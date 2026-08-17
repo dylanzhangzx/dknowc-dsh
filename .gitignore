@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# skill 运行时产物
+**/official-docs/search-results/
+**/official-docs/output/
+**/official-docs/input/
+**/official-docs/outline-results/
+
+# 本地配置
+**/config/user_profile.json
+config.ini
+config.ini.example
+
+# 发布/打包
+node_modules/
+*.tgz
+.DS_Store
