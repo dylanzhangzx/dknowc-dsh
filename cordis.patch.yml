@@ -1,0 +1,17 @@
+# dknowc-dsh bundle 插件层
+# 挂载 skill provider（3 个深知 skill）+ MCP client（深知可信工作台接口转接层）
+- insert:
+    - id: dknowc-skills
+      name: dknowc-dsh
+    - id: mcp-dknowc
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: dknowc
+        transport: streamable-http
+        url: https://mcp.dknowc.cn/s6/mcp/
+        headers:
+          Authorization: !!js '`Bearer ${process.env.DKNOWC_API_KEY}`'
+        toolCallTimeoutMs: 120000
+        # Key 未配置/无效导致启动连接或工具同步失败时，拒绝激活并明确报错，
+        # 避免"无工具但静默激活"导致模型拿到空工具列表后绕路或编造答案。
+        failOnStartupError: true

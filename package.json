@@ -1,0 +1,33 @@
+{
+  "name": "dknowc-dsh",
+  "version": "1.0.0",
+  "description": "深知可信办公全家桶：深知可信咨询、深知可信搜索、深知公文写作（skill + MCP 转接），面向 DeepSeek Harness (dsh)",
+  "type": "module",
+  "main": "src/index.js",
+  "files": [
+    "src",
+    "skills",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "python3 -m py_compile skills/dknowc-trusted-consulting/scripts/initialize.py skills/dknowc-trusted-consulting/scripts/render_trace_html.py skills/dknowc-trusted-consulting/scripts/adapt_mcp_result.py skills/dknowc-trusted-consulting/scripts/mcp_direct.py skills/dknowc-trusted-consulting/scripts/gov_chat.py && python3 -m py_compile skills/dknowc-trusted-search/scripts/initialize.py skills/dknowc-trusted-search/scripts/render_trace_html.py skills/dknowc-trusted-search/scripts/adapt_mcp_result.py skills/dknowc-trusted-search/scripts/mcp_direct.py skills/dknowc-trusted-search/scripts/trusted_search.py skills/dknowc-trusted-search/scripts/deep_query.py && python3 -m py_compile skills/dknowc-official-doc-writer/scripts/initialize.py skills/dknowc-official-doc-writer/scripts/adapt_mcp_result.py skills/dknowc-official-doc-writer/scripts/mcp_direct.py skills/dknowc-official-doc-writer/scripts/outline_reference.py skills/dknowc-official-doc-writer/scripts/dkag_search.py skills/dknowc-official-doc-writer/scripts/format_document.py skills/dknowc-official-doc-writer/scripts/template_generator.py && node --check skills/dknowc-trusted-consulting/scripts/register_key.mjs && node --check skills/dknowc-trusted-search/scripts/register_key.mjs && node --check skills/dknowc-official-doc-writer/scripts/register.mjs",
+    "prepack": "find skills -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; find skills -name .DS_Store -delete 2>/dev/null"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "dknowc",
+    "trusted-consulting",
+    "trusted-search",
+    "official-doc-writing"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
