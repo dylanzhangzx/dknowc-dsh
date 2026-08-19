@@ -19,10 +19,9 @@ from typing import Any, Dict, Iterable, Optional
 
 DEFAULT_ENDPOINT = "https://open.dknowc.cn/chat/trusted/unification"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
 WS_ROOT = Path(_os.environ.get("DKNWOC_WS_ROOT") or _os.getcwd()).resolve()
-
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 DEFAULTS = {
     "area": "",
@@ -42,6 +41,14 @@ DEFAULTS = {
 }
 
 
+def _rel_to_ws(path: Path) -> str:
+    """把输出路径显示为相对工作区（WS_ROOT）的形式；不在工作区内则显示绝对路径。"""
+    try:
+        return str(path.relative_to(WS_ROOT))
+    except ValueError:
+        return str(path.resolve())
+
+
 def resolve_output_json(output_path: str) -> Path:
     """把咨询结果 JSON 落到本 Skill 的 official-docs/search-results/ 工作区。
 
@@ -54,7 +61,7 @@ def resolve_output_json(output_path: str) -> Path:
     elif raw.parent == Path("."):
         resolved = (SEARCH_RESULTS_DIR / raw.name).resolve()
     else:
-        resolved = (WS_ROOT / raw).resolve()
+        resolved = (SKILL_ROOT / raw).resolve()
     if resolved.suffix.lower() != ".json":
         resolved = resolved.with_suffix(".json")
     return resolved

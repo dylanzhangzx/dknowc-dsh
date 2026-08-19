@@ -13,7 +13,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（会话工作区）
 import os as _os
 WS_ROOT = Path(_os.environ.get("DKNWOC_WS_ROOT") or _os.getcwd()).resolve()
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
@@ -21,9 +21,9 @@ OUTPUT_DIR = WS_ROOT / "official-docs" / "output"
 
 
 def _resolve_input(value: str) -> Path:
-    """把待读取文件解析到工作区 official-docs/search-results/。
+    """把待读取文件解析到本 Skill 的 official-docs/search-results/ 工作区。
 
-    裸文件名进 search-results/；带子路径的相对路径按 WS_ROOT 解析，
+    裸文件名进 search-results/；带子路径的相对路径按 SKILL_ROOT 解析，
     因此 official-docs/search-results/xxx.json 这类写法也可直接使用。
     """
     raw = Path(value).expanduser()
@@ -35,7 +35,7 @@ def _resolve_input(value: str) -> Path:
 
 
 def _resolve_output(value: str) -> Path:
-    """把交付物解析到工作区 official-docs/output/，自动补 .html 后缀。"""
+    """把交付物解析到本 Skill 的 official-docs/output/ 工作区，自动补 .html 后缀。"""
     raw = Path(value).expanduser()
     if raw.is_absolute():
         resolved = raw.resolve()
@@ -45,6 +45,20 @@ def _resolve_output(value: str) -> Path:
         resolved = (WS_ROOT / raw).resolve()
     if resolved.suffix.lower() not in {".html", ".htm"}:
         resolved = resolved.with_suffix(".html")
+    return resolved
+
+
+def _resolve_output_md(value: str) -> Path:
+    """把干净 Markdown 交付物解析到 official-docs/output/ 工作区，自动补 .md 后缀。"""
+    raw = Path(value).expanduser()
+    if raw.is_absolute():
+        resolved = raw.resolve()
+    elif raw.parent == Path("."):
+        resolved = (OUTPUT_DIR / raw.name).resolve()
+    else:
+        resolved = (WS_ROOT / raw).resolve()
+    if resolved.suffix.lower() != ".md":
+        resolved = resolved.with_suffix(".md")
     return resolved
 
 
@@ -91,6 +105,15 @@ def strip_tags(text: str) -> str:
 def normalize_citations(text: str) -> str:
     text = strip_tags(text)
     return re.sub(r"\[\^?(\d+)\^?\]", r"[\1]", text)
+
+
+def strip_citation_markers(text: str) -> str:
+    text = strip_tags(text)
+    text = re.sub(r"【\s*\d+\s*】", "", text)
+    text = re.sub(r"\[\^?\d+\^?\]", "", text)
+    text = re.sub(r"[ \t]+(\n)", r"\1", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip() + ("\n" if text.strip() else "")
 
 
 def paragraph_text(item: Dict[str, Any]) -> str:
@@ -967,6 +990,7 @@ def main() -> None:
     parser.add_argument("--output", help="输出 HTML 路径；不传时根据问题自动生成短文件名到 official-docs/output/")
     parser.add_argument("--title", default="深知可信咨询可信溯源", help="页面标题")
     parser.add_argument("--answer-file", help="最终回答正文文件。复杂任务综合后必须传入，确保 HTML 展示的答案与聊天答案一致。")
+    parser.add_argument("--clean-md-output", help="输出干净 Markdown 路径；内容来自同一份最终答案，并移除 [1]、【1】等溯源角标。")
     parser.add_argument("--question", default="", help="用户问题，用于生成顶部对话气泡。")
     args = parser.parse_args()
 
@@ -984,6 +1008,14 @@ def main() -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(render_html(payload, args.title, answer_override=answer_override, question_override=args.question, generated_at=generated_at), encoding="utf-8")
     print(f"已生成：{output}")
+    if args.clean_md_output:
+        clean_output = _resolve_output_md(args.clean_md_output)
+    else:
+        clean_output = _resolve_output_md(output.with_suffix(".clean.md").name)
+    clean_output.parent.mkdir(parents=True, exist_ok=True)
+    clean_answer = strip_citation_markers(answer_override or extract_answer(unwrap(payload)))
+    clean_output.write_text(clean_answer, encoding="utf-8")
+    print(f"已生成干净 Markdown：{clean_output}")
 
 
 if __name__ == "__main__":

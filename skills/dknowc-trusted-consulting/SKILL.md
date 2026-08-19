@@ -3,11 +3,11 @@ name: dknowc-trusted-consulting
 slug: dknowc-trusted-consulting
 display_name: 深知可信咨询
 display_name_en: dknowc trusted consulting
-description: "当用户咨询政策法规、政务办事、税务社保、公积金、企业补贴、资质证照、行业标准、公共服务、合规义务、企业经营政策、投资技改税惠、办事条件、材料清单、申请路径、风险判断，或要求权威依据、可信溯源、带角标答案、深知可信咨询时，使用深知可信咨询。本 dsh 版通过深知可信工作台 MCP 工具 credible_chat 获取答案和参考材料，输出带真实来源角标的咨询答案，并默认生成本轮交互式可信溯源 HTML。API Key 通过环境变量 DKNOWC_API_KEY 注入（供 MCP Bearer 认证）。"
+description: "当用户咨询政策法规、政务办事、税务社保、公积金、企业补贴、资质证照、行业标准、公共服务、合规义务、企业经营政策、投资技改税惠、办事条件、材料清单、申请路径、风险判断，或要求权威依据、可信溯源、带角标答案、深知可信咨询时，使用深知可信咨询。本 dsh 版通过深知可信工作台 MCP 工具 credible_chat 获取答案和参考材料，输出带真实来源角标和来源清单的咨询答案，并默认生成本轮交互式可信溯源 HTML 与移除角标的干净 Markdown。API Key 通过环境变量 DKNOWC_API_KEY 注入（供 MCP Bearer 认证）。"
 description_zh: "深知可信咨询是由北京彩智科技有限公司旗下“深知可信智能”提供的可信咨询 Skill，面向政策法规、政务办事、税务社保、公积金、企业补贴、资质证照、行业标准、公共服务、合规义务、企业经营政策和办事导办等场景。它通过 MCP 调用可信统一问答接口，输出带权威来源角标和本地可点击溯源 HTML 的精准咨询结果。"
 description_en: "dknowc trusted consulting is a trusted consultation Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It answers policy, regulation, government service, tax, social security, housing fund, enterprise subsidy, licensing, industry standard, compliance and public-service questions through the trusted unified chat API (via MCP), with citation markers and local provenance HTML."
 category: 通用办公
-version: 1.0.2-dsh
+version: 1.0.3-dsh
 author: 彩智科技
 permissions:
   network:
@@ -147,11 +147,13 @@ python3 <skillDir>/scripts/render_trace_html.py official-docs/search-results/dkn
   --answer-file official-docs/search-results/dknowc_consulting_answer.txt
 ```
 
-8. 回复用户：
+`render_trace_html.py` 会同时生成溯源 HTML 和同名 `.clean.md`（移除全部角标的干净 Markdown），输出到 `official-docs/output/`。如需指定干净 Markdown 路径，传 `--clean-md-output official-docs/output/xxx.md`。
 
-- 先给最终答案，保留角标。
+8. 回复用户（三件套交付：带角标答案 + 溯源 HTML + 干净 Markdown）：
+
+- 先给最终答案，保留角标；答案末尾附“来源”清单，逐行列出答案中实际用到的角标，格式：`[n]《材料标题》· 发布机构 · 日期`（按角标首次出现顺序；机构或日期缺失时可省略对应段）。只列被答案引用的角标，不要罗列全部返回材料。
 - 不要再给用户输出接口返回的 `可信溯源报告` 链接；本地 HTML 已承载同一类溯源信息。
-- 给出本地 HTML 路径，使用 `render_trace_html.py` 实际打印的自动生成路径。
+- 给出本地 HTML 路径和干净 Markdown 路径，均使用 `render_trace_html.py` 实际打印的路径。
 - 如接口材料不足，明确说明“当前接口返回材料不足以支撑某结论”，不要编造。
 
 ## 答案自检
@@ -162,6 +164,7 @@ python3 <skillDir>/scripts/render_trace_html.py official-docs/search-results/dkn
 - 每个角标编号是否能在接口来源列表中找到。
 - 每个被角标支撑的句子是否能从对应材料标题、摘要、段落摘录或原文链接中核验。
 - 聊天答案和通过 `--answer-file` 传给 HTML 的答案是否一致。
+- 答案末尾的“来源”清单是否覆盖答案中出现的全部角标，且每条来源信息与接口返回材料一致。
 
 如果答案没有角标而接口返回了来源材料，先重写答案再生成 HTML；不要交付仅有“未识别到正文角标”提示的报告。
 
