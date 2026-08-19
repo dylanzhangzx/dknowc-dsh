@@ -21,7 +21,13 @@ DEFAULT_ENDPOINT = "https://open.dknowc.cn/chat/trusted/unification"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
-WS_ROOT = Path(_os.environ.get("DKNWOC_WS_ROOT") or _os.getcwd()).resolve()
+_ws = _os.environ.get("DKNWOC_WS_ROOT")
+if not _ws:
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
+    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
+    _sid = _os.environ.get("DSH_SESSION_ID", "")
+    _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
+WS_ROOT = Path(_ws).resolve()
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 DEFAULTS = {
     "area": "",

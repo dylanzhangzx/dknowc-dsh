@@ -79,7 +79,7 @@ python3 <skillDir>/scripts/initialize.py
 如需使用搜索功能，提供手机号完成验证即可，注册由我代为处理，你不需要填写单位信息。
 ```
 
-引导配置时，用户提供手机号和收到的验证码即可。注册和获取 Key 由 Agent 处理；获取到的 Key 仅供**当前任务临时使用**，本轮用 `DKNOWC_API_KEY=<临时Key> python3 <skillDir>/scripts/mcp_direct.py trusted_search '<JSON参数>' --output official-docs/search-results/xxx_mcp_raw.json` 直调 MCP 完成搜索（bash 前缀赋值绕过 dsh 的环境清理），随后走 `adapt_mcp_result.py` 规范化 → `source_note_html.py` / `render_trace_html.py` 生成溯源报告。任务完成后再询问用户是否把 `DKNOWC_API_KEY` 持久化到本机环境变量（如 `~/.zshrc`），只有用户明确同意后才写入；写入后建议用户重启 dsh 或新开会话。
+引导配置时，用户提供手机号和收到的验证码即可。注册和获取 Key 由 Agent 处理；获取到的 Key 仅供**当前任务临时使用**，本轮用 `DKNOWC_API_KEY=<临时Key> python3 <skillDir>/scripts/mcp_direct.py trusted_search '<JSON参数>' --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/xxx_mcp_raw.json` 直调 MCP 完成搜索（bash 前缀赋值绕过 dsh 的环境清理），随后走 `adapt_mcp_result.py` 规范化 → `source_note_html.py` / `render_trace_html.py` 生成溯源报告。任务完成后再询问用户是否把 `DKNOWC_API_KEY` 持久化到本机环境变量（如 `~/.zshrc`），只有用户明确同意后才写入；写入后建议用户重启 dsh 或新开会话。
 
 MaaS 初始化按两步流程执行：
 
@@ -183,12 +183,14 @@ python3 <skillDir>/scripts/local_memory.py pref remove <偏好ID>    # 必须先
 | `reference/search_intro.md` | 引导用户时 | 需要向用户说明搜索功能时 |
 | `reference/standards/*.md` | 按文种 | 命中对应文种时读取（见"写作规则"） |
 
-## 工作区约定（dsh）——脚本与产物的路径区分
+## 工作区约定（dsh）——会话隔离的产物目录
 
-- **脚本调用一律用 skill 目录的绝对路径**（resourceBase 指引里给出的 "Base directory for this skill: <path>" 就是 skill 目录，以下称 `<skillDir>`）。不要用 `scripts/xxx.py` 这种相对路径调用脚本——bash 命令的相对路径是基于当前工作区（session cwd）解析的，而脚本在 bundle 的 skill 目录里，相对路径会找不到。
-- 因此所有脚本调用写成：`python3 <skillDir>/scripts/initialize.py`、`python3 <skillDir>/scripts/outline_reference.py ...`、`python3 <skillDir>/scripts/format_document.py ...`、`node <skillDir>/scripts/register.mjs ...` 等。
-- **运行产物（搜索结果 JSON、合并 JSON、大纲 JSON、正文临时文件、Word 文档、溯源报告 HTML）一律写入当前会话工作区**（即 bash 默认的当前工作目录），用相对路径 `official-docs/input/...`、`official-docs/search-results/...`、`official-docs/output/...`、`official-docs/outline-results/...`。脚本已按 `WS_ROOT = 当前工作目录` 解析这些相对路径，产物会落到工作区，不会写进 bundle。
-- 交付给用户的 `.docx` / HTML 路径，以脚本实际打印的绝对路径为准。
+- **脚本调用一律用 skill 目录的绝对路径**（resourceBase 指引里给出的 "Base directory for this skill: <path>" 就是 skill 目录，以下称 `<skillDir>`）。不要用 `scripts/xxx.py` 相对路径调用脚本——bash 的相对路径基于会话工作区解析，脚本在 bundle 的 skill 目录里，相对路径找不到。
+- **产物按会话隔离存放**：每个 dsh 会话在工作区下有独立产物目录，bash 中写作 ``dknowc-output/${DSH_SESSION_ID:0:8}``（DSH_SESSION_ID 由 dsh 注入；本地无此变量时为 `dknowc-output/_default`）。完整路径形如 `dknowc-output/<会话短ID>/official-docs/...`。同一工作区开多个会话时产物互不混杂、互不覆盖。
+- **运行产物（搜索结果 JSON、合并 JSON、大纲 JSON、正文临时文件、Word 文档、溯源报告 HTML）**一律写入**本会话**目录，用全前缀相对路径：`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/...`、`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/...`、`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/...`、`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/outline-results/...`。脚本对裸文件名也会自动路由到本会话对应子目录。
+- 交付给用户的文件路径，以脚本实际打印的路径为准。
+- 会话目录仍位于工作区内（dsh 沙箱/权限不受影响），用户可在访达中直接浏览 `dknowc-output/` 找到各会话产物。
+
 
 ## MCP 不可用处理（强制）
 
@@ -257,7 +259,7 @@ python3 <skillDir>/scripts/outline_reference.py "用户写作需求" --output ou
 
 `用户写作需求` 必须尽量使用用户原始需求的完整表述，保留文种、主题、地域、用途、重点内容和交付要求；不得只传入压缩后的标题或文件名。例如用户要求“关于深圳市人工智能赋能基层治理应用情况的调研报告，重点包括发展背景、主要做法、典型应用场景、存在问题和下一步建议”，不得压缩成“深圳市人工智能赋能基层治理应用情况调研报告”后调用。
 
-未指定目录的范文大纲结果保存到 `official-docs/outline-results/`。调用时使用环境变量 `DKNOWC_API_KEY`，不得向用户展示 API Key、接口参数或内部保存路径。脚本输出中 `request_success` 只表示接口请求成功，是否有可用大纲必须看 `outline_available`；`outline_available=false` 时，直接忽略范文大纲能力，不向用户确认大纲，也不要让模型自行生成替代大纲。
+未指定目录的范文大纲结果保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/outline-results/`。调用时使用环境变量 `DKNOWC_API_KEY`，不得向用户展示 API Key、接口参数或内部保存路径。脚本输出中 `request_success` 只表示接口请求成功，是否有可用大纲必须看 `outline_available`；`outline_available=false` 时，直接忽略范文大纲能力，不向用户确认大纲，也不要让模型自行生成替代大纲。
 
 触发范围：
 
@@ -344,7 +346,7 @@ python3 <skillDir>/scripts/outline_reference.py "用户写作需求" --output ou
 8. 对政策依据、数据支撑、参考案例做充分性自检，必要时补搜。
 9. 用户确认素材后，再进入大纲或 Word 生成；正式写作任务不得把正文初稿作为聊天消息发出，直接生成 Word（执行过搜索时另附 HTML 可信溯源报告）。
 10. 执行过搜索时，正式公文正文不再内嵌来源角标、知识专库链接或溯源卡片；必须另行生成 `标题_可信溯源报告.html`，将完整正文写入 HTML，并把正文中的 `[1]`/`【1】`角标变成可点击的来源跳转。报告底部统一展示知识专库链接。凡通过深知可信搜索召回并写入正文的依据，默认按已完成可信检索和可溯源处理，不得使用“建议核对”“需人工核验”等削弱可信度的措辞。
-11. 可信溯源报告必须按 `reference/search_guide.md` 的固定流程生成：先整理结构化 JSON 到 `official-docs/input/标题_可信溯源报告.json`，再调用 `python3 <skillDir>/scripts/source_note_html.py ...` 输出 HTML。不得由模型手写完整 HTML，不得自行拼接 `<a>`、`onclick`、按钮、卡片或页面样式。
+11. 可信溯源报告必须按 `reference/search_guide.md` 的固定流程生成：先整理结构化 JSON 到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_可信溯源报告.json`，再调用 `python3 <skillDir>/scripts/source_note_html.py ...` 输出 HTML。不得由模型手写完整 HTML，不得自行拼接 `<a>`、`onclick`、按钮、卡片或页面样式。
 12. 整理 `materials` 时，凡来自深知可信搜索的材料，必须将材料条目的 `url`（或规范化后的 `源网址`/`sourceUrl`）原样写入 `source_url`；不得只写规范化后的文章标题，再依赖标题反查网址。若 MCP 返回未提供该材料的 URL，该材料不显示原文链接；不得猜测、补造或用搜索接口地址代替。
 13. 可信溯源报告中的知识专库链接必须来自每个原始搜索结果 JSON 的 `knowledgeBase`、`content.knowledgeBase` 或 `search_meta.knowledgeBase` 字段，并写入结构化 JSON 的 `knowledge_bases[].url`。不得使用占位链接、`alert()`、纯文本说明、搜索接口地址或无法点击的伪链接替代。
 
@@ -388,15 +390,15 @@ python3 <skillDir>/scripts/outline_reference.py "用户写作需求" --output ou
 }
 ```
 
-2. 把 MCP 返回保存到 `official-docs/search-results/result_地域_mcp_raw.json`，再用适配脚本规范化：
+2. 把 MCP 返回保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/result_地域_mcp_raw.json`，再用适配脚本规范化：
 
 ```bash
-python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/result_地域_mcp_raw.json \
-  --output official-docs/search-results/result_地域.json \
+python3 <skillDir>/scripts/adapt_mcp_result.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/result_地域_mcp_raw.json \
+  --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/result_地域.json \
   --mode search
 ```
 
-未指定目录的搜索结果文件会保存到 `official-docs/search-results/`；合并搜索结果时也只能读取和写入本 Skill 的 `official-docs/input/`、`official-docs/output/`、`official-docs/search-results/` 工作目录。
+未指定目录的搜索结果文件会保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`；合并搜索结果时也只能读取和写入本 Skill 的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/`、`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`、`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/` 工作目录。
 
 `eff_time` 只用于 `2025年`、`2025年08月`、`2025年08月15日` 这类单个明确时间点；不要传 `2023-2025` 这类范围。没有明确时间点时省略 `eff_time`。
 
@@ -494,10 +496,10 @@ python3 <skillDir>/scripts/initialize.py --organization "用户提供的单位" 
 普通 Word：
 
 ```bash
-python3 <skillDir>/scripts/format_document.py official-docs/input/official_doc_content.txt
+python3 <skillDir>/scripts/format_document.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/official_doc_content.txt
 ```
 
-调用前先把正文写入本 Skill 工作目录下的 `official-docs/input/` 临时正文文件。默认保存到 `config/format.json` 的 `output.dir`，且输出只能位于 `official-docs/output/`；脚本默认从正文标题生成正式文件名，并在同名文件已存在时追加 `_v1`、`_v2`。如用户明确要求保存文件名，可传入 `--output 文件名.docx`。只有一句话以内的极短文本才允许使用 `--text`；多行正文不得直接通过命令行参数传入，避免换行被破坏后整篇文档变成一个段落。
+调用前先把正文写入本 Skill 工作目录下的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/` 临时正文文件。默认保存到 `config/format.json` 的 `output.dir`，且输出只能位于 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`；脚本默认从正文标题生成正式文件名，并在同名文件已存在时追加 `_v1`、`_v2`。如用户明确要求保存文件名，可传入 `--output 文件名.docx`。只有一句话以内的极短文本才允许使用 `--text`；多行正文不得直接通过命令行参数传入，避免换行被破坏后整篇文档变成一个段落。
 
 红头 Word：
 

@@ -67,7 +67,7 @@ node <skillDir>/scripts/register_key.mjs register --phone <手机号> --vcode <�
 
 脚本自动使用 dsh 渠道码 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05` 并固定携带 `source="agent"`。成功后返回 `apiKey`（打码展示）与完整 Key（仅供当前任务临时使用）；不得向用户展示完整 API Key。默认不得重新生成 Key；只有用户明确要求时才追加 `--new-key`。
 
-**临时直连完成当前任务（不依赖 dsh 的 mcp-client，也不要求立即持久化）**：注册拿到 Key 后，当前会话的 MCP Bearer 认证已冻结（无法热注入新 Key），因此本轮任务改用**临时 Key 直调 MCP** 完成——用 `DKNOWC_API_KEY=<临时Key> python3 <skillDir>/scripts/mcp_direct.py credible_chat '<JSON参数>' --output official-docs/search-results/dknowc_mcp_raw.json` 形式，把临时 Key 通过 bash 前缀赋值传给脚本（绕过 dsh 的环境清理），由 mcp_direct.py 直接 HTTP 调 MCP server 的 tools/call，产出与 dsh mcp-client 一致的 MCP 返回结构；随后照常走 `adapt_mcp_result.py` 规范化 → `render_trace_html.py` 生成溯源 HTML。**不要把临时 Key 写入环境变量或任何配置文件**。
+**临时直连完成当前任务（不依赖 dsh 的 mcp-client，也不要求立即持久化）**：注册拿到 Key 后，当前会话的 MCP Bearer 认证已冻结（无法热注入新 Key），因此本轮任务改用**临时 Key 直调 MCP** 完成——用 `DKNOWC_API_KEY=<临时Key> python3 <skillDir>/scripts/mcp_direct.py credible_chat '<JSON参数>' --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_mcp_raw.json` 形式，把临时 Key 通过 bash 前缀赋值传给脚本（绕过 dsh 的环境清理），由 mcp_direct.py 直接 HTTP 调 MCP server 的 tools/call，产出与 dsh mcp-client 一致的 MCP 返回结构；随后照常走 `adapt_mcp_result.py` 规范化 → `render_trace_html.py` 生成溯源 HTML。**不要把临时 Key 写入环境变量或任何配置文件**。
 
 **任务完成后的持久化（一次性，之后免注册）**：当前任务交付完成后，再询问用户是否需要把 `DKNOWC_API_KEY` 保存为后续可复用的环境变量（如追加到 `~/.zshrc`）。只有用户明确同意后，Agent 才能执行持久化写入；写入后建议用户重启 dsh 或新开会话，之后新会话会通过 MCP 转接正常使用。
 
@@ -78,15 +78,17 @@ node <skillDir>/scripts/register_key.mjs register --phone <手机号> --vcode <�
 - 角标必须与接口返回的材料真实对应。不能用主题相近但未支撑该结论的材料挂角标；找不到依据时，应删除该结论、标为“需进一步核验”，或重新调用接口补证。
 - 每次咨询后，默认必须生成本轮 HTML 溯源报告。只有用户明确说“不要生成 HTML/不要文件”时才跳过。
 - HTML 报告应展示本轮最终答案正文、答案中的角标、右侧可信来源、段落下可展开的来源摘录，以及接口返回的知识专库入口（如有）。不要把 HTML 改写成另一个独立调研报告。
-- 用户可见的 HTML 输出到本 Skill 的 `official-docs/output/`，中间产物（接口 JSON、答案文件）存 `official-docs/search-results/`。不要固定文件名，应让 `render_trace_html.py` 根据用户问题自动生成短文件名；不向 `/tmp` 写任何中间文件。
+- 用户可见的 HTML 输出到本 Skill 的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`，中间产物（接口 JSON、答案文件）存 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`。不要固定文件名，应让 `render_trace_html.py` 根据用户问题自动生成短文件名；不向 `/tmp` 写任何中间文件。
 - 如果用户只是追问“你是否用了 skill”“你调用了几次”等元问题，不要再次调用本 skill；直接基于当前对话说明。
 
-## 工作区约定（dsh）——脚本与产物的路径区分
+## 工作区约定（dsh）——会话隔离的产物目录
 
-- **脚本调用一律用 skill 目录的绝对路径**（resourceBase 指引里给出的 "Base directory for this skill: <path>" 就是 skill 目录，以下称 `<skillDir>`）。不要用 `scripts/xxx.py` 这种相对路径调用脚本——bash 命令的相对路径是基于当前工作区（session cwd）解析的，而脚本在 bundle 的 skill 目录里，相对路径会找不到。
-- 因此所有脚本调用写成：`python3 <skillDir>/scripts/initialize.py`、`python3 <skillDir>/scripts/adapt_mcp_result.py`、`python3 <skillDir>/scripts/render_trace_html.py ...`。
-- **运行产物（接口 JSON、答案文件、溯源 HTML）一律写入当前会话工作区**（即 bash 默认的当前工作目录），用相对路径 `official-docs/search-results/...`、`official-docs/output/...`。脚本已按 `WS_ROOT = 当前工作目录` 解析这些相对路径，产物会落到工作区，不会写进 bundle。
-- 交付给用户的 HTML 路径，以 `render_trace_html.py` 实际打印的绝对路径为准。
+- **脚本调用一律用 skill 目录的绝对路径**（resourceBase 指引里给出的 "Base directory for this skill: <path>" 就是 skill 目录，以下称 `<skillDir>`）。不要用 `scripts/xxx.py` 相对路径调用脚本——bash 的相对路径基于会话工作区解析，脚本在 bundle 的 skill 目录里，相对路径找不到。
+- **产物按会话隔离存放**：每个 dsh 会话在工作区下有独立产物目录，bash 中写作 ``dknowc-output/${DSH_SESSION_ID:0:8}``（DSH_SESSION_ID 由 dsh 注入；本地无此变量时为 `dknowc-output/_default`）。完整路径形如 `dknowc-output/<会话短ID>/official-docs/...`。同一工作区开多个会话时产物互不混杂、互不覆盖。
+- **运行产物（接口 JSON、答案文件、溯源 HTML、干净 Markdown）**一律写入**本会话**目录，用全前缀相对路径：`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/...`、`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/...`。脚本对裸文件名也会自动路由到本会话对应子目录。
+- 交付给用户的文件路径，以脚本实际打印的路径为准。
+- 会话目录仍位于工作区内（dsh 沙箱/权限不受影响），用户可在访达中直接浏览 `dknowc-output/` 找到各会话产物。
+
 
 ## MCP 不可用处理（强制）
 
@@ -112,13 +114,13 @@ python3 <skillDir>/scripts/initialize.py
 }
 ```
 
-3. 把 MCP 工具返回的 JSON 保存到 `official-docs/search-results/dknowc_mcp_raw.json`。
+3. 把 MCP 工具返回的 JSON 保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_mcp_raw.json`。
 
 4. 用适配脚本把 MCP 返回规范化成渲染脚本可消费的接口 JSON：
 
 ```bash
-python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dknowc_mcp_raw.json \
-  --output official-docs/search-results/dknowc_consulting.json \
+python3 <skillDir>/scripts/adapt_mcp_result.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_mcp_raw.json \
+  --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_consulting.json \
   --mode chat
 ```
 
@@ -127,13 +129,13 @@ python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dkno
 6. 形成面向用户的最终答案：
 
 - 如果接口正文已经适合作为最终答案，且带有可用角标，可直接使用。
-- 如果需要整理、压缩、表格化或补充咨询判断，把整理后的最终答案保存到 `official-docs/search-results/dknowc_consulting_answer.txt`。
+- 如果需要整理、压缩、表格化或补充咨询判断，把整理后的最终答案保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_consulting_answer.txt`。
 - 整理后的答案仍必须保留真实角标；不要新增无法对应到材料的角标。
 
 7. 生成 HTML 溯源报告：
 
 ```bash
-python3 <skillDir>/scripts/render_trace_html.py official-docs/search-results/dknowc_consulting.json \
+python3 <skillDir>/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_consulting.json \
   --title "深知可信咨询可信溯源" \
   --question "用户原始问题"
 ```
@@ -141,13 +143,13 @@ python3 <skillDir>/scripts/render_trace_html.py official-docs/search-results/dkn
 如果第 6 步生成了最终答案文件，必须传入：
 
 ```bash
-python3 <skillDir>/scripts/render_trace_html.py official-docs/search-results/dknowc_consulting.json \
+python3 <skillDir>/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_consulting.json \
   --title "深知可信咨询可信溯源" \
   --question "用户原始问题" \
-  --answer-file official-docs/search-results/dknowc_consulting_answer.txt
+  --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_consulting_answer.txt
 ```
 
-`render_trace_html.py` 会同时生成溯源 HTML 和同名 `.clean.md`（移除全部角标的干净 Markdown），输出到 `official-docs/output/`。如需指定干净 Markdown 路径，传 `--clean-md-output official-docs/output/xxx.md`。
+`render_trace_html.py` 会同时生成溯源 HTML 和同名 `.clean.md`（移除全部角标的干净 Markdown），输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。如需指定干净 Markdown 路径，传 `--clean-md-output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/xxx.md`。
 
 8. 回复用户（三件套交付：带角标答案 + 溯源 HTML + 干净 Markdown）：
 

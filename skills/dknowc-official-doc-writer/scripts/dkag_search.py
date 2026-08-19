@@ -33,7 +33,13 @@ QUERY_TOO_SHORT_ERROR = f"错误：查询关键词过短，最少需要 {MIN_QUE
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
 import os as _os
-WS_ROOT = Path(_os.environ.get("DKNWOC_WS_ROOT") or _os.getcwd()).resolve()
+_ws = _os.environ.get("DKNWOC_WS_ROOT")
+if not _ws:
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
+    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
+    _sid = _os.environ.get("DSH_SESSION_ID", "")
+    _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
+WS_ROOT = Path(_ws).resolve()
 
 API_KEY_ENV = "DKNOWC_API_KEY"
 DEFAULT_BASE_URL = "https://open.dknowc.cn/dependable/search/"
@@ -79,7 +85,7 @@ def resolve_output_json(output_path: str) -> Path:
     elif raw_path.parent == Path("."):
         resolved = (SEARCH_RESULTS_DIR / raw_path.name).resolve()
     else:
-        resolved = (WS_ROOT / raw_path).resolve()
+        resolved = raw_path.resolve()
 
     if resolved.suffix.lower() != ".json":
         resolved = resolved.with_suffix(".json")

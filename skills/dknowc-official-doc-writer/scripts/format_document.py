@@ -132,7 +132,13 @@ DEFAULT_OUTPUT_DIR = "official-docs/output"
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'config', 'format.json')
 SKILL_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录
-WS_ROOT = os.path.abspath(os.environ.get("DKNWOC_WS_ROOT") or os.getcwd())
+_ws = os.environ.get("DKNWOC_WS_ROOT")
+if not _ws:
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
+    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
+    _sid = os.environ.get("DSH_SESSION_ID", "")
+    _ws = os.path.join(os.getcwd(), "dknowc-output", (_sid[:8] if _sid else "_default"))
+WS_ROOT = os.path.abspath(_ws)
 
 OFFICIAL_DOCS_DIR = os.path.join(WS_ROOT, "official-docs")
 INPUT_DIR = os.path.join(OFFICIAL_DOCS_DIR, "input")
@@ -195,7 +201,7 @@ def resolve_input_text_path(input_path):
     elif raw_path == os.path.basename(raw_path):
         resolved = os.path.abspath(os.path.join(INPUT_DIR, raw_path))
     else:
-        resolved = os.path.abspath(os.path.join(WS_ROOT, raw_path))
+        resolved = os.path.abspath(raw_path)
 
     allowed_dirs = [
         os.path.abspath(INPUT_DIR),

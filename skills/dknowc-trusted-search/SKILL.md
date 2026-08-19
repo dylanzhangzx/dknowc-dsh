@@ -72,16 +72,18 @@ node <skillDir>/scripts/register_key.mjs register --phone <手机号> --vcode <�
 
 脚本自动使用 dsh 渠道码 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05` 并固定携带 `source="agent"`。成功后返回 `apiKey`（打码展示）与完整 Key（仅供当前任务临时使用）；不得向用户展示完整 API Key。默认不得重新生成 Key；只有用户明确要求时才追加 `--new-key`。
 
-**临时直调 MCP 完成当前任务（不依赖 dsh 的 mcp-client，也不要求立即持久化）**：注册拿到 Key 后，当前会话的 MCP Bearer 认证已冻结（无法热注入新 Key），因此本轮任务改用**临时 Key 直调 MCP** 完成——用 `DKNOWC_API_KEY=<临时Key> python3 <skillDir>/scripts/mcp_direct.py trusted_search '<JSON参数>' --output official-docs/search-results/dknowc_search_mcp_raw.json`（深度搜索用 `deep_query` 工具）形式，把临时 Key 通过 bash 前缀赋值传给脚本（绕过 dsh 的环境清理），由 mcp_direct.py 直接 HTTP 调 MCP server 的 tools/call，产出与 dsh mcp-client 一致的 MCP 返回结构；随后照常走 `adapt_mcp_result.py` 规范化 → `render_trace_html.py` 生成溯源 HTML 与干净 Markdown。**不要把临时 Key 写入环境变量或任何配置文件**。
+**临时直调 MCP 完成当前任务（不依赖 dsh 的 mcp-client，也不要求立即持久化）**：注册拿到 Key 后，当前会话的 MCP Bearer 认证已冻结（无法热注入新 Key），因此本轮任务改用**临时 Key 直调 MCP** 完成——用 `DKNOWC_API_KEY=<临时Key> python3 <skillDir>/scripts/mcp_direct.py trusted_search '<JSON参数>' --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_mcp_raw.json`（深度搜索用 `deep_query` 工具）形式，把临时 Key 通过 bash 前缀赋值传给脚本（绕过 dsh 的环境清理），由 mcp_direct.py 直接 HTTP 调 MCP server 的 tools/call，产出与 dsh mcp-client 一致的 MCP 返回结构；随后照常走 `adapt_mcp_result.py` 规范化 → `render_trace_html.py` 生成溯源 HTML 与干净 Markdown。**不要把临时 Key 写入环境变量或任何配置文件**。
 
 **任务完成后的持久化（一次性，之后免注册）**：当前任务交付完成后，再询问用户是否需要把 `DKNOWC_API_KEY` 保存为后续可复用的环境变量（如追加到 `~/.zshrc`）。只有用户明确同意后，Agent 才能执行持久化写入；写入后建议用户重启 dsh 或新开会话，之后新会话会通过 MCP 转接正常使用。
 
-## 工作区约定（dsh）——脚本与产物的路径区分
+## 工作区约定（dsh）——会话隔离的产物目录
 
-- **脚本调用一律用 skill 目录的绝对路径**（resourceBase 指引里给出的 "Base directory for this skill: <path>" 就是 skill 目录，以下称 `<skillDir>`）。不要用 `scripts/xxx.py` 这种相对路径调用脚本——bash 命令的相对路径是基于当前工作区（session cwd）解析的，而脚本在 bundle 的 skill 目录里，相对路径会找不到。
-- 因此所有脚本调用写成：`python3 <skillDir>/scripts/initialize.py`、`python3 <skillDir>/scripts/adapt_mcp_result.py`、`python3 <skillDir>/scripts/render_trace_html.py ...`、`node <skillDir>/scripts/register_key.mjs ...`。
-- **运行产物（接口 JSON、答案文件、溯源 HTML、干净 Markdown、政策可视化 HTML）一律写入当前会话工作区**（即 bash 默认的当前工作目录），用相对路径 `official-docs/search-results/...`、`official-docs/output/...`。脚本已按 `WS_ROOT = 当前工作目录` 解析这些相对路径，产物会落到工作区，不会写进 bundle。
-- 交付给用户的 HTML / Markdown 路径，以 `render_trace_html.py` 实际打印的绝对路径为准。
+- **脚本调用一律用 skill 目录的绝对路径**（resourceBase 指引里给出的 "Base directory for this skill: <path>" 就是 skill 目录，以下称 `<skillDir>`）。不要用 `scripts/xxx.py` 相对路径调用脚本——bash 的相对路径基于会话工作区解析，脚本在 bundle 的 skill 目录里，相对路径找不到。
+- **产物按会话隔离存放**：每个 dsh 会话在工作区下有独立产物目录，bash 中写作 ``dknowc-output/${DSH_SESSION_ID:0:8}``（DSH_SESSION_ID 由 dsh 注入；本地无此变量时为 `dknowc-output/_default`）。完整路径形如 `dknowc-output/<会话短ID>/official-docs/...`。同一工作区开多个会话时产物互不混杂、互不覆盖。
+- **运行产物（接口 JSON、答案文件、溯源 HTML、干净 Markdown、政策可视化 HTML）**一律写入**本会话**目录，用全前缀相对路径：`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/...`、`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/...`。脚本对裸文件名也会自动路由到本会话对应子目录。
+- 交付给用户的文件路径，以脚本实际打印的路径为准。
+- 会话目录仍位于工作区内（dsh 沙箱/权限不受影响），用户可在访达中直接浏览 `dknowc-output/` 找到各会话产物。
+
 
 ## MCP 不可用处理（强制）
 
@@ -94,20 +96,20 @@ node <skillDir>/scripts/register_key.mjs register --phone <手机号> --vcode <�
 
 1. 初始化：首次调用前运行 `python3 <skillDir>/scripts/initialize.py`，确认 `ready=true`、`api_key_configured=true`（`api_key_source` 为 `environment` 或 `mcp` 均可）。
 2. 判断是否需要追问：如果缺少地域、主体、时间、事项类型、企业条件等关键变量且会改变结论，先问用户；否则先搜索。
-3. 可信搜索：调用 MCP 工具 `mcp__dknowc__trusted_search` 获取权威材料。复杂任务可拆成多次搜索，每次围绕不同地域、层级、政策类型、税种、标准或证据缺口。把每次 MCP 返回保存为 JSON 到 `official-docs/search-results/`。
+3. 可信搜索：调用 MCP 工具 `mcp__dknowc__trusted_search` 获取权威材料。复杂任务可拆成多次搜索，每次围绕不同地域、层级、政策类型、税种、标准或证据缺口。把每次 MCP 返回保存为 JSON 到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`。
 4. 规范化 MCP 返回：每次调用后，用适配脚本把 MCP 返回转成渲染脚本可消费的接口 JSON：
 
 ```bash
-python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dknowc_search_mcp_raw.json \
-  --output official-docs/search-results/dknowc_search.json \
+python3 <skillDir>/scripts/adapt_mcp_result.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_mcp_raw.json \
+  --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search.json \
   --mode search
 ```
 
 5. 综合答案：基于搜索结果形成面向用户问题的最终答案，并在关键结论后标注真实可支撑的 `[数字]` 来源角标。
-6. 保存答案：把带角标的最终答案保存到 `official-docs/search-results/dknowc_search_answer.txt` 或同目录文件。
-7. 生成交付物：调用 `scripts/render_trace_html.py`，用同一份答案生成溯源 HTML 和干净 Markdown，交付物输出到 `official-docs/output/`。
-8. （可选，仅用户明确要求图表时）把核验后的数据整理成统一结构化 JSON 写入 `official-docs/search-results/`，调用 `scripts/render_policy_visualization.py` 生成可交互可视化 HTML 报告（`--svg` 附快照），输出到 `official-docs/output/`。
-9. 回复用户：给出直接答案，并附上 `official-docs/output/` 下的 HTML 路径、干净 Markdown 路径和知识专库链接。
+6. 保存答案：把带角标的最终答案保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_answer.txt` 或同目录文件。
+7. 生成交付物：调用 `scripts/render_trace_html.py`，用同一份答案生成溯源 HTML 和干净 Markdown，交付物输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。
+8. （可选，仅用户明确要求图表时）把核验后的数据整理成统一结构化 JSON 写入 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`，调用 `scripts/render_policy_visualization.py` 生成可交互可视化 HTML 报告（`--svg` 附快照），输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。
+9. 回复用户：给出直接答案，并附上 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 下的 HTML 路径、干净 Markdown 路径和知识专库链接。
 10. 深度搜索邀约：最终回复末尾询问用户是否需要进一步做深度搜索，例如：“我还可以继续为你做一次深度搜索，对结果进行多轮核验和扩展，输出一份更完整、可直接使用的深度版结果。这个过程耗时会更长，通常需要几分钟。需要我继续吗？”
 
 ## 可信搜索调用（MCP）
@@ -123,22 +125,22 @@ python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dkno
 }
 ```
 
-把 MCP 返回保存为 `official-docs/search-results/dknowc_search_mcp_raw.json`。**MCP 返回的实际字段形态**（与旧直连接口不同）：内层为 `query`、`service_area`、`consult_date`、`knowledge_base_url`（知识专库链接，下划线命名）、`total_articles`、`materials[]`（每条含 `title`/`source`/`date`/`paragraph`/`url`）、`search_meta`。不要按旧接口的 `data.检索文章` 或 `referenceMaterials` 字段名直接读取 MCP 原始返回——先经过适配脚本转换：
+把 MCP 返回保存为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_mcp_raw.json`。**MCP 返回的实际字段形态**（与旧直连接口不同）：内层为 `query`、`service_area`、`consult_date`、`knowledge_base_url`（知识专库链接，下划线命名）、`total_articles`、`materials[]`（每条含 `title`/`source`/`date`/`paragraph`/`url`）、`search_meta`。不要按旧接口的 `data.检索文章` 或 `referenceMaterials` 字段名直接读取 MCP 原始返回——先经过适配脚本转换：
 
 ```bash
-python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dknowc_search_mcp_raw.json \
-  --output official-docs/search-results/dknowc_search.json \
+python3 <skillDir>/scripts/adapt_mcp_result.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_mcp_raw.json \
+  --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search.json \
   --mode search
 python3 <skillDir>/scripts/render_trace_html.py \
-  official-docs/search-results/dknowc_search.json \
+  dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search.json \
   --title "深知可信搜索（法律、政策、标准）可信溯源" \
-  --answer-file official-docs/search-results/dknowc_search_answer.txt \
+  --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_answer.txt \
   --question "用户原始问题"
 ```
 
 适配脚本会把 `materials` 转成渲染脚本消费的 `data.检索文章`（中文键，含标题/来源/发布日期/源网址/摘要），并把 `knowledge_base_url` 映射为 `knowledgeBase`（驼峰）。综合答案时直接读规范化后 JSON 的 `data.检索文章` 与 `knowledgeBase`。
 
-`render_trace_html.py` 会同时生成 HTML 和同名 `.clean.md`，输出到 `official-docs/output/`。如需指定干净 Markdown 路径，传 `--clean-md-output official-docs/output/xxx.md`。
+`render_trace_html.py` 会同时生成 HTML 和同名 `.clean.md`，输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。如需指定干净 Markdown 路径，传 `--clean-md-output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/xxx.md`。
 
 ## 深度搜索调用（MCP）
 
@@ -152,16 +154,16 @@ python3 <skillDir>/scripts/render_trace_html.py \
 }
 ```
 
-把 MCP 返回保存为 `official-docs/search-results/dknowc_deep_mcp_raw.json`。**MCP 返回的实际字段形态**：内层为 `query_id`、`status`（`finished` 等）、`progress[]`（深度搜索过程记录，**字符串数组**，如"[查询]xxx"、"[检索]找到相关…"）、`search_groups[]` 与 `materials[]`（深度材料，可能为空——部分任务完成后材料经过程聚合输出）、`timings`。深度搜索**不直接返回答案正文**：最终答案由你基于 `progress` 过程记录与 `materials` 材料综合形成，保存为答案文件后经 `--answer-file` 传入渲染。然后：
+把 MCP 返回保存为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep_mcp_raw.json`。**MCP 返回的实际字段形态**：内层为 `query_id`、`status`（`finished` 等）、`progress[]`（深度搜索过程记录，**字符串数组**，如"[查询]xxx"、"[检索]找到相关…"）、`search_groups[]` 与 `materials[]`（深度材料，可能为空——部分任务完成后材料经过程聚合输出）、`timings`。深度搜索**不直接返回答案正文**：最终答案由你基于 `progress` 过程记录与 `materials` 材料综合形成，保存为答案文件后经 `--answer-file` 传入渲染。然后：
 
 ```bash
-python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dknowc_deep_mcp_raw.json \
-  --output official-docs/search-results/dknowc_deep.json \
+python3 <skillDir>/scripts/adapt_mcp_result.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep_mcp_raw.json \
+  --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep.json \
   --mode deep
 python3 <skillDir>/scripts/render_trace_html.py \
-  official-docs/search-results/dknowc_deep.json \
+  dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep.json \
   --title "深知可信搜索（法律、政策、标准）深度搜索溯源" \
-  --answer-file official-docs/search-results/dknowc_deep_answer.txt \
+  --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep_answer.txt \
   --question "用户原始问题"
 ```
 
@@ -201,7 +203,7 @@ python3 <skillDir>/scripts/render_trace_html.py \
 
 用户明确要求“图表、对比图、热力图、柱状图、雷达图、时间线、流程图、材料清单表格、政策对比、补贴金额对比、政策时间分布”等表达时才生成，是显式触发能力，不属于默认三件套。默认三件套交付完成后，如用户再要求图表，按本流程补生成。
 
-生成前，Agent 基于已核验的可信搜索结果，把数据整理为统一结构化 JSON（每个数据点必须带 `sources` 来源绑定）写入 `official-docs/search-results/`，再调用脚本。脚本离线运行、零网络依赖、不引用外部 CDN/字体，输出自包含可交互 HTML 报告（主交付）到 `official-docs/output/`，可选 `--svg` 追加一张静态 SVG 快照用于聊天内直接展示。
+生成前，Agent 基于已核验的可信搜索结果，把数据整理为统一结构化 JSON（每个数据点必须带 `sources` 来源绑定）写入 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`，再调用脚本。脚本离线运行、零网络依赖、不引用外部 CDN/字体，输出自包含可交互 HTML 报告（主交付）到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`，可选 `--svg` 追加一张静态 SVG 快照用于聊天内直接展示。
 
 支持的场景（`metadata.scenario`，缺省自动识别，`--scenario` 可覆盖）：
 - `city_compare` 地域/城市政策对比：对象×指标数据表（主视图）+ 每指标简单柱状对比
@@ -224,11 +226,11 @@ python3 <skillDir>/scripts/render_trace_html.py \
 
 ```bash
 python3 <skillDir>/scripts/render_policy_visualization.py \
-  --input official-docs/search-results/viz_city_compare.json \
+  --input dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/viz_city_compare.json \
   --title "长三角城市智能制造补贴政策对比" --svg
 ```
 
-默认输出 `<标题或scenario>_<时间戳>.html`；`--output` 指定文件名；`--scenario` 覆盖自动识别；`--svg` 同时输出同名 `.svg` 快照（仅含数据表对应的简单柱状对比）。输出只写 `official-docs/output/`。HTML 为 AI 综合解读，金额等关键数值须能在对应来源原文找到依据，与三件套同一套核验口径。
+默认输出 `<标题或scenario>_<时间戳>.html`；`--output` 指定文件名；`--scenario` 覆盖自动识别；`--svg` 同时输出同名 `.svg` 快照（仅含数据表对应的简单柱状对比）。输出只写 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。HTML 为 AI 综合解读，金额等关键数值须能在对应来源原文找到依据，与三件套同一套核验口径。
 
 ## 说明
 

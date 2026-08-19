@@ -81,19 +81,24 @@ echo 'export DKNOWC_API_KEY=sk-xxx...' >> ~/.zshrc
 
 bundle 内的 skill 目录是**只读发布产物**，运行时产物（溯源 HTML、搜索结果 JSON、Word 文档、中间文件）**不会写入 bundle**，而是写入**当前会话工作区**（dsh 里即你在 Web UI 中选中的 workspace 目录）。
 
-机制：所有脚本支持 `DKNWOC_WS_ROOT` 环境变量指定工作区根；未设置时自动使用当前工作目录（dsh 的 bash 工具默认 workdir 即会话工作区）。因此：
+机制：所有脚本支持 `DKNWOC_WS_ROOT` 环境变量显式指定产物根；未设置时，若存在 `DSH_SESSION_ID`（dsh 注入）则自动使用**会话隔离目录**，否则回退当前目录。因此：
 
-- 在 dsh 里：零配置，产物自动落到会话工作区
-- 在 SkillHub 等平台：未设置环境变量时回退到 skill 目录，保持原行为
+- 在 dsh 里：**每个会话的产物自动落到 `<工作区>/dknowc-output/<会话ID前8位>/`**，同一工作区多会话互不混杂、互不覆盖
+- 本地裸跑：无会话变量时落 `dknowc-output/_default/`
+- 显式指定：`DKNWOC_WS_ROOT` 优先级最高（测试/特殊场景）
 
-产物结构（在工作区内）：
+产物结构（在工作区内，按会话隔离）：
 ```
-<workspace>/official-docs/
-├── search-results/   接口 JSON、MCP 原始返回、规范化 JSON、答案文件
-├── output/           溯源 HTML、干净 Markdown、Word/红头文档
-├── input/            正文临时文件（公文写作）
-└── outline-results/  范文大纲 JSON（公文写作）
+<workspace>/dknowc-output/
+└── <会话ID前8位>/
+    └── official-docs/
+        ├── search-results/   接口 JSON、MCP 原始返回、规范化 JSON、答案文件
+        ├── output/           溯源 HTML、干净 Markdown、Word/红头文档
+        ├── input/            正文临时文件（公文写作）
+        └── outline-results/  范文大纲 JSON（公文写作）
 ```
+
+> 公文写作的**个人素材库与写作偏好**是跨会话持久数据，单独存放在用户主目录 `~/.dknowc-writer/`（不随会话隔离，升级插件不丢失）。
 
 ## 使用
 
