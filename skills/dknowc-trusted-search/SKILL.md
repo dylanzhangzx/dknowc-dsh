@@ -123,7 +123,7 @@ python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dkno
 }
 ```
 
-把 MCP 返回保存为 `official-docs/search-results/dknowc_search_mcp_raw.json`，然后：
+把 MCP 返回保存为 `official-docs/search-results/dknowc_search_mcp_raw.json`。**MCP 返回的实际字段形态**（与旧直连接口不同）：内层为 `query`、`service_area`、`consult_date`、`knowledge_base_url`（知识专库链接，下划线命名）、`total_articles`、`materials[]`（每条含 `title`/`source`/`date`/`paragraph`/`url`）、`search_meta`。不要按旧接口的 `data.检索文章` 或 `referenceMaterials` 字段名直接读取 MCP 原始返回——先经过适配脚本转换：
 
 ```bash
 python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dknowc_search_mcp_raw.json \
@@ -135,6 +135,8 @@ python3 <skillDir>/scripts/render_trace_html.py \
   --answer-file official-docs/search-results/dknowc_search_answer.txt \
   --question "用户原始问题"
 ```
+
+适配脚本会把 `materials` 转成渲染脚本消费的 `data.检索文章`（中文键，含标题/来源/发布日期/源网址/摘要），并把 `knowledge_base_url` 映射为 `knowledgeBase`（驼峰）。综合答案时直接读规范化后 JSON 的 `data.检索文章` 与 `knowledgeBase`。
 
 `render_trace_html.py` 会同时生成 HTML 和同名 `.clean.md`，输出到 `official-docs/output/`。如需指定干净 Markdown 路径，传 `--clean-md-output official-docs/output/xxx.md`。
 
@@ -150,7 +152,7 @@ python3 <skillDir>/scripts/render_trace_html.py \
 }
 ```
 
-把 MCP 返回保存为 `official-docs/search-results/dknowc_deep_mcp_raw.json`，然后：
+把 MCP 返回保存为 `official-docs/search-results/dknowc_deep_mcp_raw.json`。**MCP 返回的实际字段形态**：内层为 `query_id`、`status`（`finished` 等）、`progress[]`（深度搜索过程记录，**字符串数组**，如"[查询]xxx"、"[检索]找到相关…"）、`search_groups[]` 与 `materials[]`（深度材料，可能为空——部分任务完成后材料经过程聚合输出）、`timings`。深度搜索**不直接返回答案正文**：最终答案由你基于 `progress` 过程记录与 `materials` 材料综合形成，保存为答案文件后经 `--answer-file` 传入渲染。然后：
 
 ```bash
 python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dknowc_deep_mcp_raw.json \
@@ -162,6 +164,8 @@ python3 <skillDir>/scripts/render_trace_html.py \
   --answer-file official-docs/search-results/dknowc_deep_answer.txt \
   --question "用户原始问题"
 ```
+
+适配脚本会把 `materials` / `search_groups` 中的材料归集为渲染脚本消费的 `data.list`，并保留 `progress` 过程记录。
 
 多地域、多层级任务应拆成多次调用，例如中国、重庆市、重庆两江新区分别搜索。如果用户没有明确要求深度搜索，不要主动调用。先完成可信搜索版答案和三件套交付，再询问用户是否升级深度搜索。
 

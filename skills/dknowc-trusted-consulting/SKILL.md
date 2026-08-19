@@ -122,7 +122,7 @@ python3 <skillDir>/scripts/adapt_mcp_result.py official-docs/search-results/dkno
   --mode chat
 ```
 
-5. 读取规范化后 JSON 中的 `resp.content`、`referenceMaterials` 等字段。
+5. 读取规范化后 JSON 中的字段（MCP 返回的实际形态）：`answer`（接口答案正文，含角标）、`referenceMaterials`（参考材料，含 title/url/sourceUrl/content 摘录）、`policyFiles`（政策文件原文清单）、`recommendationItems`（办事事项，含线上办理入口）、`trace_report_url`（接口侧溯源报告链接，展示时以本地 HTML 为准）。
 
 6. 形成面向用户的最终答案：
 
