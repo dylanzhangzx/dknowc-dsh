@@ -17,3 +17,7 @@ config.ini.example
 node_modules/
 *.tgz
 .DS_Store
+
+# 个人素材库与写作偏好（本机私有数据，不进包）
+knowledge-base/
+**/writing_preferences.json

@@ -9,7 +9,8 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 LOCAL_BLOCKLIST_PATH = SKILL_ROOT / "config" / "release_blocklist.txt"
 SKIP_PARTS = {".git"}
 SKIP_FILES = {"CHANGE_log.md", "release_blocklist.txt"}
-BANNED_FILES = {"_meta.json", "config.ini", "config.ini.example", "environment_state.json", "user_profile.json"}
+BANNED_FILES = {"_meta.json", "config.ini", "config.ini.example", "environment_state.json", "user_profile.json", "writing_preferences.json"}
+BANNED_DIRS = {"knowledge-base"}
 BANNED_ARTIFACT_NAMES = {".gitignore", ".gitkeep", ".DS_Store"}
 BANNED_ARTIFACT_SUFFIXES = {".pyc", ".pyo"}
 ALLOWED_API_KEY_VALUES = {"", "your_api_key_here", "你的深知搜索 API Key"}
@@ -48,8 +49,12 @@ def main():
         if any(part == "__pycache__" for part in path.parts):
             findings.append(f"{path.relative_to(SKILL_ROOT)}: 公开包不得包含 __pycache__")
             continue
+        # 个人素材库与写作偏好是本机私有状态，绝不进入公开包。
+        if any(part in BANNED_DIRS for part in path.relative_to(SKILL_ROOT).parts):
+            findings.append(f"{path.relative_to(SKILL_ROOT)}: 公开包不得包含个人素材库等本机私有数据")
+            continue
         if path.is_file() and path.name in BANNED_FILES:
-            findings.append(f"{path.relative_to(SKILL_ROOT)}: 公开包不得包含真实配置文件")
+            findings.append(f"{path.relative_to(SKILL_ROOT)}: 公开包不得包含真实配置文件或本机私有状态")
             continue
         if not path.is_file() or path.name in SKIP_FILES or any(part in SKIP_PARTS for part in path.parts):
             continue
