@@ -280,7 +280,7 @@ python3 <skillDir>/scripts/outline_reference.py "用户写作需求" --output ou
 1. 设计搜索方案，覆盖政策依据、数据支撑、参考案例等必要维度；不要把“表述参考型”设计为独立搜索项。
 2. 使用自然语言 query，按行政层级和素材类型拆分检索。
 3. 向用户展示搜索方案并停止，等待用户确认或调整。
-4. 用户确认搜索方案后，必须调用深知可信工作台 MCP 工具 `mcp__dknowc__trusted_search` 执行深知搜索；如用户调整，按调整后的方案执行。每次调用把 MCP 返回保存为 JSON，再用 `scripts/adapt_mcp_result.py` 规范化为 `dkag_search.py --json-only` 同构的接口 JSON（保持后续合并、溯源报告脚本兼容）。搜索项的“搜索目的”作为 `purpose` 说明保留在规范化 JSON 中，用于后续知识专库链接外显文字；该内容不得展示给用户。
+4. 用户确认搜索方案后，必须调用深知可信工作台 MCP 工具 `mcp__dknowc__trusted_search` 执行深知搜索；如用户调整，按调整后的方案执行。每次调用把 MCP 返回保存为 JSON（注意 MCP 返回的实际字段是 `materials[]`（title/source/date/paragraph/url）与 `knowledge_base_url`（下划线命名），不是旧接口的 `data.检索文章`），再用 `scripts/adapt_mcp_result.py --mode search` 规范化为 `dkag_search.py --json-only` 同构的接口 JSON：`materials` 会被转换成 `data.检索文章`（中文键，含标题/来源/发布日期/源网址/摘要），`knowledge_base_url` 映射为 `knowledgeBase`，后续合并、溯源报告脚本直接兼容。搜索项的“搜索目的”作为 `purpose` 说明保留在规范化 JSON 中，用于后续知识专库链接外显文字；该内容不得展示给用户。
    - 多个搜索项必须默认串行执行：完成第 1 项并确认结果 JSON 写入后，再执行第 2 项，以此类推。
    - 不得使用并发、后台任务、并行命令、批量同时请求或多 Agent 同时调用搜索接口。
    - 只有用户明确要求提速并确认可接受并发风险，且平台和接口限流条件允许时，才可以并发搜索；否则一律串行。
@@ -291,7 +291,7 @@ python3 <skillDir>/scripts/outline_reference.py "用户写作需求" --output ou
 9. 用户确认素材后，再进入大纲或 Word 生成；正式写作任务不得把正文初稿作为聊天消息发出，直接生成 Word（执行过搜索时另附 HTML 可信溯源报告）。
 10. 执行过搜索时，正式公文正文不再内嵌来源角标、知识专库链接或溯源卡片；必须另行生成 `标题_可信溯源报告.html`，将完整正文写入 HTML，并把正文中的 `[1]`/`【1】`角标变成可点击的来源跳转。报告底部统一展示知识专库链接。凡通过深知可信搜索召回并写入正文的依据，默认按已完成可信检索和可溯源处理，不得使用“建议核对”“需人工核验”等削弱可信度的措辞。
 11. 可信溯源报告必须按 `reference/search_guide.md` 的固定流程生成：先整理结构化 JSON 到 `official-docs/input/标题_可信溯源报告.json`，再调用 `python3 <skillDir>/scripts/source_note_html.py ...` 输出 HTML。不得由模型手写完整 HTML，不得自行拼接 `<a>`、`onclick`、按钮、卡片或页面样式。
-12. 整理 `materials` 时，凡来自深知可信搜索的材料，必须将原始结果中的 `源网址` 原样写入 `source_url`；不得只写规范化后的文章标题，再依赖标题反查网址。若接口未返回 `源网址`，该材料不显示原文链接；不得猜测、补造或用搜索接口地址代替。
+12. 整理 `materials` 时，凡来自深知可信搜索的材料，必须将材料条目的 `url`（或规范化后的 `源网址`/`sourceUrl`）原样写入 `source_url`；不得只写规范化后的文章标题，再依赖标题反查网址。若 MCP 返回未提供该材料的 URL，该材料不显示原文链接；不得猜测、补造或用搜索接口地址代替。
 13. 可信溯源报告中的知识专库链接必须来自每个原始搜索结果 JSON 的 `knowledgeBase`、`content.knowledgeBase` 或 `search_meta.knowledgeBase` 字段，并写入结构化 JSON 的 `knowledge_bases[].url`。不得使用占位链接、`alert()`、纯文本说明、搜索接口地址或无法点击的伪链接替代。
 
 搜索异常处理：

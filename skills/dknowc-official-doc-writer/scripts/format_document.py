@@ -163,7 +163,7 @@ def get_skill_root():
 
 
 def get_configured_output_dir():
-    """获取 Word 输出目录：相对路径基于 Skill 安装目录解析，不依赖 cwd。"""
+    """获取 Word 输出目录：相对路径基于会话工作区（WS_ROOT）解析，不依赖 skill 安装目录。"""
     configured_dir = None
     if FORMAT_CONFIG:
         output_config = FORMAT_CONFIG.get('output', {})
@@ -172,10 +172,10 @@ def get_configured_output_dir():
 
     output_dir = os.path.expanduser(configured_dir or DEFAULT_OUTPUT_DIR)
     if not os.path.isabs(output_dir):
-        output_dir = os.path.join(get_skill_root(), output_dir)
+        output_dir = os.path.join(WS_ROOT, output_dir)
     output_dir = os.path.abspath(output_dir)
-    if not is_path_within(output_dir, os.path.abspath(os.path.join(get_skill_root(), DEFAULT_OUTPUT_DIR))):
-        raise ValueError(f"输出目录必须位于 {os.path.join(get_skill_root(), DEFAULT_OUTPUT_DIR)} 内")
+    if not is_path_within(output_dir, os.path.abspath(os.path.join(WS_ROOT, DEFAULT_OUTPUT_DIR))):
+        raise ValueError(f"输出目录必须位于 {os.path.join(WS_ROOT, DEFAULT_OUTPUT_DIR)} 内")
     return output_dir
 
 
@@ -195,7 +195,7 @@ def resolve_input_text_path(input_path):
     elif raw_path == os.path.basename(raw_path):
         resolved = os.path.abspath(os.path.join(INPUT_DIR, raw_path))
     else:
-        resolved = os.path.abspath(os.path.join(get_skill_root(), raw_path))
+        resolved = os.path.abspath(os.path.join(WS_ROOT, raw_path))
 
     allowed_dirs = [
         os.path.abspath(INPUT_DIR),
@@ -220,7 +220,7 @@ def resolve_output_path(output_path):
     elif output_path == os.path.basename(output_path):
         resolved = os.path.abspath(os.path.join(output_dir, output_path))
     else:
-        resolved = os.path.abspath(os.path.join(get_skill_root(), output_path))
+        resolved = os.path.abspath(os.path.join(WS_ROOT, output_path))
     if not is_path_within(resolved, output_dir):
         raise ValueError(f"输出文件必须位于 Word 输出目录内: {output_dir}")
     return resolved
@@ -230,7 +230,7 @@ def display_path(path):
     """将 Skill 内文件路径转换为面向用户的相对路径。"""
     resolved = os.path.abspath(os.path.expanduser(str(path)))
     try:
-        return os.path.relpath(resolved, get_skill_root())
+        return os.path.relpath(resolved, WS_ROOT)
     except ValueError:
         return resolved
 
