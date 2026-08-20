@@ -13,12 +13,10 @@ from typing import Any, Dict, Iterable, List, Optional
 
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（会话工作区）
+# 产物根：dsh 会话隔离 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/；DKNWOC_WS_ROOT 显式优先；无会话回退 _default
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
-    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
@@ -120,6 +118,42 @@ def strip_citation_markers(text: str) -> str:
     text = re.sub(r"[ \t]+(\n)", r"\1", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip() + ("\n" if text.strip() else "")
+
+
+_SOURCE_HEADINGS = {"来源", "来源清单", "参考来源"}
+
+
+def _normalize_source_heading(line: str) -> str:
+    value = line.strip()
+    value = re.sub(r"^[#>\s*\-]+", "", value)
+    value = re.sub(r"[\s:*#]+$", "", value)
+    return value
+
+
+def _is_source_entry(line: str) -> bool:
+    value = line.strip()
+    if re.match(r"^(\[\^?\d+\^?\]|【\d+】)\s*", value):
+        return True
+    return value.startswith("《")
+
+
+def strip_trailing_source_list(text: str) -> str:
+    """去除答案末尾的"来源"清单块。
+
+    来源清单只应在对话输出中展示：HTML 由右侧交互来源面板承载来源，
+    clean.md 保持纯正文。仅当标题行之后全部非空行都是来源条目时才剥离，
+    避免误删正文中恰好出现"来源"字样的段落。
+    """
+    lines = text.split("\n")
+    cut = -1
+    for i, line in enumerate(lines):
+        if _normalize_source_heading(line) in _SOURCE_HEADINGS:
+            tail = [l.strip() for l in lines[i + 1:] if l.strip()]
+            if tail and all(_is_source_entry(t) for t in tail):
+                cut = i
+    if cut < 0:
+        return text
+    return "\n".join(lines[:cut]).rstrip()
 
 
 def paragraph_text(item: Dict[str, Any]) -> str:
@@ -1005,6 +1039,8 @@ def main() -> None:
     answer_override = ""
     if args.answer_file:
         answer_override = _resolve_input(args.answer_file).read_text(encoding="utf-8")
+    base_answer = answer_override or extract_answer(unwrap(payload))
+    base_answer = strip_trailing_source_list(base_answer)
     question = args.question.strip() or extract_question(unwrap(payload))
     generated_at = datetime.now()
     if args.output:
@@ -1012,14 +1048,14 @@ def main() -> None:
     else:
         output = _resolve_output(safe_output_filename(question, generated_at))
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(render_html(payload, args.title, answer_override=answer_override, question_override=args.question, generated_at=generated_at), encoding="utf-8")
+    output.write_text(render_html(payload, args.title, answer_override=base_answer, question_override=args.question, generated_at=generated_at), encoding="utf-8")
     print(f"已生成：{output}")
     if args.clean_md_output:
         clean_output = _resolve_output_md(args.clean_md_output)
     else:
         clean_output = _resolve_output_md(output.with_suffix(".clean.md").name)
     clean_output.parent.mkdir(parents=True, exist_ok=True)
-    clean_answer = strip_citation_markers(answer_override or extract_answer(unwrap(payload)))
+    clean_answer = strip_citation_markers(base_answer)
     clean_output.write_text(clean_answer, encoding="utf-8")
     print(f"已生成干净 Markdown：{clean_output}")
 

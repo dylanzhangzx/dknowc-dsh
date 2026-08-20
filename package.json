@@ -1,6 +1,6 @@
 {
   "name": "dknowc-dsh",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "深知可信办公全家桶：深知可信咨询、深知可信搜索、深知公文写作（skill + MCP 转接），面向 DeepSeek Harness (dsh)",
   "type": "module",
   "main": "src/index.js",

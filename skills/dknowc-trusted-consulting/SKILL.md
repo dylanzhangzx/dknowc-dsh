@@ -7,7 +7,7 @@ description: "当用户咨询政策法规、政务办事、税务社保、公积
 description_zh: "深知可信咨询是由北京彩智科技有限公司旗下“深知可信智能”提供的可信咨询 Skill，面向政策法规、政务办事、税务社保、公积金、企业补贴、资质证照、行业标准、公共服务、合规义务、企业经营政策和办事导办等场景。它通过 MCP 调用可信统一问答接口，输出带权威来源角标和本地可点击溯源 HTML 的精准咨询结果。"
 description_en: "dknowc trusted consulting is a trusted consultation Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It answers policy, regulation, government service, tax, social security, housing fund, enterprise subsidy, licensing, industry standard, compliance and public-service questions through the trusted unified chat API (via MCP), with citation markers and local provenance HTML."
 category: 通用办公
-version: 1.0.3-dsh
+version: 1.0.4-dsh
 author: 彩智科技
 permissions:
   network:
@@ -149,7 +149,7 @@ python3 <skillDir>/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0
   --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_consulting_answer.txt
 ```
 
-`render_trace_html.py` 会同时生成溯源 HTML 和同名 `.clean.md`（移除全部角标的干净 Markdown），输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。如需指定干净 Markdown 路径，传 `--clean-md-output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/xxx.md`。
+`render_trace_html.py` 会同时生成溯源 HTML 和同名 `.clean.md`（移除全部角标的干净 Markdown），输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。如需指定干净 Markdown 路径，传 `--clean-md-output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/xxx.md`。"来源"清单只属于对话输出：即使答案文件末尾带了来源清单，脚本也会在生成 HTML 和 clean.md 前自动去除该块——HTML 的来源由右侧交互面板承载，clean.md 保持纯正文。
 
 8. 回复用户（三件套交付：带角标答案 + 溯源 HTML + 干净 Markdown）：
 
