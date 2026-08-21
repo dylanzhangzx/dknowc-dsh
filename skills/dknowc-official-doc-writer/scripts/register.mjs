@@ -139,7 +139,7 @@ async function main() {
 
   if (cmd === "send") {
     if (!a.phone) { console.error("缺少 --phone"); process.exit(2); }
-    const r = await post(base + "/sendMessage", { phone: a.phone, type: "register" });
+    const r = await post(base + "/sendMessage", { phone: a.phone, type: "register", channel: a.channel && a.channel !== true ? a.channel : DEFAULT_CHANNEL });
     console.log(JSON.stringify(r));
     if (r.status) console.error("验证码已发送，请向用户索取收到的 6 位验证码后再执行 register。");
     process.exit(r.status ? 0 : 1);

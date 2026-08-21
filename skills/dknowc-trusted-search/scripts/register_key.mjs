@@ -104,6 +104,7 @@ async function main() {
     const result = await postJson(`${base}/sendMessage`, {
       phone: args.phone,
       type: "register",
+      channel: args.channel && args.channel !== true ? args.channel : DEFAULT_CHANNEL,
     });
     console.log(JSON.stringify(result));
     process.exit(result.status ? 0 : 1);

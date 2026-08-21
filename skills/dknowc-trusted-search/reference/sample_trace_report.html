@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>深知可信搜索·可信溯源（示例）</title>
+  <style>
+    :root {
+      --purple: #6b18c9;
+      --purple-soft: #f4ebff;
+      --ink: #2f3033;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --panel: #ffffff;
+      --page: #ffffff;
+      --soft: #f7f7f8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background: var(--page);
+    }
+    header {
+      padding: 12px 28px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      text-align: center;
+    }
+    h1 { margin: 0 0 3px; font-size: 16px; letter-spacing: 0; font-weight: 700; }
+    header p { margin: 0; color: #9ca3af; font-size: 12px; }
+    .product-links {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .product-links a {
+      color: var(--purple);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .product-links a:hover { text-decoration: underline; }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 700px) minmax(390px, 460px);
+      gap: 30px;
+      justify-content: center;
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 30px 18px 40px;
+    }
+    .conversation {
+      min-width: 0;
+    }
+    .question-bubble {
+      max-width: 560px;
+      margin: 0 0 26px auto;
+      padding: 12px 16px;
+      border-radius: 9px;
+      background: var(--purple);
+      color: #fff;
+      line-height: 1.55;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .answer {
+      background: transparent;
+      padding: 0;
+    }
+    .kb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 100%;
+      margin: 0 0 16px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: #4b5563;
+      background: #fafafa;
+      text-decoration: none;
+      box-shadow: none;
+      font-size: 12px;
+    }
+    .kb-chip:hover { border-color: #d1d5db; background: #f7f7f8; }
+    .kb-label { font-weight: 700; color: #374151; }
+    .kb-count {
+      padding-left: 10px;
+      border-left: 1px solid var(--line);
+      color: #6b7280;
+    }
+    .kb-arrow {
+      color: var(--purple);
+      font-weight: 700;
+    }
+    .ai-note { margin: 0 0 10px; color: #52525b; line-height: 1.75; font-size: 14px; }
+    .answer-body {
+      padding: 0;
+      background: transparent;
+    }
+    .answer-block, .answer-item { margin: 0 0 12px; }
+    .answer-item { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; }
+    .answer-item .bullet { padding-top: 2px; color: #111827; font-size: 16px; line-height: 1.75; }
+    .answer-item.numbered { grid-template-columns: 28px minmax(0, 1fr); }
+    .answer p { margin: 0; font-size: 14px; line-height: 1.85; }
+    .answer strong { font-weight: 700; color: #202124; }
+    .answer em { font-style: normal; color: #4b5563; }
+    .answer code {
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: #f3f4f6;
+      color: #374151;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+    .answer-table-wrap { max-width: 100%; overflow-x: auto; margin: 6px 0 8px; }
+    .answer-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+    .answer-table th, .answer-table td {
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.65;
+    }
+    .answer-table th { background: #f8fafc; font-weight: 700; color: #374151; }
+    .answer-heading { margin: 20px 0 9px; color: #111827; line-height: 1.45; letter-spacing: 0; }
+    h2.answer-heading { font-size: 18px; }
+    h3.answer-heading { font-size: 16px; }
+    h4.answer-heading { font-size: 15px; }
+    .answer-divider { border: 0; border-top: 1px solid var(--line); margin: 22px 0; }
+    .warning-box {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      background: #fffbeb;
+      color: #92400e;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .cite {
+      margin: 0 2px;
+      padding: 0 5px;
+      border: 0;
+      border-radius: 4px;
+      color: var(--purple);
+      background: var(--purple-soft);
+      font-weight: 700;
+      cursor: pointer;
+      vertical-align: super;
+      font-size: 10px;
+      line-height: 1.4;
+    }
+    .cite.disabled { color: #9ca3af; background: #f3f4f6; cursor: default; }
+    .evidence-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 5px 0 0;
+    }
+    .evidence-detail {
+      max-width: 100%;
+    }
+    .evidence-detail summary {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      border-radius: 999px;
+      padding: 4px 9px;
+      color: #6b7280;
+      background: #f3f4f6;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      list-style: none;
+      font-size: 12px;
+    }
+    .evidence-detail summary::-webkit-details-marker { display: none; }
+    .evidence-detail summary::after {
+      content: "展开";
+      margin-left: 7px;
+      color: #9ca3af;
+      font-size: 11px;
+    }
+    .evidence-detail[open] summary::after { content: "收起"; }
+    .evidence-detail summary b { color: var(--purple); margin-right: 5px; }
+    .evidence-panel {
+      margin: 7px 0 4px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    .evidence-title { font-weight: 700; font-size: 14px; margin-bottom: 5px; color: #111827; }
+    .evidence-meta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .evidence-section { color: var(--purple); font-size: 12px; margin-bottom: 6px; font-weight: 700; }
+    .evidence-panel p { margin: 0 0 8px; color: #374151; font-size: 13px; line-height: 1.7; }
+    .evidence-panel a { color: var(--purple); font-weight: 700; text-decoration: none; }
+    .source-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .source-links span {
+      display: inline-flex;
+    }
+    .source-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--purple-soft);
+      color: var(--purple);
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 12px;
+    }
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+    .tools a {
+      color: var(--purple);
+      background: var(--purple-soft);
+      border-radius: 999px;
+      padding: 7px 12px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .sources {
+      align-self: start;
+      position: sticky;
+      top: 70px;
+      max-height: calc(100vh - 92px);
+      overflow: auto;
+      background: #fff;
+      border-left: 1px solid var(--line);
+      padding: 16px 0 16px 24px;
+    }
+    .sources h2 { margin: 0 0 12px; font-size: 15px; }
+    .searchbox {
+      width: 100%;
+      margin: 0 0 14px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: #6b7280;
+      background: #fff;
+    }
+    .source-card {
+      padding: 14px 0 15px;
+      border: 0;
+      border-bottom: 1px solid #f1f1f2;
+      border-radius: 0;
+      margin-bottom: 0;
+      background: #fff;
+    }
+    .source-card.active {
+      margin-left: -10px;
+      padding-left: 10px;
+      border-left: 3px solid var(--purple);
+      background: #fbf8ff;
+      box-shadow: none;
+    }
+    .source-top {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 7px;
+      align-items: start;
+      margin-bottom: 6px;
+    }
+    .source-index {
+      color: var(--purple);
+      background: var(--purple-soft);
+      border-radius: 5px;
+      padding: 1px 5px;
+      font-weight: 800;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .source-card h3 { margin: 0; font-size: 13px; line-height: 1.55; letter-spacing: 0; }
+    .source-card p { margin: 0 0 7px; color: #374151; line-height: 1.72; font-size: 12px; }
+    .source-card .meta { color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .source-card .section { color: var(--purple); font-size: 12px; font-weight: 700; }
+    .source-card a { color: var(--purple); font-weight: 700; text-decoration: none; font-size: 12px; }
+    .source-card .source-excerpt {
+      margin: 8px 0 8px;
+      padding: 9px 10px;
+      border-radius: 7px;
+      background: #f8fafc;
+      color: #374151;
+      font-size: 12px;
+      line-height: 1.75;
+    }
+    .source-excerpt.rich {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+    .source-excerpt.rich table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .source-excerpt.rich td, .source-excerpt.rich th {
+      min-width: 92px;
+      max-width: 220px;
+      padding: 7px 8px;
+      border: 1px solid #e5e7eb;
+      vertical-align: top;
+      word-break: break-word;
+    }
+    .source-excerpt.rich thead td, .source-excerpt.rich th {
+      background: #f3f4f6;
+      color: #374151;
+      font-weight: 700;
+    }
+    .empty { color: var(--muted); }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; padding: 14px; }
+      .sources { position: static; max-height: none; }
+      .question-bubble { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>深知可信搜索·可信溯源（示例）</h1>
+    <p>内容为 AI 生成，仅供参考｜生成时间：2026-08-21 14:28</p>
+    <nav class="product-links" aria-label="产品链接"><a href="https://yun.dknowc.cn/wlcb/dknowc-chat/#/" target="_blank" rel="noopener">深知晓内测</a><a href="https://www.dknowc.cn/" target="_blank" rel="noopener">深知可信智能官网</a></nav>
+  </header>
+  <main class="layout">
+    <section class="conversation" aria-label="回答正文">
+      <div class="question-bubble">企业购置节能节水、安全生产专用设备的企业所得税抵免政策</div>
+      <div class="answer">
+        <a class="kb-chip" href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/" target="_blank" rel="noopener"><span class="kb-label">知识专库</span><span class="kb-count">2条来源</span><span class="kb-arrow">查看</span></a>
+        <p class="ai-note">AI综合所有相关权威材料后，参考性解读如下，建议点击角标查看所依据的材料原文。</p>
+        
+        <div class="answer-body"><h3 class="answer-heading">企业购置专用设备企业所得税抵免（示例回答）</h3>
+<h4 class="answer-heading">一、抵免政策要点</h4>
+<div class="answer-block"><p>企业购置并实际使用列入目录内的节能节水、环境保护、安全生产专用设备，其投资额的 <strong>10%</strong> 可从企业当年的应纳税额中抵免；当年不足抵免的，可在以后 5 个纳税年度结转抵免 <button class="cite" data-source="1" type="button">[1]</button>。</p><div class="evidence-row">
+            <details class="evidence-detail" data-source="1">
+              <summary><b>[1]</b>财政部 税务总局关于节能节水、环境保护、安全生产专用设备投资抵免企业所得税有关问题的通知（示例标题）</summary>
+              <div class="evidence-panel">
+                <div class="evidence-title">财政部 税务总局关于节能节水、环境保护、安全生产专用设备投资抵免企业所得税有关问题的通知（示例标题）</div>
+                <div class="evidence-meta">财政部官网（规范性文件） | 2025-XX-XX | 材料</div>
+                <div class="evidence-section">抵免比例与结转</div>
+                <p>企业购置并实际使用列入《环境保护专用设备企业所得税优惠目录》等目录内的节能节水、环境保护、安全生产专用设备的，该专用设备投资额的 10% 可以从企业当年的应纳税额中抵免；当年不足抵免的，可以在以后 5 个纳税年度结转抵免。</p>
+                <div class="source-links"><span><a href="https://example.gov.cn/sample_notice.html" target="_blank" rel="noopener">查看原文</a></span><span><a href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/" target="_blank" rel="noopener">知识专库原文</a></span></div>
+              </div>
+            </details>
+            </div></div>
+<h4 class="answer-heading">二、申报注意事项</h4>
+<div class="answer-block"><p>申报时需填报专用设备投资额抵免明细，并留存购置发票、目录归属证明备查；跨年度结转抵免应在申报表中逐笔登记 <button class="cite" data-source="2" type="button">[2]</button>。</p><div class="evidence-row">
+            <details class="evidence-detail" data-source="2">
+              <summary><b>[2]</b>某省税务局节能节水专用设备抵免企业所得税操作指引（示例标题）</summary>
+              <div class="evidence-panel">
+                <div class="evidence-title">某省税务局节能节水专用设备抵免企业所得税操作指引（示例标题）</div>
+                <div class="evidence-meta">某省税务局官网（办事口径） | 2025-XX-XX | 材料</div>
+                <div class="evidence-section">申报要求</div>
+                <p>申报时需填报专用设备投资额抵免明细，留存专用设备购置发票、目录归属证明备查；跨年度结转抵免应在申报表中逐笔登记。</p>
+                <div class="source-links"><span><a href="https://example.gov.cn/sample_guide.html" target="_blank" rel="noopener">查看原文</a></span></div>
+              </div>
+            </details>
+            </div></div>
+<div class="answer-block"><p>&gt; 本页为效果展示样例：数据为示例格式，不是真实检索结果，仅供展示。</p></div></div>
+        <div class="tools"><a href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/" target="_blank" rel="noopener">知识专库</a></div>
+      </div>
+    </section>
+    <aside class="sources" aria-label="可信来源">
+      <h2>可信来源</h2>
+      <input class="searchbox" type="search" placeholder="搜索来源标题或摘录">
+      
+            <article class="source-card" id="source-1" data-source="1">
+              <div class="source-top">
+                <span class="source-index">[1]</span>
+                <h3>财政部 税务总局关于节能节水、环境保护、安全生产专用设备投资抵免企业所得税有关问题的通知（示例标题）</h3>
+              </div>
+              <p class="meta">财政部官网（规范性文件） | 2025-XX-XX | 材料</p>
+              <p class="section">抵免比例与结转</p>
+              <div class="source-excerpt plain">企业购置并实际使用列入《环境保护专用设备企业所得税优惠目录》等目录内的节能节水、环境保护、安全生产专用设备的，该专用设备投资额的 10% 可以从企业当年的应纳税额中抵免；当年不足抵免的，可以在以后 5 个纳税年度结转抵免。</div>
+              <div class="source-links"><span><a href="https://example.gov.cn/sample_notice.html" target="_blank" rel="noopener">查看原文</a></span><span><a href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/" target="_blank" rel="noopener">知识专库原文</a></span></div>
+            </article>
+            
+
+            <article class="source-card" id="source-2" data-source="2">
+              <div class="source-top">
+                <span class="source-index">[2]</span>
+                <h3>某省税务局节能节水专用设备抵免企业所得税操作指引（示例标题）</h3>
+              </div>
+              <p class="meta">某省税务局官网（办事口径） | 2025-XX-XX | 材料</p>
+              <p class="section">申报要求</p>
+              <div class="source-excerpt plain">申报时需填报专用设备投资额抵免明细，留存专用设备购置发票、目录归属证明备查；跨年度结转抵免应在申报表中逐笔登记。</div>
+              <div class="source-links"><span><a href="https://example.gov.cn/sample_guide.html" target="_blank" rel="noopener">查看原文</a></span></div>
+            </article>
+            
+    </aside>
+  </main>
+  <script>
+    const cards = Array.from(document.querySelectorAll(".source-card"));
+    function activate(id) {
+      cards.forEach(card => card.classList.toggle("active", card.dataset.source === id));
+      const target = document.querySelector(`#source-${CSS.escape(id)}`);
+      if (target) target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    document.querySelectorAll(".cite").forEach(button => {
+      if (button.classList.contains("disabled")) return;
+      button.addEventListener("click", () => activate(button.dataset.source));
+    });
+    document.querySelectorAll(".evidence-detail").forEach(detail => {
+      detail.addEventListener("toggle", () => {
+        if (!detail.open) return;
+        cards.forEach(card => card.classList.toggle("active", card.dataset.source === detail.dataset.source));
+      });
+    });
+    const searchbox = document.querySelector(".searchbox");
+    if (searchbox) {
+      searchbox.addEventListener("input", () => {
+        const value = searchbox.value.trim().toLowerCase();
+        cards.forEach(card => {
+          card.style.display = !value || card.innerText.toLowerCase().includes(value) ? "" : "none";
+        });
+      });
+    }
+  </script>
+</body>
+</html>
