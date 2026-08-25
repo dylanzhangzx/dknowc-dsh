@@ -1,0 +1,16 @@
+# 本地状态与配置
+config/environment_state.json
+config/release_blocklist.txt
+
+# 工作区产物
+projects/*
+!projects/.gitkeep
+official-docs/search-results/*
+official-docs/output/*
+!official-docs/search-results/.gitkeep
+!official-docs/output/.gitkeep
+
+# Python / 系统
+__pycache__/
+*.pyc
+.DS_Store

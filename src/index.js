@@ -1,8 +1,8 @@
 /**
  * dknowc-dsh —— 深知可信办公全家桶 skill provider
  *
- * 把 3 个内嵌 skill（dknowc-trusted-consulting / dknowc-trusted-search /
- * dknowc-official-doc-writer）注册进 dsh 的 `ctx.skills`，使它们出现在
+ * 把 4 个内嵌 skill（dknowc-trusted-consulting / dknowc-trusted-search /
+ * dknowc-ppt-assistant / dknowc-official-doc-writer）注册进 dsh 的 `ctx.skills`，使它们出现在
  * 会话的 <available_skills> 目录中，可被模型的 `skill` 工具加载。
  *
  * 注册范式对照官方 `@deepseek-ai/dsh-skill-badge`：
@@ -26,6 +26,11 @@ const SKILLS = [
     name: 'dknowc-trusted-search',
     description:
       '当用户需要检索权威材料、政策法规/标准原文、政策清单、可点击溯源、知识专库、多地域政策素材收集与对比核验、企业补贴与税惠材料核验、合规依据核验，或明确要求深度搜索、深度分析、全面查找、多轮核验、完整调研方案时，使用深知可信搜索。本 skill 负责检索与核验材料，交付直接答案、可点击溯源 HTML 与干净 Markdown；如用户要求把素材写成正式报告、调研报告、分析报告或公文（如"帮我写一份××报告"），应改用深知公文写作。',
+  },
+  {
+    name: 'dknowc-ppt-assistant',
+    description:
+      '当用户要求制作 PPT、演示文稿、汇报 PPT、课件、宣讲材料、把材料转成 PPT、做幻灯片，或要求可编辑原生 PPT、多版式（16:9/4:3/小红书/竖版/A4）输出时，使用深知可信PPT。约束 SVG 逐页创作 + 确定性编译为原生可编辑 PowerPoint（真实形状/文本/图表/表格，非整页图片）；素材检索经深知可信工作台 MCP（trusted_search）全程可溯源，交付 .pptx 与可信溯源核验报告。注意区分：写文字材料/Word/红头用公文写作 skill；只检索材料不成稿用可信搜索 skill。',
   },
   {
     name: 'dknowc-official-doc-writer',

@@ -2,7 +2,7 @@
 
 深知可信办公全家桶 —— DeepSeek Harness（dsh）插件包。
 
-通过一个 bundle 交付彩智科技的三个深知 Skill（深知可信咨询 / 深知可信搜索 / 深知公文写作），并内置深知可信工作台 MCP 转接层配置：**接口能力统一走 MCP，skill 不再直连深知接口**。
+通过一个 bundle 交付彩智科技的四个深知 Skill（深知可信咨询 / 深知可信搜索 / 深知可信PPT / 深知公文写作），并内置深知可信工作台 MCP 转接层配置：**接口能力统一走 MCP，skill 不再直连深知接口**。
 
 ## 包含什么
 
@@ -11,8 +11,9 @@ dknowc-dsh/
 ├── skills/
 │   ├── dknowc-trusted-consulting/    深知可信咨询（MCP 转接 credible_chat）
 │   ├── dknowc-trusted-search/        深知可信搜索（MCP 转接 trusted_search / deep_query）
+│   ├── dknowc-ppt-assistant/         深知可信PPT（素材检索走 MCP；SVG→原生PPTX 纯本地编译）
 │   └── dknowc-official-doc-writer/   深知公文写作（搜索走 MCP；范文大纲保留原脚本直连）
-├── src/index.js                      注册 3 个 skill 到 dsh ctx.skills
+├── src/index.js                      注册 4 个 skill 到 dsh ctx.skills
 └── cordis.patch.yml                  挂载 skill provider + mcp-client（Bearer 认证）
 ```
 
@@ -21,6 +22,7 @@ dknowc-dsh/
 | 深知可信咨询 | 政策/法规/办事咨询，带角标答案 + 溯源 HTML | `mcp__dknowc__credible_chat` |
 | 深知可信搜索 | 权威材料检索/深度研究，溯源 HTML + 干净 Markdown + 政策可视化 | `mcp__dknowc__trusted_search` / `mcp__dknowc__deep_query` |
 | 深知公文写作 | 正式公文起草/改写/Word/红头交付 | 搜索走 `mcp__dknowc__trusted_search`；范文大纲 `outline_reference.py` 保留原脚本直连（特殊能力，不进 MCP） |
+| 深知可信PPT | 演示文稿制作：SVG 逐页创作→编译原生可编辑 .pptx，双版可信溯源核验报告 | 素材检索走 `mcp__dknowc__trusted_search`；编译纯本地（python-pptx，uv 隔离依赖） |
 
 ## 安装
 
@@ -99,13 +101,15 @@ bundle 内的 skill 目录是**只读发布产物**，运行时产物（溯源 H
 ```
 
 > 公文写作的**个人素材库与写作偏好**是跨会话持久数据，单独存放在用户主目录 `~/.dknowc-writer/`（不随会话隔离，升级插件不丢失）。
+> 可信PPT 的**项目目录**是跨会话延续的工作数据，单独存放在工作区级 `dknowc-projects/<项目名>/`（内容包、SVG、导出的 .pptx，访达可直接找到，不随会话隔离）。
 
 ## 使用
 
-装好后，3 个 skill 会出现在 dsh 会话的 `<available_skills>` 目录中，模型会按任务描述自动路由：
+装好后，4 个 skill 会出现在 dsh 会话的 `<available_skills>` 目录中，模型会按任务描述自动路由：
 
 - 咨询政策/办事 → 深知可信咨询
 - 检索权威材料/深度研究 → 深知可信搜索
+- 制作 PPT/演示文稿/课件 → 深知可信PPT
 - 起草/改写/生成正式公文 → 深知公文写作
 
 也可在 dsh 中通过 skill 名称直接触发。
@@ -123,10 +127,11 @@ npm run check
 
 ## 维护约定（重要）
 
-**skillhub 版本是母版。** 三个 skill 的内容源头分别为：
+**skillhub 版本是母版。** 四个 skill 的内容源头分别为：
 
 - `深知可信咨询` → 深知可信咨询skill `public/skillhub/dknowc-trusted-consulting`
 - `深知可信搜索` → 深知可信搜索skill `public/skillhub/dknowc-trusted-search`
+- `深知可信PPT` → 深知可信PPT Skill `public/skillhub/dknowc-ppt-assistant`
 - `深知公文写作` → 深知公文写作 `public/skillhub/dknowc-official-doc-writer`
 
 **修改流程**：任何 skill 改动优先改 skillhub 母版 → 重新同步到本包 `skills/` 目录 → 重新适配（frontmatter name 改 kebab-case、渠道码换 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05`、接口调用改 MCP 转接）。其他各渠道（DeepSeek Club / 夏平 / ClawHub / ModelScope / Qoder / Skills-SH / 华为等）的版本都是在 skillhub 母版基础上更换各自渠道码生成。

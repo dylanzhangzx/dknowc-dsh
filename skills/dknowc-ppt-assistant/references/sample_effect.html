@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>演示页效果示例 · 含权威数据引用（非真实结果）</title>
+<style>
+  body{margin:0;padding:28px 20px;color:#1f2430;background:#f6f7f9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.9}
+  .wrap{max-width:900px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:30px 36px}
+  .banner{background:#fff7e6;border:1px solid #f0d48a;color:#8a6116;border-radius:8px;padding:8px 14px;font-size:13px;margin-bottom:22px}
+  h1{font-size:20px;text-align:center;margin:0 0 22px}
+  .slide-hint{font-size:12.5px;color:#6b7280;text-align:center;margin-bottom:8px}
+  .slide{position:relative;aspect-ratio:16/9;border:1px solid #d1d5db;border-radius:8px;background:linear-gradient(160deg,#ffffff 0%,#f3f6fa 100%);padding:3.2% 3.8%;box-shadow:0 2px 10px rgba(31,36,48,.06);overflow:hidden}
+  .slide .band{position:absolute;left:0;top:0;bottom:0;width:8px;background:linear-gradient(180deg,#b5261f,#8f1d17)}
+  .slide .kicker{font-size:.85em;color:#b5261f;font-weight:700;letter-spacing:.25em;margin-bottom:.5em}
+  .slide h2{font-size:1.9em;margin:0 0 .25em;color:#1f2430}
+  .slide .sub{font-size:.95em;color:#4b5563;margin-bottom:1.1em}
+  .cols{display:flex;gap:3.5%;height:60%}
+  .chart{flex:1.15;display:flex;flex-direction:column}
+  .chart .title{font-size:.95em;font-weight:700;margin-bottom:.5em}
+  .bars{flex:1;display:flex;align-items:flex-end;gap:9%;border-left:2px solid #9ca3af;border-bottom:2px solid #9ca3af;padding:0 4% 0 6%}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .bar .v{font-size:.8em;color:#1f2430;font-weight:700;margin-bottom:.3em}
+  .bar .b{width:100%;background:linear-gradient(180deg,#c0392b,#8f1d17);border-radius:2px 2px 0 0}
+  .bar .l{font-size:.78em;color:#4b5563;margin-top:.5em}
+  .facts{flex:1;display:flex;flex-direction:column;justify-content:space-between}
+  .fact{border-left:3px solid #b5261f;background:#fff;border-radius:0 6px 6px 0;padding:.5em .8em;box-shadow:0 1px 4px rgba(31,36,48,.05)}
+  .fact .n{font-size:1.5em;font-weight:800;color:#b5261f}
+  .fact .t{font-size:.8em;color:#4b5563}
+  .slide .foot{position:absolute;left:3.8%;right:3.8%;bottom:2.6%;display:flex;justify-content:space-between;font-size:.75em;color:#6b7280}
+  sup a{color:#1677ff;text-decoration:none;font-weight:700}
+  h3{font-size:16px;margin:26px 0 10px}
+  .card{border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin:12px 0;background:#fcfcfd}
+  .card .t{font-weight:700;margin-bottom:4px}
+  .card .m{font-size:13.5px;color:#4b5563}
+  .card .link{display:inline-block;margin-top:8px;font-size:13.5px;color:#1677ff}
+  .note{margin-top:24px;font-size:12.5px;color:#6b7280}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="banner">本页面为演示页的效果示例：页面内容与数据均为示例数据，非真实检索结果，仅供展示，不作为交付物。</div>
+
+<h1>效果示例：含权威数据引用的演示数据页</h1>
+<div class="slide-hint">↓ 16:9 数据图表页示意（实际交付为原生可编辑 .pptx，图表可在 PowerPoint/WPS 中直接修改）</div>
+
+<div class="slide">
+  <div class="band"></div>
+  <div class="kicker">数 据 支 撑</div>
+  <h2>工业企业 AI 应用渗透率稳步提升</h2>
+  <div class="sub">权威公开口径 · 2023–2025（示例）</div>
+  <div class="cols">
+    <div class="chart">
+      <div class="title">AI 应用渗透率（示例数据）<sup><a href="#src1">[1]</a></sup></div>
+      <div class="bars">
+        <div class="bar"><span class="v">X%</span><div class="b" style="height:45%"></div><span class="l">2023</span></div>
+        <div class="bar"><span class="v">X%</span><div class="b" style="height:65%"></div><span class="l">2024</span></div>
+        <div class="bar"><span class="v">X%</span><div class="b" style="height:85%"></div><span class="l">2025E</span></div>
+      </div>
+    </div>
+    <div class="facts">
+      <div class="fact"><div class="n">X 万亿元</div><div class="t">2025 年 AI 核心产业规模<sup><a href="#src1">[1]</a></sup></div></div>
+      <div class="fact"><div class="n">Top 3</div><div class="t">质检 / 排产 / 运维为前三大场景<sup><a href="#src1">[1]</a></sup></div></div>
+      <div class="fact"><div class="n">−X%</div><div class="t">案例企业质检漏检率下降<sup><a href="#src2">[2]</a></sup></div></div>
+    </div>
+  </div>
+  <div class="foot"><span>人工智能赋能制造业发展情况汇报（示例标题）</span><span>数据来源见溯源报告 [1][2]</span></div>
+</div>
+
+<h3>页面角标对应的来源卡片（随溯源 HTML 交付）</h3>
+
+<div class="card" id="src1">
+  <div class="t">[1] 某权威研究机构《智能制造发展报告（2025）》（示例标题）</div>
+  <div class="m">来源：研究机构官网公开报告 · 发布日期：2025-XX-XX</div>
+  <div class="link">点击查看原文 →</div>
+</div>
+
+<div class="card" id="src2">
+  <div class="t">[2] 某市"AI 质检"应用案例入选省级典型（示例标题）</div>
+  <div class="m">来源：某市人民政府官网（政务公开信息）· 发布日期：2025-XX-XX</div>
+  <div class="link">点击查看原文 →</div>
+</div>
+
+<div class="note">说明：页面上每个数字、每条政策旁边的 [1][2] 角标均可点击跳转到对应来源卡片；来源卡片保留原文链接，可前往原文页面核验。开通检索后，实际页面由本 Skill 逐页制作并编译为原生可编辑 .pptx，溯源 HTML 随交付物一并提供，结构与本示例一致。</div>
+
+</div>
+</body>
+</html>
