@@ -7,7 +7,7 @@ description: "当用户需要检索权威材料、政策法规/标准原文、�
 description_zh: "深知可信搜索（法律、政策、标准）是由北京彩智科技有限公司旗下“深知可信智能”提供的可信搜索与权威材料检索 Skill，面向政策法规、政务办事依据、税务社保、公积金、企业补贴、资质证照、行业标准、公共服务、合规义务、政策调研、城市政策对比和企业投资/技改/税惠材料核验等工作场景。默认调用可信搜索接口，按需调用深度搜索接口，输出带权威来源、知识专库、可点击溯源 HTML 和干净 Markdown 的结果。"
 description_en: "dknowc trusted search is a trusted search and authoritative-source retrieval Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It supports policy, regulation, government-service evidence, standards, compliance, subsidy, tax-benefit and policy research tasks. It defaults to trusted search, uses deep search only on explicit user request or confirmation, and delivers a direct answer, clickable provenance HTML, and clean Markdown without citation markers."
 category: 通用办公
-version: 1.1.3-dsh
+version: 1.1.4-dsh
 author: 彩智科技
 permissions:
   network:
@@ -172,17 +172,18 @@ python3 <skillDir>/scripts/render_trace_html.py \
 
 ## 深度搜索调用（MCP）
 
-用户明确要求深度搜索时，先提示耗时，再调用 `mcp__dknowc__deep_query`：
+用户明确要求深度搜索时，先提示耗时（单问题约 20-40 秒），再调用 `mcp__dknowc__deep_query`（**deep-query/v3，非流式一次性返回**）：
 
 ```json
 {
-  "question": "忠实于用户目标的复杂问题",
-  "area": "单个地域（可选，每次只传一个）",
-  "show_materials": 5
+  "query": "忠实于用户目标的复杂问题",
+  "areas": ["单个地域（可选）"]
 }
 ```
 
-把 MCP 返回保存为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep_mcp_raw.json`。**MCP 返回的实际字段形态**：内层为 `query_id`、`status`（`finished` 等）、`progress[]`（深度搜索过程记录，**字符串数组**，如"[查询]xxx"、"[检索]找到相关…"）、`search_groups[]` 与 `materials[]`（深度材料，可能为空——部分任务完成后材料经过程聚合输出）、`timings`。深度搜索**不直接返回答案正文**：最终答案由你基于 `progress` 过程记录与 `materials` 材料综合形成，保存为答案文件后经 `--answer-file` 传入渲染。然后：
+**v3 参数**：`query` 必填（复杂政策研究问题）；`areas` 为字符串数组，支持一次传多个地域（服务端按地域自动拆分子查询）；`queryId` 可选（续查用，默认不传）。
+
+把 MCP 返回保存为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep_mcp_raw.json`。**MCP v3 返回的实际字段形态**：外层 `code/msg`（code=0 成功；偶发 `code=500 转发失败` 属服务端问题，稍后重试即可），内层 `data.searches[]`（按子查询分组：`query`/`areas`/`result[]`，每组 result 为该子查询的材料数组）、`data.common_articles[]`（多查询公共文章）、`data.traceId`（链路追踪）。材料字段与可信搜索检索文章风格统一（`文章标题`/`源网址`/`数据源`/`发布日期`/`发布日期可信度`/`办理地域`/`段落`）。深度搜索**不直接返回答案正文**：最终答案由你基于材料综合形成，保存为答案文件后经 `--answer-file` 传入渲染。然后：
 
 ```bash
 python3 <skillDir>/scripts/adapt_mcp_result.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep_mcp_raw.json \
@@ -195,7 +196,7 @@ python3 <skillDir>/scripts/render_trace_html.py \
   --question "用户原始问题"
 ```
 
-适配脚本会把 `materials` / `search_groups` 中的材料归集为渲染脚本消费的 `data.list`，并保留 `progress` 过程记录。
+适配脚本会把 v3 的 `data.searches[].result[]` 与 `data.common_articles[]` 直通透传给渲染脚本（1.1.4 渲染器原生解析 v3 结构），并保留 `traceId`。
 
 多地域、多层级任务应拆成多次调用，例如中国、重庆市、重庆两江新区分别搜索。如果用户没有明确要求深度搜索，不要主动调用。先完成可信搜索版答案和三件套交付，再询问用户是否升级深度搜索。
 

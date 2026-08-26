@@ -13,16 +13,13 @@ from typing import Any, Dict, Iterable, List, Optional
 
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
+# 产物根：dsh 会话隔离 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/；DKNWOC_WS_ROOT 显式优先；无会话回退 _default
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
-    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
-
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 OUTPUT_DIR = WS_ROOT / "official-docs" / "output"
 
@@ -216,25 +213,33 @@ def extract_articles_from_search(payload: Dict[str, Any]) -> List[Dict[str, Any]
 
 
 def extract_articles_from_deep(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
-    events = payload.get("events")
-    if isinstance(events, list):
-        for event in events:
-            if isinstance(event, list) and len(event) == 2:
-                name, obj = event
-            elif isinstance(event, dict):
-                name, obj = event.get("event"), event
-            else:
-                continue
-            if name == "result" and isinstance(obj, dict):
-                data = obj.get("data")
-                result_list = data.get("list") if isinstance(data, dict) else None
-                if isinstance(result_list, list):
-                    return [x for x in result_list if isinstance(x, dict)]
+    """深度搜索 deep-query/v3 非流式格式：{"data": {"searches": [{"result": [...]}], "common_articles": [...]}}。"""
     data = payload.get("data")
-    result_list = data.get("list") if isinstance(data, dict) else None
-    if isinstance(result_list, list):
-        return [x for x in result_list if isinstance(x, dict)]
-    return []
+    if not isinstance(data, dict):
+        return []
+    searches = data.get("searches")
+    if not isinstance(searches, list):
+        return []
+    seen: set = set()
+    out: List[Dict[str, Any]] = []
+
+    def _add(article: Any) -> None:
+        if not isinstance(article, dict):
+            return
+        key = str(article.get("源网址") or article.get("文章标题") or "")
+        if key and key in seen:
+            return
+        if key:
+            seen.add(key)
+        out.append(article)
+
+    for search in searches:
+        if isinstance(search, dict):
+            for article in search.get("result") or []:
+                _add(article)
+    for article in data.get("common_articles") or []:
+        _add(article)
+    return out
 
 
 def extract_reference_materials(payload: Dict[str, Any]) -> List[Dict[str, Any]]:

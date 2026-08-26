@@ -20,10 +20,10 @@ trusted_search 内层（search 模式，需要映射）：
       （渲染脚本 extract_articles_from_search 只认中文键 data.检索文章）
   knowledge_base_url → knowledgeBase / knowledgeBaseUrl（渲染脚本只认驼峰）
 
-deep_query 内层（deep 模式，需要映射）：
-  materials[] / search_groups[].materials[] → data.list[]
-      （渲染脚本 extract_articles_from_deep 认 data.list）
-  progress[]（字符串过程记录）原样保留，供 Agent 综合答案时参考
+deep_query v3 内层（deep 模式，直通透传）：
+  {code, msg, data:{searches[], common_articles[], traceId}}
+      （渲染脚本 1.1.4+ 的 extract_articles_from_deep 原生解析 v3）
+  code=500 转发失败为服务端偶发，透传由调用方重试
   答案不由接口给出，由 Agent 基于材料形成后经 --answer-file 传入
 
 用法：
@@ -88,7 +88,7 @@ def _extract_mcp_text(o: Any) -> Optional[str]:
         if isinstance(result, dict):
             return _extract_mcp_text(result)
         # 已是业务 JSON（answer/materials/referenceMaterials 等特征键）
-        if any(k in o for k in ("answer", "referenceMaterials", "materials", "检索文章", "progress", "search_meta")):
+        if any(k in o for k in ("answer", "referenceMaterials", "materials", "检索文章", "progress", "search_meta", "searches", "common_articles", "code")):
             return json.dumps(o, ensure_ascii=False)
     return None
 
@@ -180,36 +180,18 @@ def _normalize_search(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _normalize_deep(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """规范化深度搜索（deep_query）返回：materials / search_groups → data.list，
-    progress（字符串过程）保留，knowledge_base_url 映射驼峰。
-    深度搜索答案由 Agent 基于材料与 progress 综合形成，经 --answer-file 传入渲染。
+    """规范化深度搜索（deep_query v3）返回：透传 v3 的 data.searches/common_articles。
+
+    v3（2026-08 实测）：MCP 内层为 {code, msg, data:{searches[], common_articles[], traceId}}。
+    - code=0 成功；code=500 转发失败为服务端偶发问题，原样透传由调用方提示重试
+    - searches[]: 每组 {query, areas, result[]}，result 为该子查询材料（中文键：
+      文章标题/源网址/数据源/发布日期/发布日期可信度/段落）
+    - common_articles[]: 多查询公共文章（含 办理地域）
+    渲染脚本（1.1.4+）的 extract_articles_from_deep 原生解析该结构，
+    此处把内层 JSON 提到顶层（保留 code/msg 供诊断）即可，无需字段映射。
+    深度搜索答案仍由 Agent 基于材料综合形成，经 --answer-file 传入渲染。
     """
     out = dict(payload)
-    items: List[Dict[str, Any]] = []
-    mats = payload.get("materials")
-    if isinstance(mats, list):
-        items.extend([m for m in mats if isinstance(m, dict)])
-    groups = payload.get("search_groups")
-    if isinstance(groups, list):
-        for g in groups:
-            if isinstance(g, dict) and isinstance(g.get("materials"), list):
-                items.extend([m for m in g["materials"] if isinstance(m, dict)])
-            elif isinstance(g, dict):
-                # search_groups 条目本身可能就是材料（含 title/url 等特征键）
-                if any(k in g for k in ("title", "url", "sourceUrl")):
-                    items.append(g)
-    if items:
-        # 渲染脚本 extract_articles_from_deep 消费顶层 data.list
-        out["data"] = {"list": items}
-    # 兼容旧直连 events 形态的防御提取
-    if "data" not in out:
-        events = payload.get("events")
-        if isinstance(events, list):
-            out["events"] = events
-    kb = payload.get("knowledge_base_url") or payload.get("knowledgeBase") or payload.get("knowledgeBaseUrl")
-    if isinstance(kb, str) and kb.strip():
-        out["knowledgeBase"] = kb
-        out["knowledgeBaseUrl"] = kb
     return out
 
 
@@ -221,10 +203,10 @@ def detect_mode(payload: Dict[str, Any]) -> str:
     会被误判（materials 为空列表也是 list）。
     """
     if (
-        "query_id" in payload
-        or isinstance(payload.get("progress"), list)
-        or isinstance(payload.get("search_groups"), list)
-        or isinstance(payload.get("deep_query_meta"), dict)
+        isinstance(payload.get("searches"), list)
+        or isinstance(payload.get("common_articles"), list)
+        or "traceId" in payload
+        or "code" in payload
     ):
         return "deep"
     if isinstance(payload.get("search_meta"), dict) or (
