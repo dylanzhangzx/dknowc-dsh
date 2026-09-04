@@ -29,7 +29,6 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
-
 INPUT_DIR = WS_ROOT / "official-docs" / "input"
 OUTPUT_DIR = WS_ROOT / "official-docs" / "output"
 

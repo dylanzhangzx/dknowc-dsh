@@ -39,7 +39,6 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
-
 OFFICIAL_DOCS_DIR = WS_ROOT / "official-docs"
 INPUT_DIR = OFFICIAL_DOCS_DIR / "input"
 OUTPUT_DIR = OFFICIAL_DOCS_DIR / "output"
@@ -81,7 +80,7 @@ def resolve_input_docx(input_path) -> Path:
     elif raw_path.parent == Path("."):
         resolved = (OUTPUT_DIR / raw_path.name).resolve()
     else:
-        resolved = raw_path.resolve()
+        resolved = (SKILL_ROOT / raw_path).resolve()
 
     if resolved.suffix.lower() != ".docx":
         raise ValueError(f"只允许读取 .docx 文件: {input_path}")
@@ -99,7 +98,7 @@ def resolve_output_docx(output_path) -> Path:
     elif raw_path.parent == Path("."):
         resolved = (OUTPUT_DIR / raw_path.name).resolve()
     else:
-        resolved = raw_path.resolve()
+        resolved = (SKILL_ROOT / raw_path).resolve()
 
     if resolved.suffix.lower() != ".docx":
         resolved = resolved.with_suffix(".docx")
@@ -109,10 +108,10 @@ def resolve_output_docx(output_path) -> Path:
 
 
 def display_path(path: Path) -> str:
-    """将 Skill 内文件路径转换为面向用户的相对路径。"""
+    """将产物路径转换为相对会话工作区（WS_ROOT）的形式；不在其内则显示绝对路径。"""
     resolved = Path(path).expanduser().resolve()
     try:
-        return str(_rel_to_ws(resolved))
+        return str(resolved.relative_to(WS_ROOT))
     except ValueError:
         return str(resolved)
 

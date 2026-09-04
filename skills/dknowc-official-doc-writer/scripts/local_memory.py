@@ -172,7 +172,7 @@ def cmd_kb_save(args) -> dict:
         "category_label": KB_CATEGORIES[category],
         "tags": tags,
         "note": args.note or "",
-        "file": str(dest.relative_to(DATA_ROOT)),
+        "file": str(dest),
         "size": dest.stat().st_size,
         "added": date.today().isoformat(),
     }
@@ -208,7 +208,7 @@ def cmd_kb_search(args) -> dict:
             matched_in.append("标签")
         if lowered in str(item.get("note", "")).lower():
             matched_in.append("备注")
-        path = DATA_ROOT / str(item.get("file", ""))
+        path = SKILL_ROOT / str(item.get("file", ""))
         if path.is_file() and lowered in searchable_text(path).lower():
             matched_in.append("正文")
         if matched_in:
@@ -225,7 +225,7 @@ def cmd_kb_remove(args) -> dict:
             break
     if target is None:
         raise SystemExit(f"ERROR: 素材不存在: {args.id}")
-    path = (DATA_ROOT / str(target.get("file", ""))).resolve()
+    path = (SKILL_ROOT / str(target.get("file", ""))).resolve()
     try:
         path.relative_to(KB_ROOT.resolve())
     except ValueError:

@@ -15,9 +15,6 @@ API_KEY_ENV = "DKNOWC_API_KEY"
 PROFILE_PATH = SKILL_ROOT / "config" / "user_profile.json"
 ENV_STATE_PATH = SKILL_ROOT / "config" / "environment_state.json"
 SCRIPTS_DIR = SKILL_ROOT / "scripts"
-# 个人素材库与写作偏好的持久数据根（与 local_memory.py 一致）
-import os as _os
-DATA_ROOT = Path(_os.environ.get("DKNWOC_HOME_DIR") or str(Path.home() / ".dknowc-writer")).resolve()
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 
@@ -96,7 +93,7 @@ def check_environment():
 
 
 def _count_kb_materials():
-    index_path = DATA_ROOT / "knowledge-base" / "_index.json"
+    index_path = SKILL_ROOT / "knowledge-base" / "_index.json"
     try:
         data = json.loads(index_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -107,7 +104,7 @@ def _count_kb_materials():
 
 
 def _count_writing_preferences():
-    pref_path = DATA_ROOT / "config" / "writing_preferences.json"
+    pref_path = SKILL_ROOT / "config" / "writing_preferences.json"
     try:
         data = json.loads(pref_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):

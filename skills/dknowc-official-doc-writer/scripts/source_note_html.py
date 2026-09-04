@@ -7,6 +7,7 @@ import argparse
 import importlib.util
 import json
 import re
+import sys
 import unicodedata
 from pathlib import Path
 
@@ -21,7 +22,6 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
-
 INPUT_DIR = WS_ROOT / "official-docs" / "input"
 OUTPUT_DIR = WS_ROOT / "official-docs" / "output"
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
@@ -57,7 +57,7 @@ def safe_output(value: str, title: str) -> Path:
         path = raw.resolve() if raw.is_absolute() else (OUTPUT_DIR / raw.name).resolve()
     else:
         safe_title = "".join("_" if char in '\\/:*?"<>| ' else char for char in title).strip("_")
-        path = (OUTPUT_DIR / f"{safe_title[:80] or '可信溯源报告'}_可信溯源报告.html").resolve()
+        path = (OUTPUT_DIR / f"{safe_title[:80] or '可信核验报告'}_可信核验报告.html").resolve()
     if path.suffix.lower() not in {".html", ".htm"}:
         path = path.with_suffix(".html")
     try:
@@ -140,6 +140,7 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
             "知识专库原文": policy_url,
             "policyUrl": first_value(item, "policyUrl", "policy_url"),
             "类型": first_value(item, "type", "素材类型") or "材料",
+            "核验": first_value(item, "verification", "核验", "核验说明"),
         })
     knowledge_bases = data.get("knowledge_bases") or data.get("knowledgeBases") or data.get("知识专库链接") or []
     kb_urls = []
@@ -156,6 +157,16 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
             kb_labels.append(label)
     content = {"data": {"检索文章": articles}}
     payload = {"answer": answer, "question": title, "content": content}
+    # 成稿自检结果（5 项）由生成流程写入溯源 JSON；未写入时渲染器如实显示"未记录"
+    self_check = data.get("self_check") or data.get("selfCheck")
+    if isinstance(self_check, dict):
+        payload["selfCheck"] = self_check
+        content["selfCheck"] = self_check
+    # 生成流程写入的核验说明清单，用于报告底部核验方法说明
+    verify_checks = data.get("verification_checks") or data.get("verificationChecks")
+    if isinstance(verify_checks, list) and verify_checks:
+        payload["verificationChecks"] = [str(x) for x in verify_checks]
+        content["verificationChecks"] = [str(x) for x in verify_checks]
     if kb_urls:
         payload["knowledgeBase"] = kb_urls[0]
         payload["knowledgeBases"] = kb_urls
@@ -175,6 +186,12 @@ def main() -> None:
     input_path = resolve_input(args.input)
     data = json.loads(input_path.read_text(encoding="utf-8"))
     payload, title, answer = to_trace_payload(data)
+    # 生成前校验：有素材但正文无角标 = 无法建立核验对应，拒绝生成，要求先修 JSON
+    materials_count = len(data.get("materials") or [])
+    if materials_count and not re.search(r"\[\d+\]", answer):
+        print(f"错误：materials 共 {materials_count} 条，但正文 document_content 没有任何 [n] 角标，无法生成核验对应。", file=sys.stderr)
+        print("请修正溯源 JSON：在正文关键结论后标注 [1]、[2] 等角标并与 materials 一一对应，然后重新运行本脚本。", file=sys.stderr)
+        raise SystemExit(1)
     output_path = safe_output(args.output, title)
     renderer = load_renderer()
     rendered = renderer.render_html(payload, title, answer_override=answer, question_override=title)

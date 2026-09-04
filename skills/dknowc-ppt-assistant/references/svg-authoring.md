@@ -1,6 +1,6 @@
 # 约束 SVG 排版契约（svg-authoring）
 
-本文件定义深知可信PPT的页面设计语言：主 Agent 逐页手写的受限 SVG 方言，以及导出为原生 PPTX 的规则。方言改编自 ppt-master（MIT）的 SVG 页面设计边界；完整示例见 `references/upstream-example/`。
+本文件定义深知可信PPT的页面设计语言：主 Agent 逐页手写的受限 SVG 方言，以及导出为原生 PPTX 的规则。方言在第三方开源（MIT）SVG 页面设计边界基础上改编；完整示例见 `references/upstream-example/`。
 
 ## 一、核心契约
 
@@ -72,10 +72,10 @@
 
 ```bash
 # 质检（quick 模式：无锁检查；--stage final --json 生成导出所需的正式报告）
-python3 scripts/svg_quality_checker.py dknowc-projects/<项目名> --quick-generate --stage final --json
+python3 {skillDir}/scripts/svg_quality_checker.py dknowc-projects/<项目名> --quick-generate --stage final --json
 
 # 编译导出（quick 模式）
-uv run --with python-pptx --with XlsxWriter python3 scripts/svg_to_pptx.py dknowc-projects/<项目名> --quick-generate
+uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pptx.py dknowc-projects/<项目名> --quick-generate
 ```
 
 质检 errors（exit 1）必须修复后重新导出；warnings 可评估后放行。导出成功后 `.pptx` 写入项目 `exports/`。

@@ -149,6 +149,10 @@ def _normalize_chat(payload: Dict[str, Any]) -> Dict[str, Any]:
     answer = out.get("answer")
     if isinstance(answer, str) and answer.strip() and not isinstance(out.get("resp"), dict):
         out["resp"] = {"content": answer}
+    # 云端溯源存档：MCP 内层用 trace_report_url，渲染脚本 extract_trace_archives 认 traceUrl
+    trace = out.get("traceUrl") or out.get("trace_url") or out.get("trace_report_url")
+    if isinstance(trace, str) and trace.strip():
+        out["traceUrl"] = trace.strip()
     return out
 
 

@@ -13,6 +13,7 @@ import requests
 
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
+API_KEY_ENV = "DKNOWC_API_KEY"
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
@@ -22,8 +23,6 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
-
-API_KEY_ENV = "DKNOWC_API_KEY"
 OUTLINE_RESULTS_DIR = WS_ROOT / "official-docs" / "outline-results"
 OUTLINE_API_URL = "https://open.dknowc.cn/llm-api/proxy-builtin/official-doc-outline/v1"
 MIN_QUERY_LENGTH = 2
@@ -45,14 +44,6 @@ def safe_filename(text: str, max_length: int = 60) -> str:
     return (name or "outline")[:max_length]
 
 
-def _rel_to_ws(path: Path) -> str:
-    """把输出路径显示为相对工作区（WS_ROOT）的形式；不在工作区内则显示绝对路径。"""
-    try:
-        return str(path.relative_to(WS_ROOT))
-    except ValueError:
-        return str(path.resolve())
-
-
 def resolve_output_json(output_path: Optional[str], query: str) -> Path:
     if output_path:
         raw_path = Path(output_path).expanduser()
@@ -64,7 +55,7 @@ def resolve_output_json(output_path: Optional[str], query: str) -> Path:
     elif raw_path.parent == Path("."):
         resolved = (OUTLINE_RESULTS_DIR / raw_path.name).resolve()
     else:
-        resolved = raw_path.resolve()
+        resolved = (SKILL_ROOT / raw_path).resolve()
 
     if resolved.suffix.lower() != ".json":
         resolved = resolved.with_suffix(".json")
@@ -77,9 +68,7 @@ def load_api_key(config_path: Optional[Path] = None) -> str:
     if config_path is not None:
         raise ValueError(f"当前版本不再读取 config.ini，请通过环境变量 {API_KEY_ENV} 配置 API Key。")
 
-    # dsh 场景：dsh 会清理名字含 KEY 的隐式环境变量，bundle 插件会把主进程的
-    # DKNOWC_API_KEY 经 shell-env 显式注入为 DSH_DKNOWC_API_KEY，优先读取。
-    api_key = os.environ.get("DSH_DKNOWC_API_KEY", "").strip() or os.environ.get(API_KEY_ENV, "").strip()
+    api_key = os.environ.get(API_KEY_ENV, "").strip()
     if not api_key or api_key in {"your_api_key_here", "你的深知搜索 API Key"}:
         raise ValueError(f"API Key 为空，请通过环境变量 {API_KEY_ENV} 配置有效 API Key。")
     return api_key
@@ -111,6 +100,14 @@ def call_outline_api(query: str, api_key: str, timeout: int) -> tuple[int, dict 
     except ValueError:
         body = response.text
     return response.status_code, body, elapsed
+
+
+def _rel_to_ws(path: Path) -> str:
+    """把输出路径显示为相对工作区（WS_ROOT）的形式；不在工作区内则显示绝对路径。"""
+    try:
+        return str(path.relative_to(WS_ROOT))
+    except ValueError:
+        return str(path.resolve())
 
 
 def build_output(query: str, status_code: int, body: dict | str, elapsed: float) -> dict:
@@ -180,7 +177,7 @@ def main():
             json.dump(result, f, ensure_ascii=False, indent=2)
 
         summary = {
-            "output": str(_rel_to_ws(output_path)),
+            "output": _rel_to_ws(output_path),
             "status_code": status_code,
             "elapsed_seconds": elapsed,
             "request_success": result.get("success"),

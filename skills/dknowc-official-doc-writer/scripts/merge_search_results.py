@@ -20,7 +20,6 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
-
 OFFICIAL_DOCS_DIR = WS_ROOT / "official-docs"
 SEARCH_RESULTS_DIR = OFFICIAL_DOCS_DIR / "search-results"
 ALLOWED_INPUT_DIRS = (
@@ -47,7 +46,7 @@ def resolve_input_json(file_path: str) -> Path:
     elif raw_path.parent == Path("."):
         resolved = (SEARCH_RESULTS_DIR / raw_path.name).resolve()
     else:
-        resolved = raw_path.resolve()
+        resolved = (SKILL_ROOT / raw_path).resolve()
 
     if resolved.suffix.lower() != ".json":
         raise ValueError(f"只允许读取 JSON 文件: {file_path}")
@@ -64,7 +63,7 @@ def resolve_output_json(output_path: str) -> Path:
     elif raw_path.parent == Path("."):
         resolved = (SEARCH_RESULTS_DIR / raw_path.name).resolve()
     else:
-        resolved = raw_path.resolve()
+        resolved = (SKILL_ROOT / raw_path).resolve()
 
     if resolved.suffix.lower() != ".json":
         resolved = resolved.with_suffix(".json")

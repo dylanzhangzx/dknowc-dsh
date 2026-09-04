@@ -31,6 +31,8 @@ QUERY_TOO_SHORT_ERROR = f"错误：查询关键词过短，最少需要 {MIN_QUE
 
 # API Key 与搜索结果路径
 SKILL_ROOT = Path(__file__).resolve().parent.parent
+API_KEY_ENV = "DKNOWC_API_KEY"
+DEFAULT_BASE_URL = "https://open.dknowc.cn/dependable/search/"
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
@@ -40,9 +42,6 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
-
-API_KEY_ENV = "DKNOWC_API_KEY"
-DEFAULT_BASE_URL = "https://open.dknowc.cn/dependable/search/"
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 CONFIG_HELP_URL = "https://platform.dknowc.cn/"
 FIXED_SEGMENT_COUNT = 2
@@ -85,7 +84,7 @@ def resolve_output_json(output_path: str) -> Path:
     elif raw_path.parent == Path("."):
         resolved = (SEARCH_RESULTS_DIR / raw_path.name).resolve()
     else:
-        resolved = raw_path.resolve()
+        resolved = (SKILL_ROOT / raw_path).resolve()
 
     if resolved.suffix.lower() != ".json":
         resolved = resolved.with_suffix(".json")
@@ -168,6 +167,29 @@ def attach_knowledge_base_aliases(result: dict, knowledge_base_url: str) -> dict
             data["knowledgeBase_note"] = "兼容字段：原始链接位于 content.knowledgeBase。"
 
     return result
+
+
+
+# 余额/额度用尽的判定：HTTP 状态与业务错误消息双路径。
+# 命中后返回 quota_exhausted=true，Agent 必须停止重试并引导用户到 MaaS 处理，不得反复调用。
+QUOTA_EXHAUSTED_HTTP_CODES = {402, 403}
+QUOTA_EXHAUSTED_KEYWORDS = (
+    "余额不足", "额度不足", "额度已用完", "额度已用尽", "体验额度已用完",
+    "余额已不足", "欠费", "quota", "insufficient", "balance", "exceeded",
+)
+
+
+def detect_quota_exhausted(status_code=None, errmsg=None, biz_status=None):
+    """判断本次接口失败是否由余额/额度用尽引起。"""
+    if status_code in QUOTA_EXHAUSTED_HTTP_CODES:
+        return True
+    for text in (errmsg, biz_status):
+        if not text:
+            continue
+        lowered = str(text).lower()
+        if any(kw in lowered for kw in QUOTA_EXHAUSTED_KEYWORDS):
+            return True
+    return False
 
 
 def load_config(config_path: Optional[Path] = None) -> dict:
@@ -470,13 +492,19 @@ def dkag_search(
             }
 
         if result.get("ret") not in (None, 0, "0") or result.get("errcode") not in (None, 0, "0"):
+            errmsg = result.get("errmsg")
+            biz_status = result.get("bizStatus")
+            quota_exhausted = detect_quota_exhausted(errmsg=errmsg, biz_status=biz_status)
             return {
                 "error": True,
-                "message": "深知搜索接口返回异常",
+                "quota_exhausted": quota_exhausted,
+                "message": ("深知搜索额度或余额已用尽，请到 MaaS 管理平台实名认证领取赠金或充值后重试"
+                            if quota_exhausted else "深知搜索接口返回异常"),
                 "ret": result.get("ret"),
                 "errcode": result.get("errcode"),
-                "errmsg": result.get("errmsg"),
-                "bizStatus": result.get("bizStatus"),
+                "errmsg": errmsg,
+                "bizStatus": biz_status,
+                "maas_platform_url": "https://platform.dknowc.cn/" if quota_exhausted else None,
                 "search_meta": search_meta
             }
 
@@ -492,12 +520,18 @@ def dkag_search(
         attach_knowledge_base_aliases(result, knowledge_base_url)
         return result
     except requests.exceptions.RequestException as e:
+        status_code = getattr(e.response, 'status_code', None) if hasattr(e, 'response') else None
+        quota_exhausted = detect_quota_exhausted(status_code=status_code, errmsg=str(e))
         return {
             "error": True,
-            "message": "请求失败：网络连接、代理或接口返回异常，请检查运行环境和 API Key",
+            "quota_exhausted": quota_exhausted,
+            "message": ("深知搜索额度或余额已用尽，请到 MaaS 管理平台实名认证领取赠金或充值后重试"
+                        if quota_exhausted else
+                        "请求失败：网络连接、代理或接口返回异常，请检查运行环境和 API Key"),
             "error_type": type(e).__name__,
             "payload": payload,
-            "status_code": getattr(e.response, 'status_code', None) if hasattr(e, 'response') else None,
+            "status_code": status_code,
+            "maas_platform_url": "https://platform.dknowc.cn/" if quota_exhausted else None,
             "search_meta": search_meta
         }
 

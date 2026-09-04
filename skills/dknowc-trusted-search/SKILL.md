@@ -3,11 +3,11 @@ name: dknowc-trusted-search
 slug: dknowc-trusted-search
 display_name: 深知可信搜索（法律、政策、标准）
 display_name_en: dknowc trusted search
-description: "当用户需要检索权威材料、政策法规/标准原文、政策清单、可点击溯源、知识专库、多地域政策素材收集与对比核验、企业补贴与税惠材料核验、合规依据核验，或明确要求深度搜索、深度分析、全面查找、多轮核验、完整调研方案时，使用深知可信搜索（法律、政策、标准）。本 skill 负责检索与核验材料，交付直接答案、可点击溯源 HTML 与干净 Markdown；如用户要求把素材写成正式报告、调研报告、分析报告或公文（如'帮我写一份××报告'），应改用深知公文写作 skill（dknowc-official-doc-writer）。"
+description: "当用户需要可信搜索、权威材料检索、政策法规/标准依据查找、可点击溯源、知识专库、政策调研、城市政策对比、企业补贴与税惠材料核验、合规依据核验，或明确要求深度搜索、深度分析、全面查找、多轮核验、完整方案时，使用深知可信搜索（法律、政策、标准）。本 skill 默认只调用可信搜索，只有用户明确要求深度搜索或确认升级深度核验时才调用深度搜索；最终交付直接回复答案、可信溯源核验报告 HTML 与干净 Markdown。如用户要求把素材写成正式报告、调研报告、分析报告或公文（如'帮我写一份××报告'），应改用深知公文写作 skill（dknowc-official-doc-writer）。"
 description_zh: "深知可信搜索（法律、政策、标准）是由北京彩智科技有限公司旗下“深知可信智能”提供的可信搜索与权威材料检索 Skill，面向政策法规、政务办事依据、税务社保、公积金、企业补贴、资质证照、行业标准、公共服务、合规义务、政策调研、城市政策对比和企业投资/技改/税惠材料核验等工作场景。默认调用可信搜索接口，按需调用深度搜索接口，输出带权威来源、知识专库、可点击溯源 HTML 和干净 Markdown 的结果。"
 description_en: "dknowc trusted search is a trusted search and authoritative-source retrieval Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It supports policy, regulation, government-service evidence, standards, compliance, subsidy, tax-benefit and policy research tasks. It defaults to trusted search, uses deep search only on explicit user request or confirmation, and delivers a direct answer, clickable provenance HTML, and clean Markdown without citation markers."
 category: 通用办公
-version: 1.1.4-dsh
+version: 1.1.6-dsh
 author: 彩智科技
 permissions:
   network:
@@ -32,11 +32,14 @@ secrets:
 - 默认调用 MCP 工具 `mcp__dknowc__trusted_search`。即使问题比较复杂，也先通过可信搜索建立证据池，再判断是否需要向用户追问或建议深度搜索。
 - 只有用户明确说“深度搜索、深度分析、全面查找、多轮核验、完整方案、深度核验”等意图，或在最终回复后确认升级，才调用 `mcp__dknowc__deep_query`。
 - ReAct 逻辑保留：如果问题缺少会影响结论的关键信息，先追问；如果先搜索后发现证据不足或条件依赖明显，再向用户补问关键条件。
-- 最终解决问题时必须同时交付三项：直接回复答案、可点击溯源 HTML、干净 Markdown。中间追问和阶段性 ReAct 过程不要求交付三件套。
+- 最终解决问题时必须同时交付三项：直接回复答案、可信溯源核验报告 HTML、干净 Markdown。中间追问和阶段性 ReAct 过程不要求交付三件套。
 - 最终答案必须先由 Agent 基于搜索材料综合形成，再保存为文本，通过 `render_trace_html.py --answer-file` 传入。HTML 和干净 Markdown 必须来自同一份最终答案。
 - 最终答案中的关键事实、金额、比例、适用条件、办理路径、政策名称、标准条款等必须标来源角标，例如 `[1]`、`[2]`。角标必须能被接口返回的材料标题、摘要、段落摘录或原文支撑。
+- **角标挂载纪律（防"形式绑定"）**：角标必须挂在**直接载有该条款原文**的材料上——以"点击这个角标后用户看到的摘录能否印证这句话"为判断标准。由多份材料综合得出的结论，逐条拆开、分别挂到直接载有该条款的材料；**禁止把具体条件、数字、程序类结论挂到仅主题相关但不载有该条款的材料上**（如把办理条件挂在一份"认可目录"通知上）。找不到直接载有该条款的材料时：换绑正确材料、继续搜索补证，或把该条降级标注"待核验"，三选一，不得将就挂载。
+- **关键数字不得用"以官方为准"搪塞**：用户问题的核心就是具体数字（金额、比例、期限、倍数、标准）而首轮检索只返回框架性内容时，必须再做定向补充检索（在 query 中加入"管理办法""实施细则""办理指南""申报通知"或具体区县名等）后回答；仍查不到具体数字才可写"以各区最新细则为准"，并同时给出已查到的最接近口径与其出处。
 - 不得伪造、误配或泛配角标。找不到直接依据时，应删除该结论、标为“待核验/需以主管部门口径为准”，或继续搜索补证。
-- 聊天回复默认不堆大量材料裸链接；保留核心结论、必要来源摘要、知识专库链接、溯源 HTML 路径和干净 Markdown 路径。
+- 聊天回复默认不堆大量材料裸链接；保留核心结论、必要来源摘要、知识专库链接、核验报告路径和干净 Markdown 路径。
+- 交付状态纪律：核验报告必须以"已核验"状态交付。答案角标编号无需人工控制（渲染器自动按首次出现顺序重排为 [1][2][3]…）；被引用材料必须可回看（有原文链接，或经知识专库回看），缺少原文链接时优先换绑有链接的同类材料再生成。渲染脚本报错（答案无角标 / 角标未绑定材料）属于必须修正的错误：修答案、重跑、再交付。除用户明确知情接受外，禁止把"核验未通过"或带红色警示的报告交付给用户；确属不可抗力（如权威材料无原文链接但知识专库可回看）交付时在回复中口头说明即可，报告内以温和提示呈现。
 - 用户明确说“不要 HTML/不要文件”时，才跳过文件交付；否则 HTML 和干净 Markdown 是最终交付的一部分。
 
 ## 启动初始化
@@ -133,11 +136,11 @@ python3 <skillDir>/scripts/adapt_mcp_result.py dknowc-output/${DSH_SESSION_ID:0:
   --mode search
 ```
 
-5. 综合答案：基于搜索结果形成面向用户问题的最终答案，并在关键结论后标注真实可支撑的 `[数字]` 来源角标。
-6. 保存答案：把带角标的最终答案保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_answer.txt` 或同目录文件。
-7. 生成交付物：调用 `scripts/render_trace_html.py`，用同一份答案生成溯源 HTML 和干净 Markdown，交付物输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。
+5. 综合答案：基于搜索结果形成面向用户问题的最终答案，并在关键结论后标注真实可支撑的 `[数字]` 来源角标（遵守"角标挂载纪律"，逐条核对角标摘录能否印证对应结论）。
+6. 答案自检并保存：按五项如实自检——①事实有据（关键结论有材料支撑，且**逐条核对角标摘录支撑**：点击每个角标看到的摘录要能印证对应结论，具体条件/数字/程序不得挂在仅主题相关的材料上）②角标绑定（每个角标都能对应到召回材料）③答案一致（报告答案与回复答案一致）④时效确认（材料日期已核对）⑤无未核验断言（不确定处已标"待核验"；用户核心诉求是具体数字而未查到时，已做过定向补搜并在答案中说明）。把带角标的最终答案保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_answer.txt`，自检结果写入 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_selfcheck.json`（键 `fact_basis/binding/consistency/freshness/no_gap`，值写 `通过` 或 `未通过：原因`，键支持中英文）。
+7. 生成核验报告：调用 `scripts/render_trace_html.py --answer-file --self-check-file`，用同一份答案生成《标题_可信核验报告_时间戳.html》与同名 `.clean.md`，交付物输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。生成前硬校验：召回材料非空而答案无 `[n]` 角标时拒绝生成并报错，须修正答案后重跑；答案角标未绑定到任何召回材料同样拒绝生成。
 8. （可选，仅用户明确要求图表时）把核验后的数据整理成统一结构化 JSON 写入 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`，调用 `scripts/render_policy_visualization.py` 生成可交互可视化 HTML 报告（`--svg` 附快照），输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。
-9. 回复用户：给出直接答案，并附上 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 下的 HTML 路径、干净 Markdown 路径和知识专库链接。
+9. 回复用户：给出直接答案，并附上 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 下的核验报告 HTML 路径、干净 Markdown 路径和知识专库链接（dsh 以工作区为文件视图，产物即写即见，无需额外交付复制）。
 10. 深度搜索邀约：最终回复末尾询问用户是否需要进一步做深度搜索，例如：“我还可以继续为你做一次深度搜索，对结果进行多轮核验和扩展，输出一份更完整、可直接使用的深度版结果。这个过程耗时会更长，通常需要几分钟。需要我继续吗？”
 
 ## 可信搜索调用（MCP）
@@ -161,14 +164,15 @@ python3 <skillDir>/scripts/adapt_mcp_result.py dknowc-output/${DSH_SESSION_ID:0:
   --mode search
 python3 <skillDir>/scripts/render_trace_html.py \
   dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search.json \
-  --title "深知可信搜索（法律、政策、标准）可信溯源" \
+  --title "深知可信搜索（法律、政策、标准）核验报告" \
   --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_answer.txt \
+  --self-check-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_selfcheck.json \
   --question "用户原始问题"
 ```
 
 适配脚本会把 `materials` 转成渲染脚本消费的 `data.检索文章`（中文键，含标题/来源/发布日期/源网址/摘要），并把 `knowledge_base_url` 映射为 `knowledgeBase`（驼峰）。综合答案时直接读规范化后 JSON 的 `data.检索文章` 与 `knowledgeBase`。
 
-`render_trace_html.py` 会同时生成 HTML 和同名 `.clean.md`，输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。如需指定干净 Markdown 路径，传 `--clean-md-output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/xxx.md`。
+`render_trace_html.py` 生成**可信溯源核验报告**（首屏核验报告单：依据溯源/引用绑定/时效检查/类型覆盖/答案自检五项指标，全部由脚本真实计算；素材四分类色系；未引用材料折叠为"备查"组；打印归档模式；移动端适配）与同名 `.clean.md`，输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`，文件名形如《标题_可信核验报告_时间戳.html》。角标按答案首次出现顺序自动重排为 [1][2][3]…，来源卡同号对应。如需指定干净 Markdown 路径，传 `--clean-md-output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/xxx.md`。未传 `--self-check-file` 时核验单如实显示"答案自检 未记录"，不假装通过。
 
 ## 深度搜索调用（MCP）
 
@@ -191,8 +195,9 @@ python3 <skillDir>/scripts/adapt_mcp_result.py dknowc-output/${DSH_SESSION_ID:0:
   --mode deep
 python3 <skillDir>/scripts/render_trace_html.py \
   dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep.json \
-  --title "深知可信搜索（法律、政策、标准）深度搜索溯源" \
+  --title "深知可信搜索（法律、政策、标准）深度搜索核验报告" \
   --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep_answer.txt \
+  --self-check-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_deep_selfcheck.json \
   --question "用户原始问题"
 ```
 

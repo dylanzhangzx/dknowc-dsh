@@ -139,7 +139,9 @@ async function main() {
 
   if (cmd === "send") {
     if (!a.phone) { console.error("缺少 --phone"); process.exit(2); }
-    const r = await post(base + "/sendMessage", { phone: a.phone, type: "register", channel: a.channel && a.channel !== true ? a.channel : DEFAULT_CHANNEL });
+    // 渠道细分：sendMessage 与 register 请求体统一携带 SkillHub 渠道码。
+    const channel = a.channel && a.channel !== true ? a.channel : DEFAULT_CHANNEL;
+    const r = await post(base + "/sendMessage", { phone: a.phone, type: "register", channel });
     console.log(JSON.stringify(r));
     if (r.status) console.error("验证码已发送，请向用户索取收到的 6 位验证码后再执行 register。");
     process.exit(r.status ? 0 : 1);

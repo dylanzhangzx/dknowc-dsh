@@ -13,6 +13,13 @@ BANNED_FILES = {"_meta.json", "config.ini", "config.ini.example", "environment_s
 BANNED_DIRS = {"knowledge-base"}
 BANNED_ARTIFACT_NAMES = {".gitignore", ".gitkeep", ".DS_Store"}
 BANNED_ARTIFACT_SUFFIXES = {".pyc", ".pyo"}
+# 二进制产物：skill 只有文本规则与脚本，任何 Office/PDF/图片/压缩包都不该出现，
+# 平台上传也会因"禁止上传二进制文件"被跳过。
+BANNED_BINARY_SUFFIXES = {
+    ".doc", ".docx", ".docm", ".xls", ".xlsx", ".xlsm", ".ppt", ".pptx",
+    ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico",
+    ".zip", ".tar", ".gz", ".dmg", ".exe",
+}
 ALLOWED_API_KEY_VALUES = {"", "your_api_key_here", "你的深知搜索 API Key"}
 API_KEY_PATTERN = re.compile(r"(?im)^\s*api_key\s*=\s*([^\s#;]+)\s*$")
 SECRET_TOKEN_PATTERN = re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b")
@@ -45,6 +52,9 @@ def main():
     for path in SKILL_ROOT.rglob("*"):
         if path.name in BANNED_ARTIFACT_NAMES or path.suffix in BANNED_ARTIFACT_SUFFIXES:
             findings.append(f"{path.relative_to(SKILL_ROOT)}: 公开包不得包含本地产物或平台不允许的文件")
+            continue
+        if path.suffix.lower() in BANNED_BINARY_SUFFIXES:
+            findings.append(f"{path.relative_to(SKILL_ROOT)}: 公开包不得包含二进制产物（平台禁止上传二进制文件）")
             continue
         if any(part == "__pycache__" for part in path.parts):
             findings.append(f"{path.relative_to(SKILL_ROOT)}: 公开包不得包含 __pycache__")

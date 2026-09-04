@@ -3,73 +3,339 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>可信溯源报告 · 效果示例（非真实结果）</title>
+<title>关于深圳市人工智能赋能政务服务应用情况的调研报告 · 可信溯源核验报告</title>
 <style>
-  body{margin:0;padding:28px 20px;color:#1f2430;background:#f6f7f9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.9}
-  .wrap{max-width:860px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:30px 36px}
-  .banner{background:#fff7e6;border:1px solid #f0d48a;color:#8a6116;border-radius:8px;padding:8px 14px;font-size:13px;margin-bottom:22px}
-  h1{font-size:20px;text-align:center;margin:0 0 26px}
-  h2{font-size:16px;margin:26px 0 10px}
-  p{margin:10px 0;text-indent:2em}
-  sup a{color:#1677ff;text-decoration:none;font-weight:700}
-  .card{border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin:12px 0;background:#fcfcfd}
-  .card .t{font-weight:700;margin-bottom:4px}
-  .card .m{font-size:13.5px;color:#4b5563}
-  .card .link{display:inline-block;margin-top:8px;font-size:13.5px;color:#1677ff}
-  .kb{margin-top:28px;padding-top:16px;border-top:1px dashed #d1d5db}
-  .kb .t{font-weight:700;margin-bottom:8px}
-  .kb a{display:block;color:#1677ff;font-size:14px;margin:4px 0}
-  .note{margin-top:24px;font-size:12.5px;color:#6b7280}
+:root{
+  --navy:#0b1f3a; --ink:#172236; --muted:#667085; --line:#dce4ef; --line-strong:#b9c6d9;
+  --brand:#1559c7; --brand-soft:#e8f0ff;
+  --policy:#0c9b78; --policy-soft:#e2f6ef;
+  --case:#b26a00; --case-soft:#fff4e0;
+  --ref:#4b5563; --ref-soft:#eef1f6;
+  --warn:#b26a00; --danger:#b93939; --ok:#0c9b78;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink);background:#f4f7fb;line-height:1.75;font-size:14.5px}
+a{color:var(--brand)}
+.topbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:10px 22px;background:var(--navy);color:#fff;font-size:13px}
+.topbar .tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .tags{display:flex;align-items:center;gap:6px;flex:none}
+.topbar .tags span{padding:2px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;font-size:11.5px}
+.layout{display:grid;grid-template-columns:minmax(0,760px) minmax(340px,420px);gap:26px;
+  max-width:1240px;margin:0 auto;padding:26px 18px 60px}
+/* 左栏 */
+.report{min-width:0}
+.r-head{padding:22px 26px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;text-align:center}
+.r-head h1{margin:0 0 8px;font-size:22px;color:var(--navy);line-height:1.5}
+.r-head .sub{color:var(--muted);font-size:12.5px}
+.verify{margin:0 0 16px;background:#fff;border:1px solid #bfe5d6;border-radius:12px;padding:16px 20px}
+.verify.fail{border-color:#f2c4c4;background:#fffafa}
+.v-head{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;color:var(--ok)}
+.verify.fail .v-head{color:var(--danger)}
+.v-shield{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;
+  align-items:center;justify-content:center;font-size:12px;flex:none}
+.verify.fail .v-shield{background:var(--danger)}
+.v-stamp{margin-left:auto;font-size:11px;border:1.5px solid var(--ok);color:var(--ok);border-radius:5px;
+  padding:1px 8px;letter-spacing:2px;flex:none}
+.v-stamp.bad{border-color:var(--danger);color:var(--danger)}
+.v-reasons{margin-top:6px;font-size:12.5px;color:var(--danger)}
+.v-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-top:10px}
+.vi{display:flex;gap:7px;align-items:baseline;font-size:12.5px;color:#35445c;line-height:1.7;min-width:0}
+.vi .s{font-weight:800;flex:none}
+.vi .s.ok{color:var(--ok)}
+.vi .s.warn{color:var(--warn)}
+.vi .s.fail{color:var(--danger)}
+.vi .s.man{color:var(--case)}
+.vi .s.none{color:var(--muted)}
+.vi .d{color:var(--muted);min-width:0}
+.v-note{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--muted);line-height:1.7}
+/* 正文章节卡 */
+.doc-sec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:16px}
+.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px;
+  padding-bottom:10px;border-bottom:1px solid var(--line)}
+.sec-no{display:inline-flex;width:26px;height:26px;border-radius:7px;background:var(--brand);color:#fff;
+  align-items:center;justify-content:center;font-size:13.5px;font-weight:700;flex:none}
+.sec-head h3{margin:0;font-size:16.5px;color:var(--navy);line-height:1.5}
+.sec-badge{margin-left:auto;font-size:11.5px;color:var(--ok);background:var(--policy-soft);
+  border-radius:6px;padding:2px 9px;font-weight:700;flex:none}
+.sec-badge.bad{color:var(--danger);background:#fdecea}
+.doc-sub{margin:16px 0 8px;color:var(--navy);font-size:14.5px;font-weight:700}
+h5.doc-sub{font-size:13.5px}
+.doc-block,.doc-item{margin:0 0 12px}
+.doc-block p,.doc-item p{margin:0;font-size:14px;line-height:1.9}
+.doc-item{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px}
+.doc-item.numbered{grid-template-columns:28px minmax(0,1fr)}
+.doc-bullet{padding-top:1px;color:#111827;font-size:15px;line-height:1.85}
+.doc-divider{border:0;border-top:1px solid var(--line);margin:18px 0}
+code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.tbl-wrap{max-width:100%;overflow-x:auto;margin:8px 0}
+.data-tbl{width:100%;border-collapse:collapse;border:1px solid var(--line);font-size:13px}
+.data-tbl th,.data-tbl td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.65}
+.data-tbl th{background:#f2f5fb;font-weight:700;color:#374151}
+/* 角标 */
+.cite{margin:0 1px;padding:0 5px;border:0;border-radius:4px;background:var(--brand-soft);color:var(--brand);
+  font-weight:800;font-size:10.5px;cursor:pointer;vertical-align:super;font-family:monospace}
+.cite:hover,.cite:focus-visible{background:var(--brand);color:#fff;outline:none}
+.cite.unresolved{background:#fdecea;color:var(--danger)}
+/* 段落级证据 chips */
+.ev-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.ev-chip{max-width:100%}
+.ev-chip summary{display:inline-flex;align-items:center;max-width:100%;border-radius:999px;padding:3px 10px;
+  color:#4b5563;background:#f3f4f6;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  list-style:none;font-size:11.5px}
+.ev-chip summary::-webkit-details-marker{display:none}
+.ev-chip summary::after{content:"核验";margin-left:7px;color:#9ca3af;font-size:10.5px}
+.ev-chip[open] summary::after{content:"收起"}
+.ev-chip summary b{color:var(--brand);margin-right:5px}
+.ev-panel{margin:7px 0 6px;padding:12px 14px;border:1px solid var(--line);border-radius:9px;background:#fbfcfe;
+  box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.ev-title{font-weight:700;font-size:13.5px;margin-bottom:4px;color:var(--navy)}
+.ev-meta{color:var(--muted);font-size:12px;margin-bottom:6px}
+.ev-panel p{margin:0 0 8px;color:#374151;font-size:12.8px;line-height:1.7}
+.sc-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.sc-links span{display:inline-flex}
+.sc-links a{display:inline-flex;align-items:center;min-height:24px;padding:3px 9px;border-radius:6px;
+  background:var(--brand-soft);color:var(--brand);font-weight:700;text-decoration:none;font-size:12px}
+/* 右栏 核验材料 */
+.sources{position:sticky;top:56px;align-self:start;max-height:calc(100vh - 76px);overflow:auto;
+  background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.sources h3{margin:0 0 3px;font-size:15px;color:var(--navy)}
+.src-tip{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.filters button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
+  padding:3px 11px;font-size:12px;cursor:pointer}
+.filters button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
+.src-search{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;margin-bottom:12px}
+.scard{border:1px solid var(--line);border-left-width:3px;border-radius:10px;padding:11px 13px;margin-bottom:10px;
+  background:#fff;transition:box-shadow .25s}
+.scard.pol{border-left-color:var(--policy)}
+.scard.dat{border-left-color:var(--brand)}
+.scard.cas{border-left-color:var(--case)}
+.scard.ref,.scard.mat{border-left-color:var(--ref)}
+.scard.hl{box-shadow:0 0 0 3px var(--brand)}
+.scard.hide{display:none}
+.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.sc-id{font-family:monospace;font-weight:800;font-size:11px;color:var(--brand);background:var(--brand-soft);
+  border-radius:4px;padding:1px 7px}
+.sc-type{font-size:11px;font-weight:700;border-radius:4px;padding:1px 8px;background:var(--ref-soft);color:var(--ref)}
+.scard.pol .sc-type{background:var(--policy-soft);color:var(--policy)}
+.scard.dat .sc-type{background:var(--brand-soft);color:var(--brand)}
+.scard.cas .sc-type{background:var(--case-soft);color:var(--case)}
+.sc-vk{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}
+.sc-vk.warn{color:var(--warn)}
+.scard h4{margin:0 0 4px;font-size:13px;color:var(--navy);line-height:1.55}
+.sc-meta{font-size:11.5px;color:var(--muted)}
+.sc-section{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600}
+.sc-vnote{margin-top:5px;font-size:11.3px;color:var(--ok);line-height:1.6}
+.sc-excerpt{margin:7px 0;padding:9px 10px;border-radius:7px;background:#f8fafc;color:#42566f;font-size:12px;line-height:1.7;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.scard.open .sc-excerpt{display:block;-webkit-line-clamp:unset}
+.sc-excerpt.rich{overflow-x:auto}
+.sc-excerpt.rich table{width:max-content;min-width:100%;border-collapse:collapse;background:#fff;font-size:12px}
+.sc-excerpt.rich td,.sc-excerpt.rich th{min-width:92px;max-width:220px;padding:7px 8px;border:1px solid var(--line);
+  vertical-align:top;word-break:break-word}
+.sc-excerpt.rich thead td,.sc-excerpt.rich th{background:#f3f4f6;color:#374151;font-weight:700}
+.scard .sc-links a{font-size:12px}
+.scard .sc-links{margin-top:4px}
+.no-link{font-size:11.5px;color:var(--muted)}
+.uncited-group{margin-top:12px;border-top:1px dashed var(--line-strong);padding-top:10px}
+.uncited-group summary{cursor:pointer;font-size:12.5px;color:var(--muted);font-weight:600}
+.uncited-group .uncited-list{margin-top:10px}
+/* 知识专库 */
+.kb-zone{margin-top:14px;border-top:1px dashed var(--line-strong);padding-top:12px}
+.kb-title{font-size:12.5px;font-weight:800;color:var(--navy)}
+.kb-desc{font-size:11.3px;color:var(--muted);line-height:1.65;margin:3px 0 8px}
+.kb-list{display:flex;flex-direction:column;gap:7px}
+.kb-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+  background:#fbfcfe;text-decoration:none;font-size:11.5px}
+.kb-chip:hover{border-color:var(--brand);background:var(--brand-soft)}
+.kb-label{font-weight:700;color:#374151;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kb-count{padding-left:8px;border-left:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.kb-arrow{margin-left:auto;color:var(--brand);font-weight:700;white-space:nowrap}
+.empty{color:var(--muted)}
+.foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
+@media (max-width:1020px){
+  .layout{grid-template-columns:1fr}
+  .sources{position:static;max-height:none}
+}
+@media print{
+  .topbar,.filters,.src-search{display:none!important}
+  .layout{grid-template-columns:1fr;max-width:none;padding:0;gap:14px}
+  body{background:#fff;font-size:12.5px}
+  .sources{position:static;max-height:none;border:0;padding:0;overflow:visible}
+  .r-head,.verify,.doc-sec{border-color:#bbb;box-shadow:none;break-inside:avoid}
+  .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
+  .uncited-group[open] .uncited-list,.uncited-group{break-inside:avoid}
+  .scard{break-inside:avoid}
+  .cite{background:#eee;color:#333}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-<div class="banner">本页面为可信溯源报告的效果示例，内容为示例数据，非真实检索结果，仅供展示，不作为交付物。</div>
+<header class="topbar">
+  <div class="tb-title">关于深圳市人工智能赋能政务服务应用情况的调研报告 · 可信溯源核验报告</div>
+  <div class="tags">
+    <span>生成于 2026-09-01 15:45</span>
+    <span>素材来源：深知可信搜索</span>
+  </div>
+</header>
 
-<h1>关于人工智能赋能制造业发展情况的调研报告<br><span style="font-size:14px;color:#6b7280;font-weight:400">（示例标题）</span></h1>
-
-<h2>一、政策背景</h2>
-<p>近年来，国家持续推动制造业数字化转型与智能化升级。《制造业数字化转型行动方案》提出，到 2027 年规模以上工业企业关键工序数控化率、数字化研发设计工具普及率大幅提升<sup><a href="#src1">[1]</a></sup>。地方层面，多地出台配套政策，对认定为省级智能工厂的企业给予分档奖励，重点支持工业大模型、智能质检等场景落地<sup><a href="#src2">[2]</a></sup>。</p>
-
-<h2>二、发展现状</h2>
-<p>据权威研究机构公开报告，2025 年我国人工智能核心产业规模持续增长，工业企业 AI 应用渗透率稳步提升，质检、排产、运维为主要应用场景<sup><a href="#src3">[3]</a></sup>。从地方实践看，已有企业通过部署视觉质检系统实现漏检率明显下降、单条产线质检人力有效减少<sup><a href="#src4">[4]</a></sup>。</p>
-
-<h2>来源清单</h2>
-
-<div class="card" id="src1">
-  <div class="t">[1] 工业和信息化部关于印发《制造业数字化转型行动方案》的通知（示例标题）</div>
-  <div class="m">来源：工业和信息化部官网（规范性文件）· 文号：工信部规〔2025〕X 号（示例）· 发布日期：2025-XX-XX</div>
-  <div class="link">点击查看原文 →</div>
+<div class="layout">
+  <main class="report" aria-label="核验报告正文">
+    <div class="r-head">
+      <h1>关于深圳市人工智能赋能政务服务应用情况的调研报告</h1>
+      <div class="sub">素材：政策依据 2 · 数据支撑 2 · 参考案例 1 ｜ 共 5 条 ｜ 点击正文角标 [1] 定位材料原文</div>
+    </div>
+    
+    <div class="verify ok">
+      <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据可交付<span class="v-stamp">已核验</span></div>
+      
+      <div class="v-grid">
+        <div class="vi"><span class="s ok">✓ 依据溯源 5/5</span><span class="d">每条素材可回看原文</span></div><div class="vi"><span class="s ok">✓ 引用绑定 6/6</span><span class="d">正文引用全部对应素材</span></div><div class="vi"><span class="s ok">✓ 时效检查 完成</span><span class="d">材料日期 2024-01～2026-01</span></div><div class="vi"><span class="s ok">✓ 类型覆盖</span><span class="d">政策依据 2 · 数据支撑 2 · 参考案例 1</span></div><div class="vi"><span class="s ok">✓ 成稿自检 5/5</span><span class="d">事实/结构/占位/AI味/格式</span></div><div class="vi"><span class="s man">◐ 效力复核</span><span class="d">2 条政策依据建议按官方发布复核现行效力</span></div>
+      </div>
+      <div class="v-note">核验方法：深知可信搜索召回权威来源 → 逐条溯源（摘录比对 + 原文链接 + 知识专库回看）→ 正文引用绑定 → 成稿自检。政策现行效力以官方发布为准。<br>· 已完成政策文件名称、发布主体、发布时间和正文对应位置核验。<br>· 已完成服务数据、审批数据的来源与公开口径核验。</div>
+    </div>
+    <section class="doc-sec"><div class="sec-head"><span class="sec-badge ">本章引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>为落实数字政府建设部署，近期围绕人工智能赋能政务服务开展专题调研<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>。现将情况报告如下。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="1">
+              <summary><b>[1]</b>《深圳经济特区人工智能产业促进条例》</summary>
+              <div class="ev-panel">
+                <div class="ev-title">《深圳经济特区人工智能产业促进条例》</div>
+                <div class="ev-meta">深圳市人大常委会 | 2024年</div>
+                <p>支撑深圳以地方立法推动人工智能产业和政务场景应用的制度基础。</p>
+                <div class="sc-links"><span><a href="https://www.szrd.gov.cn/sample/1.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div></section>
+<section class="doc-sec"><div class="sec-head"><span class="sec-no">一</span><h3>政策体系</h3><span class="sec-badge ">本章引用 2 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>深圳以地方立法率先构建人工智能产业与政务应用的制度基础<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>。市政务服务和数据管理局陆续出台场景开放清单与数据治理规范<button class="cite" data-cite="2" type="button" title="核验依据 [2]">[2]</button>。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="1">
+              <summary><b>[1]</b>《深圳经济特区人工智能产业促进条例》</summary>
+              <div class="ev-panel">
+                <div class="ev-title">《深圳经济特区人工智能产业促进条例》</div>
+                <div class="ev-meta">深圳市人大常委会 | 2024年</div>
+                <p>支撑深圳以地方立法推动人工智能产业和政务场景应用的制度基础。</p>
+                <div class="sc-links"><span><a href="https://www.szrd.gov.cn/sample/1.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+              </div>
+            </details>
+            
+            <details class="ev-chip" data-cite="2">
+              <summary><b>[2]</b>深圳市政务人工智能应用场景开放清单</summary>
+              <div class="ev-panel">
+                <div class="ev-title">深圳市政务人工智能应用场景开放清单</div>
+                <div class="ev-meta">深圳市政务服务和数据管理局 | 2025年</div>
+                <p>支撑场景开放与数据治理规范的持续供给表述。</p>
+                <div class="sc-links"><span><a href="https://www.sz.gov.cn/sample/2.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div></section>
+<section class="doc-sec"><div class="sec-head"><span class="sec-no">二</span><h3>应用成效</h3><span class="sec-badge ">本章引用 2 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>“深小i”智能问答服务累计办结咨询超千万次，一次解决率稳步提升<button class="cite" data-cite="3" type="button" title="核验依据 [3]">[3]</button>。智能审批在多个高频事项中实现秒批秒办<button class="cite" data-cite="4" type="button" title="核验依据 [4]">[4]</button>。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="3">
+              <summary><b>[3]</b>“深小i”智能问答服务运行数据</summary>
+              <div class="ev-panel">
+                <div class="ev-title">“深小i”智能问答服务运行数据</div>
+                <div class="ev-meta">深圳市政务服务和数据管理局公开报道 | 2026年</div>
+                <p>支撑服务量、应答率、一次解决率等成效描述。</p>
+                <div class="sc-links"><span><a href="https://www.sz.gov.cn/sample/3.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+              </div>
+            </details>
+            
+            <details class="ev-chip" data-cite="4">
+              <summary><b>[4]</b>深圳智能审批高频事项秒批数据</summary>
+              <div class="ev-panel">
+                <div class="ev-title">深圳智能审批高频事项秒批数据</div>
+                <div class="ev-meta">深圳市政务服务数据管理局年度报告 | 2026年</div>
+                <p>支撑秒批秒办事项数与办理时限压缩描述。</p>
+                <div class="sc-links"><span><a href="https://www.sz.gov.cn/sample/4.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div></section>
+<section class="doc-sec"><div class="sec-head"><span class="sec-no">三</span><h3>外地经验</h3><span class="sec-badge ">本章引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>上海市推出政务服务大模型助手，形成场景开放与安全评估同步推进的做法<button class="cite" data-cite="5" type="button" title="核验依据 [5]">[5]</button>，可为我市下一步扩面提供参考。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="5">
+              <summary><b>[5]</b>上海市政务服务大模型助手建设做法</summary>
+              <div class="ev-panel">
+                <div class="ev-title">上海市政务服务大模型助手建设做法</div>
+                <div class="ev-meta">上海市人民政府官网 | 2025年</div>
+                <p>支撑场景开放与安全评估同步推进的经验表述。</p>
+                <div class="sc-links"><span><a href="https://www.shanghai.gov.cn/sample/5.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div></section>
+    <div class="foot">深知公文写作 · 可信溯源核验报告 ｜ 核验方法：可信搜索召回 → 逐条溯源 → 正文绑定 → 成稿自检 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
+  </main>
+  <aside class="sources" aria-label="核验材料面板"><h3>核验材料（5 条 · 全部已核验）</h3><div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div><div class="filters" role="group" aria-label="类型筛选"><button class="on" data-f="all" type="button">全部</button><button data-f="policy" type="button">政策依据</button><button data-f="data" type="button">数据支撑</button><button data-f="case" type="button">参考案例</button></div><input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源"><div class="src-list"><article class="scard pol" id="src-1" data-type="policy" data-cite-id="1"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="已完成法规名称、发布主体、施行日期和正文引用位置的溯源核验。">✓ 已核验</span></div><h4>《深圳经济特区人工智能产业促进条例》</h4><div class="sc-meta">深圳市人大常委会 | 2024年</div><div class="sc-section">支撑：一 政策体系</div><div class="sc-vnote">已完成法规名称、发布主体、施行日期和正文引用位置的溯源核验。</div><div class="sc-excerpt plain">支撑深圳以地方立法推动人工智能产业和政务场景应用的制度基础。</div><div class="sc-links"><span><a href="https://www.szrd.gov.cn/sample/1.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard pol" id="src-2" data-type="policy" data-cite-id="2"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="已完成文件名称、发布主体、发布时间和适用范围的溯源核验。">✓ 已核验</span></div><h4>深圳市政务人工智能应用场景开放清单</h4><div class="sc-meta">深圳市政务服务和数据管理局 | 2025年</div><div class="sc-section">支撑：一 政策体系</div><div class="sc-vnote">已完成文件名称、发布主体、发布时间和适用范围的溯源核验。</div><div class="sc-excerpt plain">支撑场景开放与数据治理规范的持续供给表述。</div><div class="sc-links"><span><a href="https://www.sz.gov.cn/sample/2.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard dat" id="src-3" data-type="data" data-cite-id="3"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="已完成服务数据、发布主体、发布时间和正文使用口径的溯源核验。">✓ 已核验</span></div><h4>“深小i”智能问答服务运行数据</h4><div class="sc-meta">深圳市政务服务和数据管理局公开报道 | 2026年</div><div class="sc-section">支撑：二 应用成效</div><div class="sc-vnote">已完成服务数据、发布主体、发布时间和正文使用口径的溯源核验。</div><div class="sc-excerpt plain">支撑服务量、应答率、一次解决率等成效描述。</div><div class="sc-links"><span><a href="https://www.sz.gov.cn/sample/3.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard dat" id="src-4" data-type="data" data-cite-id="4"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="已完成事项范围、数据口径和时间基准的溯源核验。">✓ 已核验</span></div><h4>深圳智能审批高频事项秒批数据</h4><div class="sc-meta">深圳市政务服务数据管理局年度报告 | 2026年</div><div class="sc-section">支撑：二 应用成效</div><div class="sc-vnote">已完成事项范围、数据口径和时间基准的溯源核验。</div><div class="sc-excerpt plain">支撑秒批秒办事项数与办理时限压缩描述。</div><div class="sc-links"><span><a href="https://www.sz.gov.cn/sample/4.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard cas" id="src-5" data-type="case" data-cite-id="5"><div class="sc-head"><span class="sc-id">[5]</span><span class="sc-type">参考案例</span><span class="sc-vk ok" title="已完成做法事实、发布主体和时间口径的溯源核验。">✓ 已核验</span></div><h4>上海市政务服务大模型助手建设做法</h4><div class="sc-meta">上海市人民政府官网 | 2025年</div><div class="sc-section">支撑：三 外地经验</div><div class="sc-vnote">已完成做法事实、发布主体和时间口径的溯源核验。</div><div class="sc-excerpt plain">支撑场景开放与安全评估同步推进的经验表述。</div><div class="sc-links"><span><a href="https://www.shanghai.gov.cn/sample/5.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article></div><div class="kb-zone"><div class="kb-title">原始召回存档（深知知识专库）</div><div class="kb-desc">以下链接可回看每次搜索的完整召回结果（含未写入正文的材料）；原文页面改版或下线时可回看当时召回的快照。逐条材料的核验请点击来源卡上的"查看原文"直达官方页面。</div><div class="kb-list"><a class="kb-chip" href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/?id=sample-1" target="_blank" rel="noopener"><span class="kb-label">深圳AI与智慧城市政策依据</span><span class="kb-count">5 条来源 · 可回看</span><span class="kb-arrow">打开 ↗</span></a><a class="kb-chip" href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/?id=sample-2" target="_blank" rel="noopener"><span class="kb-label">深圳政务智能审批改革数据</span><span class="kb-count">原始召回 · 可回看</span><span class="kb-arrow">打开 ↗</span></a></div></div></aside>
 </div>
 
-<div class="card" id="src2">
-  <div class="t">[2] 某省人民政府办公厅关于加快推进智能制造发展的实施意见（示例标题）</div>
-  <div class="m">来源：某省人民政府官网（规范性文件）· 文号：X政办发〔2025〕X 号（示例）· 发布日期：2025-XX-XX</div>
-  <div class="link">点击查看原文 →</div>
-</div>
+<script>
+(function () {
+  "use strict";
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".scard"));
+  var byId = {};
+  cards.forEach(function (c) {
+    var id = c.getAttribute("data-cite-id");
+    if (id) byId[id] = c;
+  });
 
-<div class="card" id="src3">
-  <div class="t">[3] 某权威研究机构《智能制造发展报告（2025）》（示例标题）</div>
-  <div class="m">来源：研究机构官网公开报告 · 发布日期：2025-XX-XX</div>
-  <div class="link">点击查看原文 →</div>
-</div>
+  /* 角标 → 来源卡：精确 ID 匹配，缺失即红色警示，绝不按位置猜测 */
+  document.querySelectorAll("[data-cite]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var card = byId[btn.getAttribute("data-cite")];
+      if (!card) {
+        btn.classList.add("unresolved");
+        if (console.error) console.error("[核验] 未绑定角标:", btn.getAttribute("data-cite"));
+        return;
+      }
+      card.classList.remove("hide", "open");
+      card.classList.add("hl", "open");
+      card.scrollIntoView({ block: "center", behavior: "smooth" });
+      setTimeout(function () { card.classList.remove("hl"); }, 2200);
+    });
+  });
 
-<div class="card" id="src4">
-  <div class="t">[4] 某市"AI 质检"应用案例入选省级典型（示例标题）</div>
-  <div class="m">来源：某市人民政府官网（政务公开信息）· 发布日期：2025-XX-XX</div>
-  <div class="link">点击查看原文 →</div>
-</div>
+  /* 摘录点击展开/收起 */
+  cards.forEach(function (c) {
+    var ex = c.querySelector(".sc-excerpt");
+    if (!ex) return;
+    ex.addEventListener("click", function (e) {
+      if (e.target.closest("a")) return;
+      c.classList.toggle("open");
+    });
+  });
 
-<div class="kb">
-  <div class="t">知识专库链接</div>
-  <a href="#">政策依据 · 检索来源（示例）</a>
-  <a href="#">数据支撑 · 检索来源（示例）</a>
-  <a href="#">参考案例 · 检索来源（示例）</a>
-</div>
+  /* 证据 chips 展开时同步高亮来源卡 */
+  document.querySelectorAll(".ev-chip").forEach(function (chip) {
+    chip.addEventListener("toggle", function () {
+      if (!chip.open) return;
+      var card = byId[chip.getAttribute("data-cite")];
+      if (!card) return;
+      cards.forEach(function (c) { c.classList.remove("hl"); });
+      card.classList.add("hl");
+      setTimeout(function () { card.classList.remove("hl"); }, 2200);
+    });
+  });
 
-<div class="note">说明：正文中的 [1][2][3] 角标均可点击跳转到对应来源卡片；来源卡片保留原文链接，可前往原文页面核验。开通搜索后，实际报告由本 Skill 自动生成，结构与本示例一致。</div>
-
-</div>
+  /* 类型筛选 + 搜索 */
+  var filter = "all";
+  var kw = "";
+  function apply() {
+    cards.forEach(function (c) {
+      var okType = filter === "all" || c.getAttribute("data-type") === filter;
+      var okKw = !kw || (c.textContent || "").toLowerCase().indexOf(kw) !== -1;
+      c.classList.toggle("hide", !(okType && okKw));
+    });
+  }
+  document.querySelectorAll(".filters button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".filters button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      filter = b.getAttribute("data-f");
+      apply();
+    });
+  });
+  var search = document.querySelector(".src-search");
+  if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); apply(); });
+})();
+</script>
 </body>
 </html>

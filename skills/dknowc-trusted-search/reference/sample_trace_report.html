@@ -1,450 +1,417 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>深知可信搜索·可信溯源（示例）</title>
-  <style>
-    :root {
-      --purple: #6b18c9;
-      --purple-soft: #f4ebff;
-      --ink: #2f3033;
-      --muted: #6b7280;
-      --line: #e5e7eb;
-      --panel: #ffffff;
-      --page: #ffffff;
-      --soft: #f7f7f8;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      color: var(--ink);
-      background: var(--page);
-    }
-    header {
-      padding: 12px 28px;
-      background: #fff;
-      border-bottom: 1px solid var(--line);
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      text-align: center;
-    }
-    h1 { margin: 0 0 3px; font-size: 16px; letter-spacing: 0; font-weight: 700; }
-    header p { margin: 0; color: #9ca3af; font-size: 12px; }
-    .product-links {
-      display: flex;
-      justify-content: center;
-      gap: 14px;
-      margin-top: 8px;
-      font-size: 12px;
-    }
-    .product-links a {
-      color: var(--purple);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .product-links a:hover { text-decoration: underline; }
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 700px) minmax(390px, 460px);
-      gap: 30px;
-      justify-content: center;
-      max-width: 1220px;
-      margin: 0 auto;
-      padding: 30px 18px 40px;
-    }
-    .conversation {
-      min-width: 0;
-    }
-    .question-bubble {
-      max-width: 560px;
-      margin: 0 0 26px auto;
-      padding: 12px 16px;
-      border-radius: 9px;
-      background: var(--purple);
-      color: #fff;
-      line-height: 1.55;
-      font-weight: 700;
-      font-size: 14px;
-    }
-    .answer {
-      background: transparent;
-      padding: 0;
-    }
-    .kb-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      max-width: 100%;
-      margin: 0 0 16px;
-      padding: 7px 10px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      color: #4b5563;
-      background: #fafafa;
-      text-decoration: none;
-      box-shadow: none;
-      font-size: 12px;
-    }
-    .kb-chip:hover { border-color: #d1d5db; background: #f7f7f8; }
-    .kb-label { font-weight: 700; color: #374151; }
-    .kb-count {
-      padding-left: 10px;
-      border-left: 1px solid var(--line);
-      color: #6b7280;
-    }
-    .kb-arrow {
-      color: var(--purple);
-      font-weight: 700;
-    }
-    .ai-note { margin: 0 0 10px; color: #52525b; line-height: 1.75; font-size: 14px; }
-    .answer-body {
-      padding: 0;
-      background: transparent;
-    }
-    .answer-block, .answer-item { margin: 0 0 12px; }
-    .answer-item { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; }
-    .answer-item .bullet { padding-top: 2px; color: #111827; font-size: 16px; line-height: 1.75; }
-    .answer-item.numbered { grid-template-columns: 28px minmax(0, 1fr); }
-    .answer p { margin: 0; font-size: 14px; line-height: 1.85; }
-    .answer strong { font-weight: 700; color: #202124; }
-    .answer em { font-style: normal; color: #4b5563; }
-    .answer code {
-      padding: 1px 5px;
-      border-radius: 4px;
-      background: #f3f4f6;
-      color: #374151;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
-    }
-    .answer-table-wrap { max-width: 100%; overflow-x: auto; margin: 6px 0 8px; }
-    .answer-table {
-      width: 100%;
-      border-collapse: collapse;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      overflow: hidden;
-      font-size: 13px;
-    }
-    .answer-table th, .answer-table td {
-      padding: 9px 10px;
-      border: 1px solid var(--line);
-      text-align: left;
-      vertical-align: top;
-      line-height: 1.65;
-    }
-    .answer-table th { background: #f8fafc; font-weight: 700; color: #374151; }
-    .answer-heading { margin: 20px 0 9px; color: #111827; line-height: 1.45; letter-spacing: 0; }
-    h2.answer-heading { font-size: 18px; }
-    h3.answer-heading { font-size: 16px; }
-    h4.answer-heading { font-size: 15px; }
-    .answer-divider { border: 0; border-top: 1px solid var(--line); margin: 22px 0; }
-    .warning-box {
-      margin: 0 0 16px;
-      padding: 12px 14px;
-      border: 1px solid #f59e0b;
-      border-radius: 8px;
-      background: #fffbeb;
-      color: #92400e;
-      line-height: 1.7;
-      font-size: 14px;
-    }
-    .cite {
-      margin: 0 2px;
-      padding: 0 5px;
-      border: 0;
-      border-radius: 4px;
-      color: var(--purple);
-      background: var(--purple-soft);
-      font-weight: 700;
-      cursor: pointer;
-      vertical-align: super;
-      font-size: 10px;
-      line-height: 1.4;
-    }
-    .cite.disabled { color: #9ca3af; background: #f3f4f6; cursor: default; }
-    .evidence-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin: 5px 0 0;
-    }
-    .evidence-detail {
-      max-width: 100%;
-    }
-    .evidence-detail summary {
-      display: inline-flex;
-      align-items: center;
-      max-width: 100%;
-      border-radius: 999px;
-      padding: 4px 9px;
-      color: #6b7280;
-      background: #f3f4f6;
-      cursor: pointer;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      list-style: none;
-      font-size: 12px;
-    }
-    .evidence-detail summary::-webkit-details-marker { display: none; }
-    .evidence-detail summary::after {
-      content: "展开";
-      margin-left: 7px;
-      color: #9ca3af;
-      font-size: 11px;
-    }
-    .evidence-detail[open] summary::after { content: "收起"; }
-    .evidence-detail summary b { color: var(--purple); margin-right: 5px; }
-    .evidence-panel {
-      margin: 7px 0 4px;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-    }
-    .evidence-title { font-weight: 700; font-size: 14px; margin-bottom: 5px; color: #111827; }
-    .evidence-meta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
-    .evidence-section { color: var(--purple); font-size: 12px; margin-bottom: 6px; font-weight: 700; }
-    .evidence-panel p { margin: 0 0 8px; color: #374151; font-size: 13px; line-height: 1.7; }
-    .evidence-panel a { color: var(--purple); font-weight: 700; text-decoration: none; }
-    .source-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .source-links span {
-      display: inline-flex;
-    }
-    .source-links a {
-      display: inline-flex;
-      align-items: center;
-      min-height: 24px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: var(--purple-soft);
-      color: var(--purple);
-      font-weight: 700;
-      text-decoration: none;
-      font-size: 12px;
-    }
-    .tools {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 20px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-    }
-    .tools a {
-      color: var(--purple);
-      background: var(--purple-soft);
-      border-radius: 999px;
-      padding: 7px 12px;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .sources {
-      align-self: start;
-      position: sticky;
-      top: 70px;
-      max-height: calc(100vh - 92px);
-      overflow: auto;
-      background: #fff;
-      border-left: 1px solid var(--line);
-      padding: 16px 0 16px 24px;
-    }
-    .sources h2 { margin: 0 0 12px; font-size: 15px; }
-    .searchbox {
-      width: 100%;
-      margin: 0 0 14px;
-      padding: 9px 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      color: #6b7280;
-      background: #fff;
-    }
-    .source-card {
-      padding: 14px 0 15px;
-      border: 0;
-      border-bottom: 1px solid #f1f1f2;
-      border-radius: 0;
-      margin-bottom: 0;
-      background: #fff;
-    }
-    .source-card.active {
-      margin-left: -10px;
-      padding-left: 10px;
-      border-left: 3px solid var(--purple);
-      background: #fbf8ff;
-      box-shadow: none;
-    }
-    .source-top {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 7px;
-      align-items: start;
-      margin-bottom: 6px;
-    }
-    .source-index {
-      color: var(--purple);
-      background: var(--purple-soft);
-      border-radius: 5px;
-      padding: 1px 5px;
-      font-weight: 800;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-    .source-card h3 { margin: 0; font-size: 13px; line-height: 1.55; letter-spacing: 0; }
-    .source-card p { margin: 0 0 7px; color: #374151; line-height: 1.72; font-size: 12px; }
-    .source-card .meta { color: var(--muted); font-size: 12px; line-height: 1.55; }
-    .source-card .section { color: var(--purple); font-size: 12px; font-weight: 700; }
-    .source-card a { color: var(--purple); font-weight: 700; text-decoration: none; font-size: 12px; }
-    .source-card .source-excerpt {
-      margin: 8px 0 8px;
-      padding: 9px 10px;
-      border-radius: 7px;
-      background: #f8fafc;
-      color: #374151;
-      font-size: 12px;
-      line-height: 1.75;
-    }
-    .source-excerpt.rich {
-      overflow-x: auto;
-      max-width: 100%;
-    }
-    .source-excerpt.rich table {
-      width: max-content;
-      min-width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      font-size: 12px;
-      line-height: 1.55;
-    }
-    .source-excerpt.rich td, .source-excerpt.rich th {
-      min-width: 92px;
-      max-width: 220px;
-      padding: 7px 8px;
-      border: 1px solid #e5e7eb;
-      vertical-align: top;
-      word-break: break-word;
-    }
-    .source-excerpt.rich thead td, .source-excerpt.rich th {
-      background: #f3f4f6;
-      color: #374151;
-      font-weight: 700;
-    }
-    .empty { color: var(--muted); }
-    @media (max-width: 900px) {
-      .layout { grid-template-columns: 1fr; padding: 14px; }
-      .sources { position: static; max-height: none; }
-      .question-bubble { margin-left: 0; }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>可信溯源核验报告 · 可信溯源核验报告</title>
+<style>
+:root{
+  --navy:#0b1f3a; --ink:#172236; --muted:#667085; --line:#dce4ef; --line-strong:#b9c6d9;
+  --brand:#1559c7; --brand-soft:#e8f0ff;
+  --policy:#0c9b78; --policy-soft:#e2f6ef;
+  --case:#b26a00; --case-soft:#fff4e0;
+  --ref:#4b5563; --ref-soft:#eef1f6;
+  --warn:#b26a00; --danger:#b93939; --ok:#0c9b78;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink);background:#f4f7fb;line-height:1.75;font-size:14.5px}
+a{color:var(--brand)}
+.topbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:10px 22px;background:var(--navy);color:#fff;font-size:13px}
+.topbar .tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .tags{display:flex;align-items:center;gap:6px;flex:none}
+.topbar .tags span{padding:2px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;font-size:11.5px}
+.layout{display:grid;grid-template-columns:minmax(0,760px) minmax(340px,420px);gap:26px;
+  max-width:1240px;margin:0 auto;padding:26px 18px 60px}
+/* 左栏 */
+.report{min-width:0}
+.r-head{padding:22px 26px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;text-align:center}
+.r-head h1{margin:0 0 8px;font-size:22px;color:var(--navy);line-height:1.5}
+.r-head .sub{color:var(--muted);font-size:12.5px}
+.warn-box{margin:0 0 16px;padding:13px 16px;border:1.5px solid var(--danger);border-radius:10px;
+  background:#fdf3f3;color:#8f2626;font-size:13.5px;line-height:1.7}
+.verify{margin:0 0 16px;background:#fff;border:1px solid #bfe5d6;border-radius:12px;padding:16px 20px}
+.verify.fail{border-color:#f2c4c4;background:#fffafa}
+.v-head{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;color:var(--ok)}
+.verify.fail .v-head{color:var(--danger)}
+.v-shield{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;
+  align-items:center;justify-content:center;font-size:12px;flex:none}
+.verify.fail .v-shield{background:var(--danger)}
+.v-stamp{margin-left:auto;font-size:11px;border:1.5px solid var(--ok);color:var(--ok);border-radius:5px;
+  padding:1px 8px;letter-spacing:2px;flex:none}
+.v-stamp.bad{border-color:var(--danger);color:var(--danger)}
+.v-reasons{margin-top:6px;font-size:12.5px;color:var(--danger)}
+.v-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-top:10px}
+.vi{display:flex;gap:7px;align-items:baseline;font-size:12.5px;color:#35445c;line-height:1.7;min-width:0}
+.vi .s{font-weight:800;flex:none}
+.vi .s.ok{color:var(--ok)}
+.vi .s.warn{color:var(--warn)}
+.vi .s.fail{color:var(--danger)}
+.vi .s.man{color:var(--case)}
+.vi .s.none{color:var(--muted)}
+.vi .d{color:var(--muted);min-width:0}
+.v-note{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--muted);line-height:1.7}
+/* 正文章节卡 */
+.doc-sec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:16px}
+.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px;
+  padding-bottom:10px;border-bottom:1px solid var(--line)}
+.sec-no{display:inline-flex;width:26px;height:26px;border-radius:7px;background:var(--brand);color:#fff;
+  align-items:center;justify-content:center;font-size:13.5px;font-weight:700;flex:none}
+.sec-head h3{margin:0;font-size:16.5px;color:var(--navy);line-height:1.5}
+.sec-badge{margin-left:auto;font-size:11.5px;color:var(--ok);background:var(--policy-soft);
+  border-radius:6px;padding:2px 9px;font-weight:700;flex:none}
+.sec-badge.bad{color:var(--danger);background:#fdecea}
+.doc-sub{margin:16px 0 8px;color:var(--navy);font-size:14.5px;font-weight:700}
+h5.doc-sub{font-size:13.5px}
+.doc-block,.doc-item{margin:0 0 12px}
+.doc-block p,.doc-item p{margin:0;font-size:14px;line-height:1.9}
+.doc-item{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px}
+.doc-item.numbered{grid-template-columns:28px minmax(0,1fr)}
+.doc-bullet{padding-top:1px;color:#111827;font-size:15px;line-height:1.85}
+.doc-divider{border:0;border-top:1px solid var(--line);margin:18px 0}
+code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.tbl-wrap{max-width:100%;overflow-x:auto;margin:8px 0}
+.data-tbl{width:100%;border-collapse:collapse;border:1px solid var(--line);font-size:13px}
+.data-tbl th,.data-tbl td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.65}
+.data-tbl th{background:#f2f5fb;font-weight:700;color:#374151}
+/* 角标 */
+.cite{margin:0 1px;padding:0 5px;border:0;border-radius:4px;background:var(--brand-soft);color:var(--brand);
+  font-weight:800;font-size:10.5px;cursor:pointer;vertical-align:super;font-family:monospace}
+.cite:hover,.cite:focus-visible{background:var(--brand);color:#fff;outline:none}
+.cite.unresolved{background:#fdecea;color:var(--danger)}
+/* 段落级证据 chips */
+.ev-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.ev-chip{max-width:100%}
+.ev-chip summary{display:inline-flex;align-items:center;max-width:100%;border-radius:999px;padding:3px 10px;
+  color:#4b5563;background:#f3f4f6;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  list-style:none;font-size:11.5px}
+.ev-chip summary::-webkit-details-marker{display:none}
+.ev-chip summary::after{content:"核验";margin-left:7px;color:#9ca3af;font-size:10.5px}
+.ev-chip[open] summary::after{content:"收起"}
+.ev-chip summary b{color:var(--brand);margin-right:5px}
+.ev-panel{margin:7px 0 6px;padding:12px 14px;border:1px solid var(--line);border-radius:9px;background:#fbfcfe;
+  box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.ev-title{font-weight:700;font-size:13.5px;margin-bottom:4px;color:var(--navy)}
+.ev-meta{color:var(--muted);font-size:12px;margin-bottom:6px}
+.ev-panel p{margin:0 0 8px;color:#374151;font-size:12.8px;line-height:1.7}
+.sc-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.sc-links span{display:inline-flex}
+.sc-links a{display:inline-flex;align-items:center;min-height:24px;padding:3px 9px;border-radius:6px;
+  background:var(--brand-soft);color:var(--brand);font-weight:700;text-decoration:none;font-size:12px}
+/* 右栏 核验材料 */
+.sources{position:sticky;top:56px;align-self:start;max-height:calc(100vh - 76px);overflow:auto;
+  background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.sources h3{margin:0 0 3px;font-size:15px;color:var(--navy)}
+.src-tip{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.filters button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
+  padding:3px 11px;font-size:12px;cursor:pointer}
+.filters button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
+.src-search{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;margin-bottom:12px}
+.scard{border:1px solid var(--line);border-left-width:3px;border-radius:10px;padding:11px 13px;margin-bottom:10px;
+  background:#fff;transition:box-shadow .25s}
+.scard.pol{border-left-color:var(--policy)}
+.scard.dat{border-left-color:var(--brand)}
+.scard.cas{border-left-color:var(--case)}
+.scard.ref,.scard.mat{border-left-color:var(--ref)}
+.scard.hl{box-shadow:0 0 0 3px var(--brand)}
+.scard.hide{display:none}
+.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.sc-id{font-family:monospace;font-weight:800;font-size:11px;color:var(--brand);background:var(--brand-soft);
+  border-radius:4px;padding:1px 7px}
+.sc-type{font-size:11px;font-weight:700;border-radius:4px;padding:1px 8px;background:var(--ref-soft);color:var(--ref)}
+.scard.pol .sc-type{background:var(--policy-soft);color:var(--policy)}
+.scard.dat .sc-type{background:var(--brand-soft);color:var(--brand)}
+.scard.cas .sc-type{background:var(--case-soft);color:var(--case)}
+.sc-vk{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}
+.sc-vk.warn{color:var(--warn)}
+.sc-vk.none{color:#98a2b3}
+.sc-id.unc{font-family:inherit;font-size:10px;color:#9ca3af;background:#f3f4f6;padding:1px 8px}
+.v-reasons.note{color:var(--warn)}
+.scard h4{margin:0 0 4px;font-size:13px;color:var(--navy);line-height:1.55}
+.sc-meta{font-size:11.5px;color:var(--muted)}
+.sc-section{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600}
+.sc-vnote{margin-top:5px;font-size:11.3px;color:var(--ok);line-height:1.6}
+.sc-excerpt{margin:7px 0;padding:9px 10px;border-radius:7px;background:#f8fafc;color:#42566f;font-size:12px;line-height:1.7;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.scard.open .sc-excerpt{display:block;-webkit-line-clamp:unset}
+.sc-excerpt.rich{overflow-x:auto}
+.sc-excerpt.rich table{width:max-content;min-width:100%;border-collapse:collapse;background:#fff;font-size:12px}
+.sc-excerpt.rich td,.sc-excerpt.rich th{min-width:92px;max-width:220px;padding:7px 8px;border:1px solid var(--line);
+  vertical-align:top;word-break:break-word}
+.sc-excerpt.rich thead td,.sc-excerpt.rich th{background:#f3f4f6;color:#374151;font-weight:700}
+.scard .sc-links a{font-size:12px}
+.scard .sc-links{margin-top:4px}
+.no-link{font-size:11.5px;color:var(--muted)}
+.uncited-group{margin-top:12px;border-top:1px dashed var(--line-strong);padding-top:10px}
+.ug-title{font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.6}
+.uncited-group .uncited-list{margin-top:10px}
+/* 知识专库 */
+.kb-zone{margin-top:14px;border-top:1px dashed var(--line-strong);padding-top:12px}
+.kb-title{font-size:12.5px;font-weight:800;color:var(--navy)}
+.kb-desc{font-size:11.3px;color:var(--muted);line-height:1.65;margin:3px 0 8px}
+.kb-list{display:flex;flex-direction:column;gap:7px}
+.kb-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+  background:#fbfcfe;text-decoration:none;font-size:11.5px}
+.kb-chip:hover{border-color:var(--brand);background:var(--brand-soft)}
+.kb-label{font-weight:700;color:#374151;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kb-count{padding-left:8px;border-left:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.kb-arrow{margin-left:auto;color:var(--brand);font-weight:700;white-space:nowrap}
+.empty{color:var(--muted)}
+.foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
+@media (max-width:1020px){
+  .layout{grid-template-columns:1fr}
+  .sources{position:static;max-height:none}
+}
+/* —— 移动端专项适配（手机阅读核验报告） —— */
+.mobile-nav{display:none}
+.back-doc{display:none}
+/* 移动端材料底部弹层：点角标就地弹出材料卡，不跳转打断阅读 */
+.sheet-mask{display:none}
+.sheet{display:none}
+@media (max-width:680px){
+  body{font-size:14px;line-height:1.8}
+  .layout{grid-template-columns:1fr;padding:12px 10px 40px;gap:14px}
+  .topbar{padding:8px 12px;font-size:12px;gap:4px;flex-wrap:wrap}
+  .topbar .tags span{font-size:10.5px;padding:1px 8px;margin-left:4px}
+  .r-head{padding:16px 14px;border-radius:10px}
+  .r-head h1{font-size:18px}
+  .r-head .sub{font-size:11.5px;line-height:1.6}
+  .verify{padding:13px 14px;border-radius:10px}
+  .v-head{font-size:14px}
+  .v-grid{grid-template-columns:1fr;gap:2px 0}
+  .vi{flex-wrap:wrap;gap:4px 8px}
+  .vi .d{min-width:0}
+  .warn-box{font-size:12.5px;padding:11px 12px}
+  .doc-sec{padding:14px;border-radius:10px}
+  .sec-no{width:22px;height:22px;font-size:12px;border-radius:6px}
+  .sec-head{gap:7px;padding-bottom:8px;margin-bottom:8px}
+  .sec-head h3{font-size:15px}
+  .sec-badge{margin-left:0;font-size:11px}
+  .doc-block p,.doc-item p{font-size:13.5px;line-height:1.95}
+  .doc-sub{font-size:14px;margin:12px 0 6px}
+  .data-tbl{font-size:12px}
+  .data-tbl th,.data-tbl td{padding:6px 7px;line-height:1.55}
+  .cite{font-size:11px;padding:0 4px}
+  .ev-chip summary{font-size:11px}
+  .sources{padding:12px;border-radius:10px}
+  .scard{padding:10px 11px}
+  .sc-excerpt{font-size:11.5px}
+  .kb-chip{flex-wrap:wrap}
+  .kb-label{white-space:normal}
+  .mobile-nav{display:block;margin:0 0 14px;padding:11px 14px;border:1.5px solid var(--brand);
+    border-radius:10px;background:var(--brand-soft);color:var(--brand);font-weight:800;
+    font-size:13.5px;text-decoration:none;text-align:center}
+  .back-doc{display:inline-block;margin:0 0 8px;font-size:12px;color:var(--brand);
+    font-weight:700;text-decoration:none}
+  .sheet-mask{display:block;position:fixed;inset:0;background:rgba(11,31,58,.45);z-index:99;opacity:0;
+    pointer-events:none;transition:opacity .2s}
+  .sheet-mask.show{opacity:1;pointer-events:auto}
+  .sheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:100;background:#fff;
+    border-radius:14px 14px 0 0;box-shadow:0 -8px 30px rgba(11,31,58,.25);
+    max-height:68vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:10px 16px 22px;transform:translateY(105%);transition:transform .25s ease}
+  .sheet.show{transform:translateY(0)}
+  .sheet-grab{width:38px;height:4px;border-radius:2px;background:#c9d4e2;margin:2px auto 8px}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .sheet-head b{font-size:13.5px;color:var(--navy)}
+  .sheet-close{border:1px solid var(--line);background:#f5f8fc;border-radius:8px;color:#3b4a61;
+    font-size:12.5px;font-weight:700;padding:5px 14px;cursor:pointer}
+  .sheet .scard{box-shadow:none;margin-bottom:0}
+  .sheet .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
+}
+@media print{
+  .topbar,.filters,.src-search{display:none!important}
+  .layout{grid-template-columns:1fr;max-width:none;padding:0;gap:14px}
+  body{background:#fff;font-size:12.5px}
+  .sources{position:static;max-height:none;border:0;padding:0;overflow:visible}
+  .r-head,.verify,.doc-sec{border-color:#bbb;box-shadow:none;break-inside:avoid}
+  .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
+  .uncited-group[open] .uncited-list,.uncited-group{break-inside:avoid}
+  .scard{break-inside:avoid}
+  .cite{background:#eee;color:#333}
+}
+</style>
 </head>
 <body>
-  <header>
-    <h1>深知可信搜索·可信溯源（示例）</h1>
-    <p>内容为 AI 生成，仅供参考｜生成时间：2026-08-21 14:28</p>
-    <nav class="product-links" aria-label="产品链接"><a href="https://yun.dknowc.cn/wlcb/dknowc-chat/#/" target="_blank" rel="noopener">深知晓内测</a><a href="https://www.dknowc.cn/" target="_blank" rel="noopener">深知可信智能官网</a></nav>
-  </header>
-  <main class="layout">
-    <section class="conversation" aria-label="回答正文">
-      <div class="question-bubble">企业购置节能节水、安全生产专用设备的企业所得税抵免政策</div>
-      <div class="answer">
-        <a class="kb-chip" href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/" target="_blank" rel="noopener"><span class="kb-label">知识专库</span><span class="kb-count">2条来源</span><span class="kb-arrow">查看</span></a>
-        <p class="ai-note">AI综合所有相关权威材料后，参考性解读如下，建议点击角标查看所依据的材料原文。</p>
-        
-        <div class="answer-body"><h3 class="answer-heading">企业购置专用设备企业所得税抵免（示例回答）</h3>
-<h4 class="answer-heading">一、抵免政策要点</h4>
-<div class="answer-block"><p>企业购置并实际使用列入目录内的节能节水、环境保护、安全生产专用设备，其投资额的 <strong>10%</strong> 可从企业当年的应纳税额中抵免；当年不足抵免的，可在以后 5 个纳税年度结转抵免 <button class="cite" data-source="1" type="button">[1]</button>。</p><div class="evidence-row">
-            <details class="evidence-detail" data-source="1">
-              <summary><b>[1]</b>财政部 税务总局关于节能节水、环境保护、安全生产专用设备投资抵免企业所得税有关问题的通知（示例标题）</summary>
-              <div class="evidence-panel">
-                <div class="evidence-title">财政部 税务总局关于节能节水、环境保护、安全生产专用设备投资抵免企业所得税有关问题的通知（示例标题）</div>
-                <div class="evidence-meta">财政部官网（规范性文件） | 2025-XX-XX | 材料</div>
-                <div class="evidence-section">抵免比例与结转</div>
-                <p>企业购置并实际使用列入《环境保护专用设备企业所得税优惠目录》等目录内的节能节水、环境保护、安全生产专用设备的，该专用设备投资额的 10% 可以从企业当年的应纳税额中抵免；当年不足抵免的，可以在以后 5 个纳税年度结转抵免。</p>
-                <div class="source-links"><span><a href="https://example.gov.cn/sample_notice.html" target="_blank" rel="noopener">查看原文</a></span><span><a href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/" target="_blank" rel="noopener">知识专库原文</a></span></div>
-              </div>
-            </details>
-            </div></div>
-<h4 class="answer-heading">二、申报注意事项</h4>
-<div class="answer-block"><p>申报时需填报专用设备投资额抵免明细，并留存购置发票、目录归属证明备查；跨年度结转抵免应在申报表中逐笔登记 <button class="cite" data-source="2" type="button">[2]</button>。</p><div class="evidence-row">
-            <details class="evidence-detail" data-source="2">
-              <summary><b>[2]</b>某省税务局节能节水专用设备抵免企业所得税操作指引（示例标题）</summary>
-              <div class="evidence-panel">
-                <div class="evidence-title">某省税务局节能节水专用设备抵免企业所得税操作指引（示例标题）</div>
-                <div class="evidence-meta">某省税务局官网（办事口径） | 2025-XX-XX | 材料</div>
-                <div class="evidence-section">申报要求</div>
-                <p>申报时需填报专用设备投资额抵免明细，留存专用设备购置发票、目录归属证明备查；跨年度结转抵免应在申报表中逐笔登记。</p>
-                <div class="source-links"><span><a href="https://example.gov.cn/sample_guide.html" target="_blank" rel="noopener">查看原文</a></span></div>
-              </div>
-            </details>
-            </div></div>
-<div class="answer-block"><p>&gt; 本页为效果展示样例：数据为示例格式，不是真实检索结果，仅供展示。</p></div></div>
-        <div class="tools"><a href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/" target="_blank" rel="noopener">知识专库</a></div>
-      </div>
-    </section>
-    <aside class="sources" aria-label="可信来源">
-      <h2>可信来源</h2>
-      <input class="searchbox" type="search" placeholder="搜索来源标题或摘录">
-      
-            <article class="source-card" id="source-1" data-source="1">
-              <div class="source-top">
-                <span class="source-index">[1]</span>
-                <h3>财政部 税务总局关于节能节水、环境保护、安全生产专用设备投资抵免企业所得税有关问题的通知（示例标题）</h3>
-              </div>
-              <p class="meta">财政部官网（规范性文件） | 2025-XX-XX | 材料</p>
-              <p class="section">抵免比例与结转</p>
-              <div class="source-excerpt plain">企业购置并实际使用列入《环境保护专用设备企业所得税优惠目录》等目录内的节能节水、环境保护、安全生产专用设备的，该专用设备投资额的 10% 可以从企业当年的应纳税额中抵免；当年不足抵免的，可以在以后 5 个纳税年度结转抵免。</div>
-              <div class="source-links"><span><a href="https://example.gov.cn/sample_notice.html" target="_blank" rel="noopener">查看原文</a></span><span><a href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/" target="_blank" rel="noopener">知识专库原文</a></span></div>
-            </article>
-            
 
-            <article class="source-card" id="source-2" data-source="2">
-              <div class="source-top">
-                <span class="source-index">[2]</span>
-                <h3>某省税务局节能节水专用设备抵免企业所得税操作指引（示例标题）</h3>
+<header class="topbar">
+  <div class="tb-title">可信溯源核验报告 · 可信溯源核验报告</div>
+  <div class="tags">
+    <span>生成于 2026-09-02 13:31</span>
+    <span>素材来源：深知可信搜索</span>
+  </div>
+</header>
+
+<div class="layout">
+  <main class="report" aria-label="核验报告正文">
+    <div class="r-head" id="doc-top">
+      <h1>可信溯源核验报告</h1>
+      <div class="sub">素材：政策依据 1 ｜ 共 2 条 ｜ 点击正文角标 [1] 定位材料原文</div>
+    </div>
+    
+    
+    <div class="verify ok">
+      <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据可交付<span class="v-stamp">已核验</span></div>
+      
+      <div class="v-grid">
+        <div class="vi"><span class="s ok">✓ 依据溯源 2/2</span><span class="d">每条引用素材可回看原文</span></div><div class="vi"><span class="s ok">✓ 引用绑定 2/2</span><span class="d">正文引用全部对应素材</span></div><div class="vi"><span class="s ok">✓ 时效检查 完成</span><span class="d">材料日期 2025-12～2026-03</span></div><div class="vi"><span class="s ok">✓ 类型覆盖</span><span class="d">政策依据 1</span></div><div class="vi"><span class="s ok">✓ 答案自检 5/5</span><span class="d">事实有据/角标绑定/答案一致/时效确认/无未核验断言</span></div><div class="vi"><span class="s man">◐ 效力复核</span><span class="d">1 条政策依据建议按官方发布复核现行效力</span></div>
+      </div>
+      <div class="v-note">核验方法：深知可信搜索召回权威来源 → 逐条溯源（摘录比对 + 原文链接 + 知识专库回看）→ 正文引用绑定 → 答案自检。政策现行效力以官方发布为准。</div>
+    </div>
+    <a class="mobile-nav" href="#sources-panel">查看核验材料（2 条引用 · 点击角标可定位原文）↓</a>
+    <section class="doc-sec"><div class="sec-head"><h3>抵免要点</h3><span class="sec-badge ">本章引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>投资额 10% 可抵免，可结转 5 年 <button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="1">
+              <summary><b>[1]</b>财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</summary>
+              <div class="ev-panel">
+                <div class="ev-title">财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</div>
+                <div class="ev-meta">财政部官网 | 2025年12月10日</div>
+                <p>投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转。</p>
+                <div class="sc-links"><span><a href="https://example.gov.cn/notice.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
               </div>
-              <p class="meta">某省税务局官网（办事口径） | 2025-XX-XX | 材料</p>
-              <p class="section">申报要求</p>
-              <div class="source-excerpt plain">申报时需填报专用设备投资额抵免明细，留存专用设备购置发票、目录归属证明备查；跨年度结转抵免应在申报表中逐笔登记。</div>
-              <div class="source-links"><span><a href="https://example.gov.cn/sample_guide.html" target="_blank" rel="noopener">查看原文</a></span></div>
-            </article>
-            
-    </aside>
+            </details>
+            </div></div></div></section>
+<section class="doc-sec"><div class="sec-head"><h3>申报</h3><span class="sec-badge ">本章引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>填报明细留存发票备查 <button class="cite" data-cite="2" type="button" title="核验依据 [2]">[2]</button>。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="2">
+              <summary><b>[2]</b>某省税务局抵免操作指引（示例）</summary>
+              <div class="ev-panel">
+                <div class="ev-title">某省税务局抵免操作指引（示例）</div>
+                <div class="ev-meta">某省税务局 | 2026年03月01日</div>
+                <p>申报填报抵免明细，留存购置发票备查。</p>
+                <div class="sc-links"><span><a href="https://example.gov.cn/guide.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div></section>
+    <div class="foot">深知可信搜索（法律、政策、标准）· 可信溯源核验报告 ｜ 核验方法：可信搜索召回 → 逐条溯源 → 正文绑定 → 答案自检 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
   </main>
-  <script>
-    const cards = Array.from(document.querySelectorAll(".source-card"));
-    function activate(id) {
-      cards.forEach(card => card.classList.toggle("active", card.dataset.source === id));
-      const target = document.querySelector(`#source-${CSS.escape(id)}`);
-      if (target) target.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }
-    document.querySelectorAll(".cite").forEach(button => {
-      if (button.classList.contains("disabled")) return;
-      button.addEventListener("click", () => activate(button.dataset.source));
+  <aside class="sources" id="sources-panel" aria-label="核验材料面板"><a class="back-doc" href="#doc-top">↑ 返回核验报告单</a><h3>核验材料（引用 2 条 · 全部已核验）</h3><div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div><div class="filters" role="group" aria-label="类型筛选"><button class="on" data-f="all" type="button">全部</button><button data-f="policy" type="button">政策依据</button></div><input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源"><div class="src-list"><article class="scard pol" id="src-1" data-type="policy" data-cite-id="1"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</h4><div class="sc-meta">财政部官网 | 2025年12月10日</div><div class="sc-excerpt plain">投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转。</div><div class="sc-links"><span><a href="https://example.gov.cn/notice.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard mat" id="src-2" data-type="material" data-cite-id="2"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>某省税务局抵免操作指引（示例）</h4><div class="sc-meta">某省税务局 | 2026年03月01日</div><div class="sc-excerpt plain">申报填报抵免明细，留存购置发票备查。</div><div class="sc-links"><span><a href="https://example.gov.cn/guide.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article></div><div class="kb-zone"><div class="kb-title">原始召回存档（深知知识专库）</div><div class="kb-desc">以下链接可回看每次搜索的完整召回结果（含未写入正文的材料）；原文页面改版或下线时可回看当时召回的快照。逐条材料的核验请点击来源卡上的"查看原文"直达官方页面。</div><div class="kb-list"><a class="kb-chip" href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/?id=demo" target="_blank" rel="noopener"><span class="kb-label">相关搜索来源</span><span class="kb-count">2 条来源 · 可回看</span><span class="kb-arrow">打开 ↗</span></a></div></div></aside>
+</div>
+
+<div class="sheet-mask" aria-hidden="true"></div>
+<div class="sheet" role="dialog" aria-label="核验材料">
+  <div class="sheet-grab"></div>
+  <div class="sheet-head"><b>核验材料</b><button class="sheet-close" type="button">收起</button></div>
+  <div class="sheet-body"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".scard"));
+  var byId = {};
+  cards.forEach(function (c) {
+    var id = c.getAttribute("data-cite-id");
+    if (id) byId[id] = c;
+  });
+
+  /* 移动端底部弹层：点角标就地展示材料卡，不打断正文阅读 */
+  var sheet = document.querySelector(".sheet");
+  var mask = document.querySelector(".sheet-mask");
+  function isMobile() {
+    return window.matchMedia("(max-width:680px)").matches;
+  }
+  function openSheet(card) {
+    if (!sheet) return;
+    var body = sheet.querySelector(".sheet-body");
+    var clone = card.cloneNode(true);
+    clone.removeAttribute("id");
+    clone.classList.remove("hide");
+    clone.classList.add("open");
+    body.innerHTML = "";
+    body.appendChild(clone);
+    sheet.classList.add("show");
+    mask.classList.add("show");
+    document.body.style.overflow = "hidden";
+    sheet.scrollTop = 0;
+  }
+  function closeSheet() {
+    if (!sheet) return;
+    sheet.classList.remove("show");
+    mask.classList.remove("show");
+    document.body.style.overflow = "";
+  }
+  if (sheet && mask) {
+    mask.addEventListener("click", closeSheet);
+    var closeBtn = sheet.querySelector(".sheet-close");
+    if (closeBtn) closeBtn.addEventListener("click", closeSheet);
+  }
+
+  /* 角标 → 来源卡：精确 ID 匹配，缺失即红色警示，绝不按位置猜测。
+     手机单栏下不滚动定位（会跳到页面底部打断阅读），改为底部弹层就地查看。 */
+  document.querySelectorAll(".data-cite,[data-cite]").forEach(function (btn) {
+    if (btn.classList.contains("sheet-close")) return;
+    btn.addEventListener("click", function () {
+      var card = byId[btn.getAttribute("data-cite")];
+      if (!card) {
+        btn.classList.add("unresolved");
+        if (console.error) console.error("[核验] 未绑定角标:", btn.getAttribute("data-cite"));
+        return;
+      }
+      if (isMobile()) {
+        openSheet(card);
+        return;
+      }
+      card.classList.remove("hide", "open");
+      card.classList.add("hl", "open");
+      card.scrollIntoView({ block: "center", behavior: "smooth" });
+      setTimeout(function () { card.classList.remove("hl"); }, 2200);
     });
-    document.querySelectorAll(".evidence-detail").forEach(detail => {
-      detail.addEventListener("toggle", () => {
-        if (!detail.open) return;
-        cards.forEach(card => card.classList.toggle("active", card.dataset.source === detail.dataset.source));
-      });
+  });
+
+  /* 摘录点击展开/收起 */
+  cards.forEach(function (c) {
+    var ex = c.querySelector(".sc-excerpt");
+    if (!ex) return;
+    ex.addEventListener("click", function (e) {
+      if (e.target.closest("a")) return;
+      c.classList.toggle("open");
     });
-    const searchbox = document.querySelector(".searchbox");
-    if (searchbox) {
-      searchbox.addEventListener("input", () => {
-        const value = searchbox.value.trim().toLowerCase();
-        cards.forEach(card => {
-          card.style.display = !value || card.innerText.toLowerCase().includes(value) ? "" : "none";
-        });
+  });
+
+  /* 证据 chips（灰框）：桌面端点击就地展开并高亮右栏来源卡；手机端不就地展开，点击直接弹出底部材料弹层 */
+  document.querySelectorAll(".ev-chip").forEach(function (chip) {
+    var summary = chip.querySelector("summary");
+    if (summary) {
+      summary.addEventListener("click", function (e) {
+        if (!isMobile()) return;
+        e.preventDefault();
+        var card = byId[chip.getAttribute("data-cite")];
+        if (card) openSheet(card);
       });
     }
-  </script>
+    chip.addEventListener("toggle", function () {
+      if (!chip.open || isMobile()) return;
+      var card = byId[chip.getAttribute("data-cite")];
+      if (!card) return;
+      cards.forEach(function (c) { c.classList.remove("hl"); });
+      card.classList.add("hl");
+      setTimeout(function () { card.classList.remove("hl"); }, 2200);
+    });
+  });
+
+  /* 类型筛选 + 搜索 */
+  var filter = "all";
+  var kw = "";
+  function apply() {
+    cards.forEach(function (c) {
+      var okType = filter === "all" || c.getAttribute("data-type") === filter;
+      var okKw = !kw || (c.textContent || "").toLowerCase().indexOf(kw) !== -1;
+      c.classList.toggle("hide", !(okType && okKw));
+    });
+  }
+  document.querySelectorAll(".filters button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".filters button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      filter = b.getAttribute("data-f");
+      apply();
+    });
+  });
+  var search = document.querySelector(".src-search");
+  if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); apply(); });
+})();
+</script>
 </body>
 </html>

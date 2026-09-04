@@ -12,7 +12,7 @@
 
 - `search_suggestions` 只是检索方向，不是已检索素材。
 - 搜索方案仍需按政策依据型、数据支撑型、参考案例型拆分。
-- 不得把大纲接口返回内容写入可信溯源报告，也不得生成知识专库链接。
+- 不得把大纲接口返回内容写入可信核验报告，也不得生成知识专库链接。
 - 不得在用户可见方案中展示大纲接口 JSON、保存路径或脚本参数。
 - 如用户修改大纲，应按修改后的结构重新设计搜索方案。
 - 调用大纲接口时必须传入用户原始写作需求的完整表述，不得只传压缩标题，否则容易返回“未检索到可用范文”。
@@ -228,24 +228,24 @@ for article in result['content']['data']['检索文章']:
 
 ---
 
-## 六、可信溯源报告 HTML
+## 六、可信溯源核验报告 HTML
 
-执行过搜索时，正式公文 Word 不在正文中添加来源角标、素材清单和知识专库链接。撰写完成后，单独生成 `标题_可信溯源报告.html`，将完整正文写入 HTML，并把正文中的 `[1]`/`【1】`角标变成可点击的来源跳转；报告底部展示知识专库链接。可信溯源报告固定为 HTML，不生成 Word 版。
+执行过搜索时，正式公文 Word 不在正文中添加来源角标、素材清单和知识专库链接。撰写完成后，单独生成 `标题_可信核验报告.html`：报告打开第一屏即展示核验报告单（依据溯源、引用绑定、时效检查、类型覆盖、成稿自检五项指标），正文按章节分卡片展示并把 `[1]`/`【1】`角标变成可点击的来源跳转，右栏为核验材料面板（按素材类型筛选、搜索、逐条核验标记），知识专库链接在右栏面板底部。报告固定为 HTML，不生成 Word 版。
 
 生成方式：
 
-1. 先将可信溯源报告整理为结构化 JSON，保存到 `official-docs/input/标题_可信溯源报告.json`，其中正文写入 `document_content`，正文引用使用 `[1]`、`[2]` 等角标。
+1. 先将核验报告整理为结构化 JSON，保存到 `official-docs/input/标题_可信核验报告.json`，其中正文写入 `document_content`，正文引用使用 `[1]`、`[2]` 等角标——这是硬性要求：materials 非空时正文必须带角标并一一对应，`source_note_html.py` 校验到正文无角标会拒绝生成并报错，须修正 JSON 后重跑。
 2. JSON 中的 `knowledge_bases` 必须逐条来自原始搜索结果 JSON；每次深知搜索对应一个知识专库链接。
 3. 再调用 `scripts/source_note_html.py` 生成 HTML：
 
 ```bash
-python3 scripts/source_note_html.py official-docs/input/标题_可信溯源报告.json --output 标题_可信溯源报告.html
+python3 scripts/source_note_html.py official-docs/input/标题_可信核验报告.json --output 标题_可信核验报告.html
 ```
 
 未指定目录的 `--output` 会保存到 `official-docs/output/`。也可以显式写为：
 
 ```bash
-python3 scripts/source_note_html.py official-docs/input/标题_可信溯源报告.json --output official-docs/output/标题_可信溯源报告.html
+python3 scripts/source_note_html.py official-docs/input/标题_可信核验报告.json --output official-docs/output/标题_可信核验报告.html
 ```
 
 生成边界：
@@ -261,8 +261,15 @@ JSON 示例：
 
 ```json
 {
-  "title": "深圳市人工智能赋能政务服务应用情况调研报告_可信溯源报告",
-  "summary": "本说明展示本次深知可信搜索已完成的材料召回、来源定位和溯源核验情况。正文使用的政策、数据和案例依据均可通过下方知识专库链接回看原始召回材料，实现可信溯源。",
+  "title": "深圳市人工智能赋能政务服务应用情况调研报告_可信核验报告",
+  "summary": "本说明展示本次深知可信搜索已完成的材料召回、来源定位和溯源核验情况。正文使用的政策、数据和案例依据均可通过知识专库链接回看原始召回材料，实现可信溯源。",
+  "self_check": {
+    "fact_basis": "pass",
+    "structure": "pass",
+    "placeholders": "pass",
+    "ai_flavor": "pass",
+    "format": "pass"
+  },
   "knowledge_bases": [
     {
       "label": "深圳AI与智慧城市政策依据",
@@ -281,6 +288,7 @@ JSON 示例：
       "date": "2024年",
       "section": "一（二）深圳地方政策体系",
       "support": "支撑深圳以地方立法推动人工智能产业和政务场景应用的制度基础。",
+      "source_url": "https://www.szrd.gov.cn/legislation/example.html",
       "verification": "已完成法规名称、发布主体、施行日期和正文引用位置的溯源核验。"
     },
     {
@@ -290,6 +298,7 @@ JSON 示例：
       "date": "2026年",
       "section": "三（一）“深小i”AI政务助手",
       "support": "支撑“深小i”服务量、应答率、一次解决率等成效描述。",
+      "source_url": "https://www.sz.gov.cn/cn/xxgk/zfxxgj/report.html",
       "verification": "已完成服务数据、发布主体、发布时间和正文使用口径的溯源核验。"
     }
   ],
@@ -302,10 +311,12 @@ JSON 示例：
 
 格式要求：
 - 正式公文正文中不得包含 `【素材使用情况】`、`【知识专库链接】`、知识专库 URL 或素材清单。
-- 可信溯源报告 HTML 是辅助核验文件，不是正式公文附件，不附在正式正文后；它包含完整正文和可点击溯源交互。
-- HTML 首页必须先展示知识专库链接，再展示素材使用卡片和“溯源核验完成情况”。
+- 可信核验报告 HTML 是辅助核验文件，不是正式公文附件，不附在正式正文后；它包含核验报告单、完整正文和可点击溯源交互。
+- `self_check` 为必填字段：把成稿快速自检的 5 项结果（`fact_basis` 事实有据 / `structure` 结构完整 / `placeholders` 无占位残留 / `ai_flavor` 无 AI 味 / `format` 格式合规）如实写入，通过写 `"pass"`，未通过写 `"fail"`；不得省略，也不得未检查就填 `pass`——核验单展示的就是这 5 项，如实填写是报告可信的前提。
+- `materials[].type` 使用四分类取值：`政策依据型` / `数据支撑型` / `参考案例型` / `表述参考型`，报告按类型分色展示并支持筛选；类型缺失时材料卡降级为灰色"材料"。
 - 每条知识专库链接必须使用对应搜索项的“搜索目的”作为 `label`，优先读取搜索结果 JSON 的 `search_meta.purpose`；如缺失，再使用该次搜索的 query 概括。
 - `materials` 中每条素材至少包含 `material_name`、`source`、`section`、`support`；来自深知可信搜索的材料还必须把原始结果的 `源网址` 原样写入 `source_url`，不得依赖规范化标题反查。接口未返回原网址时不填、不猜测。存在数据口径、发布日期、文号或强判断时，应补充 `verification`，并使用“已完成……核验”口径，不得写“建议核对”“需人工核验”“以官方最新口径为准”等削弱可信度的措辞。
+- 核验单中的"依据溯源""引用绑定"由脚本按 JSON 与正文自动计算：素材缺 `source_url` 或摘录、正文角标无对应素材时，核验单会如实显示待补与未绑定，因此整理 JSON 时必须保证素材与角标一一对应。
 - 每条素材只写实际用于正文的核心依据，不机械罗列所有搜索结果；同类材料可合并说明，避免来源说明变成流水账。
 - 不得使用表格承载素材使用情况；HTML 由脚本生成卡片式布局。
 - 不得使用 `→ 用于：`、箭头符号或其他内部工作流标记。
@@ -313,5 +324,5 @@ JSON 示例：
 - 参考范文只写 `参考用途：` 和 `使用边界：`，不得把表述参考混入写作依据。
 - 知识专库链接按地域或素材类型分类列出
 - 知识专库链接必须逐条复制自搜索结果 JSON 顶层 `knowledgeBase` 字段；如顶层缺失，再读取原始返回位置 `content.knowledgeBase`。该链接不在 `content.data` 的文章材料字段内，不得因为 `data` 中找不到就认定缺失。
-- HTML 由 `scripts/source_note_html.py` 生成；不要手写完整 HTML 页面，也不要用 Word 排版脚本生成可信溯源报告。
+- HTML 由 `scripts/source_note_html.py` 生成；不要手写完整 HTML 页面，也不要用 Word 排版脚本生成可信核验报告。
 - 最终 HTML 必须包含真实 `<a href="知识专库URL">搜索目的</a>` 链接。若检查发现 `href` 缺失、`onclick`/`alert()` 伪链接、占位 URL 或链接文字与搜索目的不一致，视为生成失败，必须回到 JSON 和原始搜索结果修正后重新运行脚本。

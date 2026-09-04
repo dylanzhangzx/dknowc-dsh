@@ -3,74 +3,455 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>可信溯源报告 · 效果示例（非真实结果）</title>
+<title>效果示例 · 深知可信咨询核验报告 · 可信核验报告</title>
 <style>
-  body{margin:0;padding:28px 20px;color:#1f2430;background:#f6f7f9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.9}
-  .wrap{max-width:860px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:30px 36px}
-  .banner{background:#fff7e6;border:1px solid #f0d48a;color:#8a6116;border-radius:8px;padding:8px 14px;font-size:13px;margin-bottom:22px}
-  .q{max-width:78%;margin:0 0 18px auto;padding:10px 14px;border-radius:9px;background:#6b18c9;color:#fff;font-weight:700;font-size:14px}
-  .note{color:#52525b;font-size:13.5px;margin:0 0 14px}
-  h2{font-size:16px;margin:26px 0 10px}
-  p{margin:10px 0}
-  sup a{color:#6b18c9;text-decoration:none;font-weight:700}
-  .evidence{border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin:8px 0;background:#fcfcfd;font-size:13.5px;color:#4b5563}
-  .evidence b{color:#6b18c9}
-  .card{border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin:12px 0;background:#fcfcfd}
-  .card .t{font-weight:700;margin-bottom:4px}
-  .card .m{font-size:13.5px;color:#4b5563}
-  .card .excerpt{font-size:13.5px;color:#374151;background:#f8fafc;border-radius:7px;padding:9px 10px;margin-top:8px;line-height:1.75}
-  .card .link{display:inline-block;margin-top:8px;font-size:13.5px;color:#6b18c9;font-weight:700}
-  .kb{margin-top:28px;padding-top:16px;border-top:1px dashed #d1d5db}
-  .kb .t{font-weight:700;margin-bottom:8px}
-  .kb a{display:block;color:#6b18c9;font-size:14px;margin:4px 0}
-  .foot{margin-top:24px;font-size:12.5px;color:#6b7280}
+:root{
+  --navy:#0b1f3a; --ink:#172236; --muted:#667085; --line:#dce4ef; --line-strong:#b9c6d9;
+  --brand:#1559c7; --brand-soft:#e8f0ff;
+  --policy:#0c9b78; --policy-soft:#e2f6ef;
+  --case:#b26a00; --case-soft:#fff4e0;
+  --ref:#4b5563; --ref-soft:#eef1f6;
+  --warn:#b26a00; --danger:#b93939; --ok:#0c9b78;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink);background:#f4f7fb;line-height:1.75;font-size:14.5px}
+a{color:var(--brand)}
+.topbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:10px 22px;background:var(--navy);color:#fff;font-size:13px}
+.topbar .tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .tags{display:flex;align-items:center;gap:6px;flex:none}
+.topbar .tags span{padding:2px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;font-size:11.5px}
+.layout{display:grid;grid-template-columns:minmax(0,760px) minmax(340px,420px);gap:26px;
+  max-width:1240px;margin:0 auto;padding:26px 18px 60px}
+/* 左栏 */
+.report{min-width:0}
+.r-head{padding:22px 26px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;text-align:center}
+.r-head h1{margin:0 0 8px;font-size:22px;color:var(--navy);line-height:1.5}
+.q-line{margin:0 auto 10px;max-width:92%;font-size:13.5px;color:#3b4a61;background:#f5f8fc;
+  border:1px solid var(--line);border-radius:8px;padding:8px 12px;text-align:left;line-height:1.7}
+.r-head .sub{color:var(--muted);font-size:12.5px}
+.warn-box{margin:0 0 16px;padding:13px 16px;border:1.5px solid var(--danger);border-radius:10px;
+  background:#fdf3f3;color:#8f2626;font-size:13.5px;line-height:1.7}
+.verify{margin:0 0 16px;background:#fff;border:1px solid #bfe5d6;border-radius:12px;padding:16px 20px}
+.verify.fail{border-color:#f2c4c4;background:#fffafa}
+.v-head{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;color:var(--ok)}
+.verify.fail .v-head{color:var(--danger)}
+.v-shield{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;
+  align-items:center;justify-content:center;font-size:12px;flex:none}
+.verify.fail .v-shield{background:var(--danger)}
+.v-stamp{margin-left:auto;font-size:11px;border:1.5px solid var(--ok);color:var(--ok);border-radius:5px;
+  padding:1px 8px;letter-spacing:2px;flex:none}
+.v-stamp.bad{border-color:var(--danger);color:var(--danger)}
+.v-reasons{margin-top:6px;font-size:12.5px;color:var(--danger)}
+.v-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-top:10px}
+.vi{display:flex;gap:7px;align-items:baseline;font-size:12.5px;color:#35445c;line-height:1.7;min-width:0}
+.vi .s{font-weight:800;flex:none}
+.vi .s.ok{color:var(--ok)}
+.vi .s.warn{color:var(--warn)}
+.vi .s.fail{color:var(--danger)}
+.vi .s.man{color:var(--case)}
+.vi .s.none{color:var(--muted)}
+.vi .d{color:var(--muted);min-width:0}
+.v-note{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--muted);line-height:1.7}
+/* 正文章节卡 */
+.doc-sec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:16px}
+.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px;
+  padding-bottom:10px;border-bottom:1px solid var(--line)}
+.sec-no{display:inline-flex;width:26px;height:26px;border-radius:7px;background:var(--brand);color:#fff;
+  align-items:center;justify-content:center;font-size:13.5px;font-weight:700;flex:none}
+.sec-head h3{margin:0;font-size:16.5px;color:var(--navy);line-height:1.5}
+.sec-badge{margin-left:auto;font-size:11.5px;color:var(--ok);background:var(--policy-soft);
+  border-radius:6px;padding:2px 9px;font-weight:700;flex:none}
+.sec-badge.bad{color:var(--danger);background:#fdecea}
+.doc-sub{margin:16px 0 8px;color:var(--navy);font-size:14.5px;font-weight:700}
+h5.doc-sub{font-size:13.5px}
+.doc-block,.doc-item{margin:0 0 12px}
+.doc-block p,.doc-item p{margin:0;font-size:14px;line-height:1.9}
+.doc-item{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px}
+.doc-item.numbered{grid-template-columns:28px minmax(0,1fr)}
+.doc-bullet{padding-top:1px;color:#111827;font-size:15px;line-height:1.85}
+.doc-divider{border:0;border-top:1px solid var(--line);margin:18px 0}
+code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.tbl-wrap{max-width:100%;overflow-x:auto;margin:8px 0}
+.data-tbl{width:100%;border-collapse:collapse;border:1px solid var(--line);font-size:13px}
+.data-tbl th,.data-tbl td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.65}
+.data-tbl th{background:#f2f5fb;font-weight:700;color:#374151}
+/* 角标 */
+.cite{margin:0 1px;padding:0 5px;border:0;border-radius:4px;background:var(--brand-soft);color:var(--brand);
+  font-weight:800;font-size:10.5px;cursor:pointer;vertical-align:super;font-family:monospace}
+.cite:hover,.cite:focus-visible{background:var(--brand);color:#fff;outline:none}
+.cite.unresolved{background:#fdecea;color:var(--danger)}
+/* 段落级证据 chips */
+.ev-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.ev-chip{max-width:100%}
+.ev-chip summary{display:inline-flex;align-items:center;max-width:100%;border-radius:999px;padding:3px 10px;
+  color:#4b5563;background:#f3f4f6;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  list-style:none;font-size:11.5px}
+.ev-chip summary::-webkit-details-marker{display:none}
+.ev-chip summary::after{content:"核验";margin-left:7px;color:#9ca3af;font-size:10.5px}
+.ev-chip[open] summary::after{content:"收起"}
+.ev-chip summary b{color:var(--brand);margin-right:5px}
+.ev-panel{margin:7px 0 6px;padding:12px 14px;border:1px solid var(--line);border-radius:9px;background:#fbfcfe;
+  box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.ev-title{font-weight:700;font-size:13.5px;margin-bottom:4px;color:var(--navy)}
+.ev-meta{color:var(--muted);font-size:12px;margin-bottom:6px}
+.ev-panel p{margin:0 0 8px;color:#374151;font-size:12.8px;line-height:1.7}
+.sc-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.sc-links span{display:inline-flex}
+.sc-links a{display:inline-flex;align-items:center;min-height:24px;padding:3px 9px;border-radius:6px;
+  background:var(--brand-soft);color:var(--brand);font-weight:700;text-decoration:none;font-size:12px}
+/* 右栏 核验材料 */
+.sources{position:sticky;top:56px;align-self:start;max-height:calc(100vh - 76px);overflow:auto;
+  background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.sources h3{margin:0 0 3px;font-size:15px;color:var(--navy)}
+.src-tip{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.filters button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
+  padding:3px 11px;font-size:12px;cursor:pointer}
+.filters button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
+.src-search{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;margin-bottom:12px}
+.scard{border:1px solid var(--line);border-left-width:3px;border-radius:10px;padding:11px 13px;margin-bottom:10px;
+  background:#fff;transition:box-shadow .25s}
+.scard.pol{border-left-color:var(--policy)}
+.scard.dat{border-left-color:var(--brand)}
+.scard.cas{border-left-color:var(--case)}
+.scard.ref,.scard.mat{border-left-color:var(--ref)}
+.scard.hl{box-shadow:0 0 0 3px var(--brand)}
+.scard.hide{display:none}
+.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.sc-id{font-family:monospace;font-weight:800;font-size:11px;color:var(--brand);background:var(--brand-soft);
+  border-radius:4px;padding:1px 7px}
+.sc-type{font-size:11px;font-weight:700;border-radius:4px;padding:1px 8px;background:var(--ref-soft);color:var(--ref)}
+.scard.pol .sc-type{background:var(--policy-soft);color:var(--policy)}
+.scard.dat .sc-type{background:var(--brand-soft);color:var(--brand)}
+.scard.cas .sc-type{background:var(--case-soft);color:var(--case)}
+.sc-vk{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}
+.sc-vk.warn{color:var(--warn)}
+.scard h4{margin:0 0 4px;font-size:13px;color:var(--navy);line-height:1.55}
+.sc-meta{font-size:11.5px;color:var(--muted)}
+.sc-section{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600}
+.sc-vnote{margin-top:5px;font-size:11.3px;color:var(--ok);line-height:1.6}
+.sc-excerpt{margin:7px 0;padding:9px 10px;border-radius:7px;background:#f8fafc;color:#42566f;font-size:12px;line-height:1.7;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.scard.open .sc-excerpt{display:block;-webkit-line-clamp:unset}
+.sc-excerpt.rich{overflow-x:auto}
+.sc-excerpt.rich table{width:max-content;min-width:100%;border-collapse:collapse;background:#fff;font-size:12px}
+.sc-excerpt.rich td,.sc-excerpt.rich th{min-width:92px;max-width:220px;padding:7px 8px;border:1px solid var(--line);
+  vertical-align:top;word-break:break-word}
+.sc-excerpt.rich thead td,.sc-excerpt.rich th{background:#f3f4f6;color:#374151;font-weight:700}
+.scard .sc-links a{font-size:12px}
+.scard .sc-links{margin-top:4px}
+.no-link{font-size:11.5px;color:var(--muted)}
+.uncited-group{margin-top:12px;border-top:1px dashed var(--line-strong);padding-top:10px}
+.ug-title{font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.6}
+.uncited-group .uncited-list{margin-top:10px}
+/* 知识专库 */
+.kb-zone{margin-top:14px;border-top:1px dashed var(--line-strong);padding-top:12px}
+.kb-title{font-size:12.5px;font-weight:800;color:var(--navy)}
+.kb-desc{font-size:11.3px;color:var(--muted);line-height:1.65;margin:3px 0 8px}
+.kb-list{display:flex;flex-direction:column;gap:7px}
+.kb-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+  background:#fbfcfe;text-decoration:none;font-size:11.5px}
+.kb-chip:hover{border-color:var(--brand);background:var(--brand-soft)}
+.kb-label{font-weight:700;color:#374151;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kb-count{padding-left:8px;border-left:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.kb-arrow{margin-left:auto;color:var(--brand);font-weight:700;white-space:nowrap}
+.empty{color:var(--muted)}
+.foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
+@media (max-width:1020px){
+  .layout{grid-template-columns:1fr}
+  .sources{position:static;max-height:none}
+}
+/* —— 移动端专项适配（手机阅读核验报告） —— */
+.mobile-nav{display:none}
+.back-doc{display:none}
+/* 移动端材料底部弹层：点角标就地弹出材料卡，不跳转打断阅读 */
+.sheet-mask{display:none}
+.sheet{display:none}
+@media (max-width:680px){
+  body{font-size:14px;line-height:1.8}
+  .layout{grid-template-columns:1fr;padding:12px 10px 40px;gap:14px}
+  .topbar{padding:8px 12px;font-size:12px;gap:4px;flex-wrap:wrap}
+  .topbar .tags span{font-size:10.5px;padding:1px 8px;margin-left:4px}
+  .r-head{padding:16px 14px;border-radius:10px}
+  .r-head h1{font-size:18px}
+  .r-head .sub{font-size:11.5px;line-height:1.6}
+  .verify{padding:13px 14px;border-radius:10px}
+  .v-head{font-size:14px}
+  .v-grid{grid-template-columns:1fr;gap:2px 0}
+  .vi{flex-wrap:wrap;gap:4px 8px}
+  .vi .d{min-width:0}
+  .warn-box{font-size:12.5px;padding:11px 12px}
+  .doc-sec{padding:14px;border-radius:10px}
+  .sec-no{width:22px;height:22px;font-size:12px;border-radius:6px}
+  .sec-head{gap:7px;padding-bottom:8px;margin-bottom:8px}
+  .sec-head h3{font-size:15px}
+  .sec-badge{margin-left:0;font-size:11px}
+  .doc-block p,.doc-item p{font-size:13.5px;line-height:1.95}
+  .doc-sub{font-size:14px;margin:12px 0 6px}
+  .data-tbl{font-size:12px}
+  .data-tbl th,.data-tbl td{padding:6px 7px;line-height:1.55}
+  .cite{font-size:11px;padding:0 4px}
+  .ev-chip summary{font-size:11px}
+  .sources{padding:12px;border-radius:10px}
+  .scard{padding:10px 11px}
+  .sc-excerpt{font-size:11.5px}
+  .kb-chip{flex-wrap:wrap}
+  .kb-label{white-space:normal}
+  .mobile-nav{display:block;margin:0 0 14px;padding:11px 14px;border:1.5px solid var(--brand);
+    border-radius:10px;background:var(--brand-soft);color:var(--brand);font-weight:800;
+    font-size:13.5px;text-decoration:none;text-align:center}
+  .back-doc{display:inline-block;margin:0 0 8px;font-size:12px;color:var(--brand);
+    font-weight:700;text-decoration:none}
+  .sheet-mask{display:block;position:fixed;inset:0;background:rgba(11,31,58,.45);z-index:99;opacity:0;
+    pointer-events:none;transition:opacity .2s}
+  .sheet-mask.show{opacity:1;pointer-events:auto}
+  .sheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:100;background:#fff;
+    border-radius:14px 14px 0 0;box-shadow:0 -8px 30px rgba(11,31,58,.25);
+    max-height:68vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:10px 16px 22px;transform:translateY(105%);transition:transform .25s ease}
+  .sheet.show{transform:translateY(0)}
+  .sheet-grab{width:38px;height:4px;border-radius:2px;background:#c9d4e2;margin:2px auto 8px}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .sheet-head b{font-size:13.5px;color:var(--navy)}
+  .sheet-close{border:1px solid var(--line);background:#f5f8fc;border-radius:8px;color:#3b4a61;
+    font-size:12.5px;font-weight:700;padding:5px 14px;cursor:pointer}
+  .sheet .scard{box-shadow:none;margin-bottom:0}
+  .sheet .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
+}
+@media print{
+  .topbar,.filters,.src-search{display:none!important}
+  .layout{grid-template-columns:1fr;max-width:none;padding:0;gap:14px}
+  body{background:#fff;font-size:12.5px}
+  .sources{position:static;max-height:none;border:0;padding:0;overflow:visible}
+  .r-head,.verify,.doc-sec{border-color:#bbb;box-shadow:none;break-inside:avoid}
+  .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
+  .uncited-group[open] .uncited-list,.uncited-group{break-inside:avoid}
+  .scard{break-inside:avoid}
+  .cite{background:#eee;color:#333}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-<div class="banner">本页面为可信溯源报告的效果示例，内容为示例数据，非真实咨询结果，仅供展示，不作为交付物。</div>
+<header class="topbar">
+  <div class="tb-title">深知可信咨询核验报告 · 可信核验报告</div>
+  <div class="tags">
+    <span>生成于 2026-09-02 13:57</span>
+    <span>材料来源：深知可信统一问答</span>
+  </div>
+</header>
 
-<div class="q">北京市小微企业申请创业担保贷款需要满足什么条件？（示例问题）</div>
-<p class="note">AI 综合所有相关权威材料后，参考性解读如下，建议点击角标查看所依据的材料原文。</p>
-
-<h2>回答正文（示例）</h2>
-<p>根据相关政策，北京市小微企业申请创业担保贷款需同时满足以下条件<sup><a href="#src-1">[1]</a></sup>：</p>
-<p>1. 企业注册地在北京，且符合小型微型企业划型标准<sup><a href="#src-1">[1]</a></sup>；<br>
-2. 无不良信用记录，近两年未因违法经营受到行政处罚<sup><a href="#src-1">[1]</a></sup>；<br>
-3. 有实际经营场所和稳定经营业务<sup><a href="#src-3">[3]</a></sup>；<br>
-4. 招用符合条件人员（含应届高校毕业生、登记失业人员等）达到规定比例<sup><a href="#src-1">[1]</a></sup>。</p>
-<p>符合条件的可通过经办银行或区级人力资源社会保障部门提交申请<sup><a href="#src-2">[2]</a></sup>。</p>
-
-<div class="evidence"><b>[1]</b> 北京市创业担保贷款管理办法（示例标题）——点击角标后展开的证据摘录形态（示例）</div>
-
-<h2>可信来源（示例）</h2>
-<div class="card" id="src-1">
-  <div class="t">[1] 北京市创业担保贷款管理办法（示例标题）</div>
-  <div class="m">北京市人力资源和社会保障局、北京市财政局 · 2024-03-15（示例）· 北京</div>
-  <div class="excerpt">本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人……小微企业申请贷款须符合小型微型企业划型标准。（示例摘录）</div>
-  <span class="link">查看原文 / 知识专库原文（示例链接）</span>
+<div style="background:#fff7e6;border:1px solid #f0d48a;color:#8a6116;border-radius:8px;padding:8px 14px;font-size:13px;margin:10px 18px 0">本页面为可信核验报告的效果示例，内容为示例数据，非真实咨询结果，仅供展示，不作为交付物。</div>
+<div class="layout">
+  <main class="report" aria-label="核验报告正文">
+    <div class="r-head" id="doc-top">
+      <h1>深知可信咨询核验报告</h1>
+      <div class="q-line"><b>咨询问题：</b>北京市小微企业申请创业担保贷款需要满足什么条件？（示例）</div>
+      <div class="sub">共 7 条 ｜ 点击答案角标 [1] 定位材料原文</div>
+    </div>
+    
+    
+    <div class="verify ok">
+      <div class="v-head"><span class="v-shield">✓</span>核验完成，答案依据可交付<span class="v-stamp">已核验</span></div>
+      
+      <div class="v-grid">
+        <div class="vi"><span class="s warn">◐ 依据溯源 6/7</span><span class="d">1 条材料接口未返回原文链接，可经摘录与知识专库回看</span></div><div class="vi"><span class="s ok">✓ 引用绑定 6/6</span><span class="d">正文引用全部对应素材</span></div><div class="vi"><span class="s ok">✓ 时效检查 完成</span><span class="d">材料日期 2023-12～2024-06（1 条历史材料，已按参考口径处理）</span></div><div class="vi"><span class="s none">— 类型覆盖</span><span class="d">未标注素材类型</span></div><div class="vi"><span class="s ok" title="4 个角标全部命中来源材料；与对话输出一致">✓ 答案自检 5/5</span><span class="d">角标/绑定/核验/一致/清单 · 悬停查看核验说明</span></div>
+      </div>
+      <div class="v-note">核验方法：深知可信统一问答召回权威来源 → 逐条溯源（摘录比对 + 原文链接 + 知识专库回看）→ 答案引用绑定 → 答案自检。政策现行效力以官方发布为准。</div>
+    </div>
+    <a class="mobile-nav" href="#sources-panel">查看核验材料（7 条 · 点击角标可定位原文）↓</a>
+    <section class="doc-sec"><div class="sec-head"><span class="sec-badge ">本章引用 3 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>根据相关政策，北京市小微企业申请创业担保贷款需同时满足以下条件<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>：</p><div class="ev-row">
+            <details class="ev-chip" data-cite="1">
+              <summary><b>[1]</b>北京市创业担保贷款管理办法</summary>
+              <div class="ev-panel">
+                <div class="ev-title">北京市创业担保贷款管理办法</div>
+                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
+                <p>本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。</p>
+                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div><div class="doc-item"><span class="doc-bullet">1.</span><div><p>企业注册地在北京，且符合小型微型企业划型标准<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>；</p><div class="ev-row">
+            <details class="ev-chip" data-cite="1">
+              <summary><b>[1]</b>北京市创业担保贷款管理办法</summary>
+              <div class="ev-panel">
+                <div class="ev-title">北京市创业担保贷款管理办法</div>
+                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
+                <p>本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。</p>
+                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div><div class="doc-item"><span class="doc-bullet">2.</span><div><p>无不良信用记录，近两年未因违法经营受到行政处罚<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>；</p><div class="ev-row">
+            <details class="ev-chip" data-cite="1">
+              <summary><b>[1]</b>北京市创业担保贷款管理办法</summary>
+              <div class="ev-panel">
+                <div class="ev-title">北京市创业担保贷款管理办法</div>
+                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
+                <p>本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。</p>
+                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div><div class="doc-item"><span class="doc-bullet">3.</span><div><p>有实际经营场所和稳定经营业务<button class="cite" data-cite="2" type="button" title="核验依据 [2]">[2]</button>；</p><div class="ev-row">
+            <details class="ev-chip" data-cite="2">
+              <summary><b>[2]</b>北京市创业担保贷款管理办法</summary>
+              <div class="ev-panel">
+                <div class="ev-title">北京市创业担保贷款管理办法</div>
+                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
+                <p>招用符合条件人员（含应届高校毕业生、登记失业人员、返乡创业农民工等）达到规定比例的，可提高贷款额度。</p>
+                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div><div class="doc-item"><span class="doc-bullet">4.</span><div><p>招用符合条件人员（含应届高校毕业生、登记失业人员等）达到规定比例<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="1">
+              <summary><b>[1]</b>北京市创业担保贷款管理办法</summary>
+              <div class="ev-panel">
+                <div class="ev-title">北京市创业担保贷款管理办法</div>
+                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
+                <p>本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。</p>
+                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div><div class="doc-block"><p>符合条件的可通过经办银行或区级人力资源社会保障部门提交申请，具体材料清单见核验报告中的表格<button class="cite" data-cite="3" type="button" title="核验依据 [3]">[3]</button>。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="3">
+              <summary><b>[3]</b>北京市创业担保贷款管理办法</summary>
+              <div class="ev-panel">
+                <div class="ev-title">北京市创业担保贷款管理办法</div>
+                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
+                <p>申请创业担保贷款的企业应无不良信用记录，且近两年未因违法经营受到行政处罚。</p>
+                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div><div class="doc-block"><p><strong>温馨提示</strong>：以上信息依据截至示例时间的政策文件整理，后续如有调整以官方最新发布为准。</p></div></div></section>
+    <div class="foot">深知可信咨询 · 可信核验报告 ｜ 核验方法：统一问答召回 → 逐条溯源 → 引用绑定 → 答案自检 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
+  </main>
+  <aside class="sources" id="sources-panel" aria-label="核验材料面板"><a class="back-doc" href="#doc-top">↑ 返回核验报告单</a><h3>核验材料（7 条 · 6/7 已核验）</h3><div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div><input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源"><div class="src-list"><article class="scard mat" id="src-1" data-type="material" data-cite-id="1"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>北京市创业担保贷款管理办法</h4><div class="sc-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15 | 北京</div><div class="sc-section">支撑：适用范围</div><div class="sc-excerpt plain">本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。</div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div></article><article class="scard mat" id="src-2" data-type="material" data-cite-id="2"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>北京市创业担保贷款管理办法</h4><div class="sc-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15 | 北京</div><div class="sc-section">支撑：人员比例</div><div class="sc-excerpt plain">招用符合条件人员（含应届高校毕业生、登记失业人员、返乡创业农民工等）达到规定比例的，可提高贷款额度。</div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div></article><article class="scard mat" id="src-3" data-type="material" data-cite-id="3"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>北京市创业担保贷款管理办法</h4><div class="sc-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15 | 北京</div><div class="sc-section">支撑：信用条件</div><div class="sc-excerpt plain">申请创业担保贷款的企业应无不良信用记录，且近两年未因违法经营受到行政处罚。</div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div></article><div class="uncited-group"><div class="ug-title">未引用素材（4 条核心依据未在正文角标引用；完整召回可通过下方知识专库链接回看）</div><div class="uncited-list"><article class="scard mat" id="src-4" data-type="material" data-cite-id="4"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>关于进一步做好创业担保贷款工作的通知</h4><div class="sc-meta">人力资源和社会保障部 | 2024-06-20 | 全国</div><div class="sc-section">支撑：流程优化</div><div class="sc-excerpt plain">各地应简化创业担保贷款申请流程，推广线上申请，优化经办银行服务网点布局。</div><div class="sc-links"><span><a href="https://www.mohrss.gov.cn/cydk/tz2024.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard mat" id="src-5" data-type="material" data-cite-id="5"><div class="sc-head"><span class="sc-id">[5]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>关于进一步做好创业担保贷款工作的通知</h4><div class="sc-meta">人力资源和社会保障部 | 2024-06-20 | 全国</div><div class="sc-section">支撑：监督管理</div><div class="sc-excerpt plain">借款人应当如实提供申请材料，对提供虚假材料骗取贷款的，依法依规处理。</div><div class="sc-links"><span><a href="https://www.mohrss.gov.cn/cydk/tz2024.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard mat" id="src-6" data-type="material" data-cite-id="6"><div class="sc-head"><span class="sc-id">[6]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>小微企业划型标准规定</h4><div class="sc-meta">国家统计局 | 2023-12-01 | 全国</div><div class="sc-section">支撑：划型依据</div><div class="sc-excerpt plain">小型微型企业划分依据从业人数、营业收入、资产总额等指标，结合行业特点制定。</div><div class="sc-links"><span><a href="https://www.stats.gov.cn/sj/2024/xhqx.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard mat" id="src-7" data-type="material" data-cite-id="7"><div class="sc-head"><span class="sc-id">[7]</span><span class="sc-type">材料</span><span class="sc-vk warn" title="接口未提供，非核验失败">◐ 接口未返回原文链接</span></div><h4>北京市创业担保贷款经办指南</h4><div class="sc-meta">2024-05-01 | 北京</div><div class="sc-excerpt plain">本篇材料未提供原文链接，仅给出申请流程和材料准备说明。</div></article></div></div></div><div class="kb-zone"><div class="kb-title">云端溯源存档（接口可信溯源报告）</div><div class="kb-desc">以下链接为深知云平台对本次问答留存的接口侧可信溯源报告，与本核验报告内容对应：本地报告便于离线查阅与打印归档；云端存档适合向他人出示查验，也可在本地文件遗失时兜底。逐条材料的核验仍以来源卡上的"查看原文"直达官方页面为准。</div><div class="kb-list"><a class="kb-chip" href="https://yun.dknowc.cn/wlcb/trace-report/?id=2026090200000000000000sample0" target="_blank" rel="noopener"><span class="kb-label">本次问答 · 接口侧可信溯源报告</span><span class="kb-count">对应 7 条来源 · 云端存档</span><span class="kb-arrow">打开 ↗</span></a></div></div></aside>
 </div>
-<div class="card" id="src-2">
-  <div class="t">[2] 关于进一步做好创业担保贷款工作的通知（示例标题）</div>
-  <div class="m">人力资源和社会保障部 · 2024-06-20（示例）· 全国</div>
-  <div class="excerpt">各地应简化创业担保贷款申请流程，推广线上申请，优化经办银行服务网点布局。（示例摘录）</div>
-  <span class="link">查看原文（示例链接）</span>
-</div>
-<div class="card" id="src-3">
-  <div class="t">[3] 小微企业划型标准规定（示例标题）</div>
-  <div class="m">国家统计局 · 2023-12-01（示例）· 全国</div>
-  <div class="excerpt">小型微型企业划分依据从业人数、营业收入、资产总额等指标，结合行业特点制定。（示例摘录）</div>
-  <span class="link">查看原文（示例链接）</span>
+
+<div class="sheet-mask" aria-hidden="true"></div>
+<div class="sheet" role="dialog" aria-label="核验材料">
+  <div class="sheet-grab"></div>
+  <div class="sheet-head"><b>核验材料</b><button class="sheet-close" type="button">收起</button></div>
+  <div class="sheet-body"></div>
 </div>
 
-<div class="kb">
-  <div class="t">本问题知识专库（示例入口）</div>
-  <a>知识专库 · 3 篇文章 · 3 条来源（示例）</a>
-</div>
+<script>
+(function () {
+  "use strict";
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".scard"));
+  var byId = {};
+  cards.forEach(function (c) {
+    var id = c.getAttribute("data-cite-id");
+    if (id) byId[id] = c;
+  });
 
-<div class="foot">实际报告中：角标可点击联动右侧来源卡片、证据摘录可展开收起、来源面板支持搜索；本页为静态简化示例。内容为 AI 生成，仅供参考。</div>
+  /* 移动端底部弹层：点角标就地展示材料卡，不打断正文阅读 */
+  var sheet = document.querySelector(".sheet");
+  var mask = document.querySelector(".sheet-mask");
+  function isMobile() {
+    return window.matchMedia("(max-width:680px)").matches;
+  }
+  function openSheet(card) {
+    if (!sheet) return;
+    var body = sheet.querySelector(".sheet-body");
+    var clone = card.cloneNode(true);
+    clone.removeAttribute("id");
+    clone.classList.remove("hide");
+    clone.classList.add("open");
+    body.innerHTML = "";
+    body.appendChild(clone);
+    sheet.classList.add("show");
+    mask.classList.add("show");
+    document.body.style.overflow = "hidden";
+    sheet.scrollTop = 0;
+  }
+  function closeSheet() {
+    if (!sheet) return;
+    sheet.classList.remove("show");
+    mask.classList.remove("show");
+    document.body.style.overflow = "";
+  }
+  if (sheet && mask) {
+    mask.addEventListener("click", closeSheet);
+    var closeBtn = sheet.querySelector(".sheet-close");
+    if (closeBtn) closeBtn.addEventListener("click", closeSheet);
+  }
 
-</div>
+  /* 角标 → 来源卡：精确 ID 匹配，缺失即红色警示，绝不按位置猜测。
+     手机单栏下不滚动定位（会跳到页面底部打断阅读），改为底部弹层就地查看。 */
+  document.querySelectorAll(".data-cite,[data-cite]").forEach(function (btn) {
+    if (btn.classList.contains("sheet-close")) return;
+    btn.addEventListener("click", function () {
+      var card = byId[btn.getAttribute("data-cite")];
+      if (!card) {
+        btn.classList.add("unresolved");
+        if (console.error) console.error("[核验] 未绑定角标:", btn.getAttribute("data-cite"));
+        return;
+      }
+      if (isMobile()) {
+        openSheet(card);
+        return;
+      }
+      card.classList.remove("hide", "open");
+      card.classList.add("hl", "open");
+      card.scrollIntoView({ block: "center", behavior: "smooth" });
+      setTimeout(function () { card.classList.remove("hl"); }, 2200);
+    });
+  });
+
+  /* 摘录点击展开/收起 */
+  cards.forEach(function (c) {
+    var ex = c.querySelector(".sc-excerpt");
+    if (!ex) return;
+    ex.addEventListener("click", function (e) {
+      if (e.target.closest("a")) return;
+      c.classList.toggle("open");
+    });
+  });
+
+  /* 证据 chips（灰框）：桌面端点击就地展开并高亮右栏来源卡；手机端不就地展开，点击直接弹出底部材料弹层 */
+  document.querySelectorAll(".ev-chip").forEach(function (chip) {
+    var summary = chip.querySelector("summary");
+    if (summary) {
+      summary.addEventListener("click", function (e) {
+        if (!isMobile()) return;
+        e.preventDefault();
+        var card = byId[chip.getAttribute("data-cite")];
+        if (card) openSheet(card);
+      });
+    }
+    chip.addEventListener("toggle", function () {
+      if (!chip.open || isMobile()) return;
+      var card = byId[chip.getAttribute("data-cite")];
+      if (!card) return;
+      cards.forEach(function (c) { c.classList.remove("hl"); });
+      card.classList.add("hl");
+      setTimeout(function () { card.classList.remove("hl"); }, 2200);
+    });
+  });
+
+  /* 类型筛选 + 搜索 */
+  var filter = "all";
+  var kw = "";
+  function apply() {
+    cards.forEach(function (c) {
+      var okType = filter === "all" || c.getAttribute("data-type") === filter;
+      var okKw = !kw || (c.textContent || "").toLowerCase().indexOf(kw) !== -1;
+      c.classList.toggle("hide", !(okType && okKw));
+    });
+  }
+  document.querySelectorAll(".filters button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".filters button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      filter = b.getAttribute("data-f");
+      apply();
+    });
+  });
+  var search = document.querySelector(".src-search");
+  if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); apply(); });
+})();
+</script>
 </body>
 </html>

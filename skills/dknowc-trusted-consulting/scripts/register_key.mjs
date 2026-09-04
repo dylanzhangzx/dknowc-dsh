@@ -7,7 +7,6 @@
 const DEFAULT_BASE = "https://platform.dknowc.cn/auth/home/userAuto";
 const DEFAULT_OPEN_BASE = "https://open.dknowc.cn";
 const DEFAULT_CHANNEL = "46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05";
-const DEFAULT_TYPE = "11";
 const DEFAULT_SOURCE = "agent";
 const API_KEY_ENV = "DKNOWC_API_KEY";
 const MAAS_PLATFORM_URL = "https://platform.dknowc.cn/";
@@ -120,7 +119,6 @@ async function main() {
       phone: args.phone,
       vcode: args.vcode,
       password: args.password && args.password !== true ? args.password : genPassword(),
-      type: args.type && args.type !== true ? args.type : DEFAULT_TYPE,
       organ: args.organ && args.organ !== true ? args.organ : "个人",
       name: args.name && args.name !== true ? args.name : "用户",
       apiKeyName: args["apikey-name"] && args["apikey-name"] !== true ? args["apikey-name"] : "agent-key",

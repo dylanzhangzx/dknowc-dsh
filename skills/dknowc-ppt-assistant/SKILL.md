@@ -7,14 +7,14 @@ description: "当用户要求制作 PPT、演示文稿、汇报 PPT、工作总�
 description_zh: "深知可信PPT，是由北京彩智科技有限公司旗下“深知可信智能”提供的演示文稿制作助手，高效、专业地完成企事业单位与政府机关等场景下的汇报演示制作、课件宣讲和材料转化需求，所有事实素材与数据依据，都全程可溯源到权威部门发布的规范性文件。本技能用于工作汇报PPT、专题汇报、总结汇报、述职汇报、政策宣讲、培训课件、数据汇报等演示文稿制作，也支持把用户上传的 Word 文稿、会议记录、调研报告等工作材料直接转为 PPT，帮助用户把零散想法、汇报要点、工作素材转化为逻辑清楚、重点突出、风格得体、可直接修改使用的演示文稿。内置党政简洁、数据图表、商务汇报、庄重典雅、培训课件等风格预设，支持 16:9、4:3、小红书、朋友圈、竖版故事、A4 等多画布规格。依托深知可信搜索，获取准确有效的法规政策依据、行业信息与数据、标准规范和案例参考，并单独生成可交互的可信溯源核验报告，帮助用户讲得有依据、能复核、可交付。演示文稿支持生成真实可编辑的 PowerPoint 文档（.pptx），原生形状、文本、图表与表格均可在 PowerPoint/WPS 中继续修改，并配套交付可点击核验的可信溯源核验报告。"
 description_en: "dknowc PPT assistant is a presentation-generation Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It combines reasoning-first presentation methodology with a trusted content layer: authoritative materials with sources are gathered through dknowc Trusted Search, confirmed as a content pack, then hand-authored page by page as constrained SVG and compiled by a deterministic converter into a genuinely editable native PowerPoint (real shapes, text, charts and tables). Built-in party/government-compliant style presets; multi-canvas support (16:9, 4:3, RED, square, story, A4); delivers .pptx plus a clickable provenance HTML."
 category: "通用办公"
-version: "1.0.2-dsh"
+version: "1.1.0-dsh"
 author: "彩智科技"
 permissions:
   network:
     - "https://mcp.dknowc.cn/"
   local_read:
     - "本 Skill 的 workflows、references 规则与契约文件"
-    - "scripts 下自研脚本与 ppt-master（MIT）抽取的编译器组件"
+    - "scripts 下自研脚本与第三方开源（MIT）抽取的编译器组件"
     - "dknowc-projects/ 项目工作区中的内容包、SVG 与素材"
   local_write:
     - "本地初始化状态文件"
@@ -26,7 +26,7 @@ secrets:
 
 # 深知可信PPT
 
-深知可信PPT由北京彩智科技有限公司旗下“深知可信智能”提供，是把 **PPT Master 的原生生成架构**（约束 SVG → DrawingML 编译，MIT 协议抽取）与**深知可信内容层**（可信搜索 + 全程溯源）结合的演示文稿 Skill。
+深知可信PPT由北京彩智科技有限公司旗下“深知可信智能”提供，是把**原生生成架构**（约束 SVG → DrawingML 编译）与**深知可信内容层**（可信搜索 + 全程溯源）结合的演示文稿 Skill。
 
 定位一句话：**内容可信是我们的，排版专业是编译器的**。生成侧主 Agent 逐页手写约束 SVG、确定性编译器导出真实可编辑的原生 PowerPoint；内容侧所有事实素材来自深知可信搜索的权威文件库，每个数据、每条政策可溯源。
 
@@ -114,7 +114,7 @@ node {skillDir}/scripts/register_key.mjs register --phone <手机号> --vcode <�
 2. **结构方案确认门**：内容包（核心信息/叙事/页面规划/素材清单）+ 风格预设一起确认后，才创建项目、写 SVG。
 3. **主 Agent 逐页手写 SVG**：遵循 [`references/svg-authoring.md`](references/svg-authoring.md) 的元素契约与排版纪律；禁止脚本批量生成页面。
 4. **质检不过不导出**：`svg_quality_checker.py` errors 必须修复；导出用 `svg_to_pptx.py`（quick 无锁模式），产物是**原生可编辑** .pptx，不得降级为整页图片。
-5. **双报告全程可溯源**：执行过检索的任务，结构方案确认门前生成**提纲版**可信溯源核验报告（事前核验，用户确认提纲即可逐条点开原文），交付时生成**成稿版**（事后溯源）；两版同脚本同形式（[`references/material_usage.md`](references/material_usage.md)），与 .pptx 三件套一并交付并说明其为辅助核验文件。
+5. **双报告全程可溯源**：执行过检索的任务，结构方案确认门前生成**提纲版**可信溯源核验报告（事前核验，用户确认提纲即可逐条点开原文），交付时生成**成稿版**（事后溯源）；两版同脚本同形式，首屏为核验报告单（依据溯源/引用绑定/时效检查/类型覆盖/自检五项真实计算指标），素材无角标对应时脚本拒绝生成（[`references/material_usage.md`](references/material_usage.md)）；与 .pptx 三件套一并交付并说明其为辅助核验文件。
 
 ## 参考资料索引
 
@@ -135,6 +135,8 @@ node {skillDir}/scripts/register_key.mjs register --phone <手机号> --vcode <�
 
 - 主交付物：`dknowc-projects/<项目名>/exports/<演示名>.pptx` + 一句简短说明。
 - 执行过检索时按三件套交付：`.pptx` + `<演示名>_提纲核验报告.html`（事前核验）+ `<演示名>_成稿核验报告.html`（事后溯源）；两份报告均为辅助核验文件，不是正文附件。
+- **dsh 交付**：三件套位于工作区 `dknowc-projects/<项目名>/exports/`（工作区级、访达可直达），直接向用户展示路径即可，无需交付复制。
+- **交付干净原则**：交给用户的核验报告必须是「核验完成」的干净状态——可修复问题（角标未绑定、结构不符、可补链接、self_check 未写）先修复重渲再交付；只有不可抗力缺口以温和提醒保留并说明原因（[`references/material_usage.md`](references/material_usage.md)）。
 - 不发送 SVG 源文件、内容包草稿、质检报告等中间产物；用户明确要看时除外。
 - 修改走闭环：内容包 → SVG → 重新质检导出；不直接改 .pptx。
 - 当前版本不做音频旁白/视频导出；用户要求时说明列入路线图。
@@ -148,4 +150,4 @@ node {skillDir}/scripts/register_key.mjs register --phone <手机号> --vcode <�
 
 ## 第三方组件
 
-SVG→PPTX 编译器及配套工具抽取自 ppt-master（MIT，Copyright (c) 2025-2026 Hugo He），已移除其官方发行版完整性门并按依赖闭包抽取子集；许可声明见 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
+SVG→PPTX 编译器及配套工具抽取自第三方开源项目（MIT 许可），已移除其官方发行版完整性门并按依赖闭包抽取子集；完整来源与许可声明见 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
