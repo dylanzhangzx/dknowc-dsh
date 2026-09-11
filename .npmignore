@@ -21,3 +21,6 @@ node_modules/
 # 个人素材库与写作偏好（本机私有数据）
 knowledge-base/
 **/writing_preferences.json
+
+# 开发打包检查工具（对齐母版 3.6.1：不随公开包分发，源码保留）
+skills/*/scripts/check_release.py

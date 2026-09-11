@@ -5,9 +5,9 @@
 **主管线**：
 
 ```
-初始化门禁 → [深知检索（主题模式）] → 内容包 → 提纲版可信溯源核验报告
+初始化门禁 → [深知检索（主题模式）] → 内容包 → 提纲版溯源核验报告
 →【结构方案确认门 ⛔】→ 创建项目 → 逐页手写 SVG（P01 → 首页确认 ⛔ → 其余不间断）
-→ SVG 质检 → 编译导出 .pptx → 成稿版可信溯源核验报告 → 交付
+→ SVG 质检 → 编译导出 .pptx → 成稿版溯源核验报告 → 交付
 ```
 
 **执行纪律**：
@@ -51,15 +51,15 @@ python3 {skillDir}/scripts/trusted_search.py "检索问题" --service-area 单�
 
 按 [`references/content-pack.md`](../references/content-pack.md) 编制 `content-pack.md`：核心信息、叙事模式、页面规划（每页类型/标题/要点/素材ID）、素材清单（带来源）、风格预设（按 [`references/style-presets.md`](../references/style-presets.md) 推荐默认+备选）。此时项目短名（拼音或英文）应已确定，后续文件命名沿用。
 
-## Step 4 提纲版可信溯源核验报告（执行过检索时必做）
+## Step 4 提纲版溯源核验报告（执行过检索时必做）
 
 把提纲固化为**带角标的答案文件**并生成提纲版报告——与成稿版同一脚本（`render_trace_html.py`）、同一形式，让用户在确认结构方案的同时逐条核验事实依据。编制规范见 [`references/material_usage.md`](../references/material_usage.md) 第三节。
 
 1. 编制提纲答案文件 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/<项目短名>_outline.md`，三部分：
    - **演示元信息**：受众与场合、叙事模式、风格预设、画布、页数；
-   - **页面规划表**：页 | 类型 | 标题 | 事实要点 | 依据。**每条事实性要点（政策名、数字、案例、时间点）后标 `[N]` 角标**，N 为素材清单检索编号；结构页/观点页依据留空；
+   - **页面规划表**：页 | 类型 | 标题 | 事实要点（四列，不设单独「依据」列——依据由要点内 `[N]` 角标直接承载，单独罗列属冗余）。**每条事实性要点（政策名、数字、案例、时间点）后标 `[N]` 角标**，N 为素材清单检索编号；结构页/观点页要点写「无」；
    - **口径事项清单**：需用户留意的问题（统计口径差异、外省材料定位、待补检索项），逐条带角标——这是提纲版的核心价值，把「待确认」变成可点击核验的书面记录。
-2. 生成（`--stage outline`，报告标题后缀由渲染器自动附加「可信溯源核验报告（提纲版）」）：
+2. 生成（`--stage outline`，报告标题后缀由渲染器自动附加「溯源核验报告（提纲版）」）：
 
 ```bash
 python3 {skillDir}/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/NN_语义名.json \
@@ -84,7 +84,7 @@ python3 {skillDir}/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0
 - 页面规划总览（页序 + 每页标题 + 页类型）
 - 关键素材及来源摘要
 - 推荐风格预设 + 1-2 个备选 + 画布格式
-- 提纲版可信溯源核验报告路径，并说明：「提纲中每条政策、数据和案例都已在报告中挂接权威来源，可点击逐条核对原文；另有 N 条口径事项需要你确认（见报告口径事项一节）。」
+- 提纲版溯源核验报告路径，并说明：「提纲中每条政策、数据和案例都已在报告中挂接权威来源，可点击逐条核对原文；另有 N 条口径事项需要你确认（见报告口径事项一节）。」
 
 用户确认或调整后，方可创建项目。调整时先更新内容包与提纲答案文件、重新生成报告，再过本门。
 
@@ -97,7 +97,7 @@ dknowc-projects/<项目名>/        # 工作区级项目目录（跨会话延续
 ├── images/                   # 页面引用的图片（如有）
 ├── svg_output/               # ★ 逐页手写的约束 SVG
 ├── validation/               # 质检报告（脚本自动写）
-└── exports/                  # 最终 .pptx 与两版可信溯源核验报告
+└── exports/                  # 最终 .pptx 与两版溯源核验报告
 ```
 
 项目创建后，把 Step 4 生成的提纲版报告从 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 复制归档到 `dknowc-projects/<项目名>/exports/<演示名>_提纲核验报告.html`。
@@ -128,7 +128,7 @@ uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pp
 - 导出成功后 `.pptx` 位于 `dknowc-projects/<项目名>/exports/`。
 - 可选转场：`-t fade` 等参数仅用户明确要求动效时使用；默认不传。
 
-## Step 8 成稿版可信溯源核验报告（执行过检索时必做）
+## Step 8 成稿版溯源核验报告（执行过检索时必做）
 
 把「最终演示的页面级结论文本」整理为答案文件（含 `[素材ID]` 角标对应关系说明），连同检索 JSON 生成成稿版报告（`--stage final`；自检项改为成稿口径：事实有据/质检通过/无占位残留/图表有来源注/口径一致，可经合并 JSON 顶层 `self_check` 传入）：
 

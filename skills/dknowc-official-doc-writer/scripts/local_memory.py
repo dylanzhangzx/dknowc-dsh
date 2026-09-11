@@ -172,7 +172,7 @@ def cmd_kb_save(args) -> dict:
         "category_label": KB_CATEGORIES[category],
         "tags": tags,
         "note": args.note or "",
-        "file": str(dest),
+        "file": str(dest.relative_to(SKILL_ROOT)),
         "size": dest.stat().st_size,
         "added": date.today().isoformat(),
     }

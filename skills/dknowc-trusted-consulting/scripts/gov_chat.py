@@ -23,7 +23,7 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
     # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
@@ -47,14 +47,6 @@ DEFAULTS = {
 }
 
 
-def _rel_to_ws(path: Path) -> str:
-    """把输出路径显示为相对工作区（WS_ROOT）的形式；不在工作区内则显示绝对路径。"""
-    try:
-        return str(path.relative_to(WS_ROOT))
-    except ValueError:
-        return str(path.resolve())
-
-
 def resolve_output_json(output_path: str) -> Path:
     """把咨询结果 JSON 落到本 Skill 的 official-docs/search-results/ 工作区。
 
@@ -71,6 +63,31 @@ def resolve_output_json(output_path: str) -> Path:
     if resolved.suffix.lower() != ".json":
         resolved = resolved.with_suffix(".json")
     return resolved
+
+
+MAAS_LOGIN_URL = "https://platform.dknowc.cn/auth/#/login"
+
+
+def _error_user_message(code: int) -> str:
+    """按接口错误码返回给用户的固定话术（Agent 原样转述）；口径见 reference/onboarding_scripts.md。"""
+    if code == 401:
+        return "访问密钥校验没通过（密钥可能已失效），我重新获取一下密钥；还不行的话需要重新验证手机号。"
+    if code == 403:
+        return f"当前密钥没有问答权限（可能类型不符或已变更）。到 {MAAS_LOGIN_URL} 查看密钥权限，或重新验证手机号获取新密钥。"
+    if code in (402, 429):
+        return f"咨询调不动，很可能是额度用完了：到 {MAAS_LOGIN_URL} 看一下额度，完成实名认证可以领 100 元体验金。"
+    if code >= 500:
+        return "咨询服务暂时异常，我稍后再试；持续异常的话我按已有知识先答，并标注“未联网核验”。"
+    return ""
+
+
+def _print_error_with_message(prefix: str, code: Optional[int] = None) -> None:
+    """打印错误与固定话术：Agent 优先向用户转述 user_message 行。"""
+    print(prefix, file=sys.stderr)
+    user_message = _error_user_message(code) if code is not None else ""
+    if not user_message:
+        user_message = "咨询暂时没连上（网络波动），稍等我再试一次；持续失败的话我按已有知识先答，并标注“未联网核验”。"
+    print(f"user_message：{user_message}", file=sys.stderr)
 
 
 def _as_bool(value: Optional[str], default: bool = False) -> bool:
@@ -154,13 +171,13 @@ def _post(url: str, api_key: str, payload: Dict[str, Any], timeout: int) -> str:
             return resp.read().decode("utf-8", errors="replace").replace("\x00", "")
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="ignore")
-        print(f"错误：HTTP {e.code} {detail or e.reason}", file=sys.stderr)
+        _print_error_with_message(f"错误：HTTP {e.code} {detail or e.reason}", e.code)
         sys.exit(1)
     except urllib.error.URLError as e:
-        print(f"错误：网络请求失败 - {e.reason}", file=sys.stderr)
+        _print_error_with_message(f"错误：网络请求失败 - {e.reason}")
         sys.exit(1)
     except socket.timeout:
-        print("错误：接口流式响应读取超时。请确认接口是否持续输出 SSE 数据，或适当增大 --timeout。", file=sys.stderr)
+        _print_error_with_message("错误：接口流式响应读取超时。请确认接口是否持续输出 SSE 数据，或适当增大 --timeout。")
         sys.exit(1)
 
 
@@ -249,13 +266,13 @@ def _post_streaming_to_stdout(url: str, api_key: str, payload: Dict[str, Any], t
             print(trace_url)
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="ignore")
-        print(f"错误：HTTP {e.code} {detail or e.reason}", file=sys.stderr)
+        _print_error_with_message(f"错误：HTTP {e.code} {detail or e.reason}", e.code)
         sys.exit(1)
     except urllib.error.URLError as e:
-        print(f"错误：网络请求失败 - {e.reason}", file=sys.stderr)
+        _print_error_with_message(f"错误：网络请求失败 - {e.reason}")
         sys.exit(1)
     except socket.timeout:
-        print("错误：接口流式响应读取超时。请确认接口是否持续输出 SSE 数据，或适当增大 --timeout。", file=sys.stderr)
+        _print_error_with_message("错误：接口流式响应读取超时。请确认接口是否持续输出 SSE 数据，或适当增大 --timeout。")
         sys.exit(1)
 
 
@@ -456,15 +473,18 @@ def main() -> None:
         os.environ.get("DKNOWC_GOV_ZHICHA_ENDPOINT"),
         DEFAULT_ENDPOINT,
     )
-    api_key = _pick(
-        os.environ.get("DKNOWC_API_KEY"),
-    )
+    # 环境变量优先，缺失时从 ~/.zshrc 兜底解析（宿主进程读不到 shell 导出变量时不误报缺失）
+    try:
+        from api_key import resolve_api_key
+        api_key, _key_source = resolve_api_key()
+    except ImportError:
+        api_key = os.environ.get("DKNOWC_API_KEY", "").strip()
 
     if not endpoint:
         print("错误：缺少 endpoint，请通过脚本默认值、--endpoint 或环境变量配置。", file=sys.stderr)
         sys.exit(2)
     if not api_key:
-        print("错误：缺少 api_key，请配置环境变量 DKNOWC_API_KEY。", file=sys.stderr)
+        print("错误：缺少 api_key，环境变量 DKNOWC_API_KEY 与 ~/.zshrc 中均未找到。", file=sys.stderr)
         sys.exit(2)
 
     payload = _build_payload(args)

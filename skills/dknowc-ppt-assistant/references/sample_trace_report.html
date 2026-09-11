@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>效果示例 · 深知可信咨询核验报告 · 可信核验报告</title>
+<title>某市数字经济发展情况汇报 · 提纲（示例数据） · 溯源核验报告（提纲版）</title>
 <style>
 :root{
   --navy:#0b1f3a; --ink:#172236; --muted:#667085; --line:#dce4ef; --line-strong:#b9c6d9;
@@ -27,9 +27,10 @@ a{color:var(--brand)}
 /* 左栏 */
 .report{min-width:0}
 .r-head{padding:22px 26px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;text-align:center}
+.r-badge{display:inline-flex;align-items:center;gap:14px;margin:0 0 6px;color:var(--navy);
+  font-size:16px;font-weight:800;letter-spacing:7px;text-indent:7px;line-height:1.5}
+.r-badge::before,.r-badge::after{content:"";width:64px;border-top:1px solid var(--line-strong)}
 .r-head h1{margin:0 0 8px;font-size:22px;color:var(--navy);line-height:1.5}
-.q-line{margin:0 auto 10px;max-width:92%;font-size:13.5px;color:#3b4a61;background:#f5f8fc;
-  border:1px solid var(--line);border-radius:8px;padding:8px 12px;text-align:left;line-height:1.7}
 .r-head .sub{color:var(--muted);font-size:12.5px}
 .warn-box{margin:0 0 16px;padding:13px 16px;border:1.5px solid var(--danger);border-radius:10px;
   background:#fdf3f3;color:#8f2626;font-size:13.5px;line-height:1.7}
@@ -77,7 +78,10 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 .tbl-wrap{max-width:100%;overflow-x:auto;margin:8px 0}
 .data-tbl{width:100%;border-collapse:collapse;border:1px solid var(--line);font-size:13px}
 .data-tbl th,.data-tbl td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.65}
-.data-tbl th{background:#f2f5fb;font-weight:700;color:#374151}
+.data-tbl th{background:#f2f5fb;font-weight:700;color:#374151;white-space:nowrap}
+.data-tbl tbody tr:nth-child(even) td{background:#fafbfd}
+.data-tbl.wide{min-width:560px}
+.data-tbl td .ev-row{margin:4px 0 0}
 /* 角标 */
 .cite{margin:0 1px;padding:0 5px;border:0;border-radius:4px;background:var(--brand-soft);color:var(--brand);
   font-weight:800;font-size:10.5px;cursor:pointer;vertical-align:super;font-family:monospace}
@@ -107,40 +111,32 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
 .sources h3{margin:0 0 3px;font-size:15px;color:var(--navy)}
 .src-tip{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.filters button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
+  padding:3px 11px;font-size:12px;cursor:pointer}
+.filters button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
 .src-search{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;margin-bottom:12px}
-.scard{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:10px;
+.scard{border:1px solid var(--line);border-left-width:3px;border-radius:10px;padding:11px 13px;margin-bottom:10px;
   background:#fff;transition:box-shadow .25s}
+.scard.pol{border-left-color:var(--policy)}
+.scard.dat{border-left-color:var(--brand)}
+.scard.cas{border-left-color:var(--case)}
+.scard.ref,.scard.mat{border-left-color:var(--ref)}
 .scard.hl{box-shadow:0 0 0 3px var(--brand)}
 .scard.hide{display:none}
 .sc-head{display:flex;align-items:center;gap:7px;margin-bottom:4px}
 .sc-id{font-family:monospace;font-weight:800;font-size:11px;color:var(--brand);background:var(--brand-soft);
   border-radius:4px;padding:1px 7px}
+.sc-type{font-size:11px;font-weight:700;border-radius:4px;padding:1px 8px;background:var(--ref-soft);color:var(--ref)}
+.scard.pol .sc-type{background:var(--policy-soft);color:var(--policy)}
+.scard.dat .sc-type{background:var(--brand-soft);color:var(--brand)}
+.scard.cas .sc-type{background:var(--case-soft);color:var(--case)}
 .sc-vk{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}
 .sc-vk.warn{color:var(--warn)}
 .scard h4{margin:0 0 4px;font-size:13px;color:var(--navy);line-height:1.55}
 .sc-meta{font-size:11.5px;color:var(--muted)}
 .sc-section{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600}
 .sc-vnote{margin-top:5px;font-size:11.3px;color:var(--ok);line-height:1.6}
-.sc-unused{font-size:10.5px;font-weight:800;color:var(--muted);background:#eef1f6;border-radius:4px;
-  padding:1px 7px;flex:none}
-.scard[data-unused]{opacity:.86}
-.sc-conf{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e8c98a;
-  border-radius:4px;padding:0 7px;flex:none}
-.sc-extag{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line-strong);font-size:11px;color:#0b6e4f;font-weight:700}
-.sc-chain{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600;line-height:1.6;cursor:help}
-.sc-more{display:none;margin:-3px 2px 4px;text-align:right;font-size:11px;color:var(--brand);font-weight:700;cursor:pointer;user-select:none}
-.scard.clampable .sc-more{display:block}
-.scard.clampable .sc-more::before{content:"展开全文 ▾"}
-.scard.clampable.open .sc-more::before{content:"收起 ▴"}
-.cmp{margin:0 0 10px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.cmp-tag{font-size:11px;font-weight:800;padding:3px 10px}
-.cmp-side{padding:9px 12px;font-size:12.8px;line-height:1.7}
-.cmp-side p{margin:0}
-.cmp-ai{background:#fbfcfe;color:#374151}
-.cmp-ai .cmp-tag{background:#eef1f6;color:var(--ref)}
-.cmp-src{background:#f4faf7;color:#2f4a3e;border-top:1px dashed var(--line-strong)}
-.cmp-src .cmp-tag{background:var(--policy-soft);color:#0b6e4f}
-.cmp-src .sc-excerpt{display:block;-webkit-line-clamp:unset;background:#fff;cursor:auto;font-size:12px;padding:8px 10px;margin:0}
 .sc-excerpt{margin:7px 0;padding:9px 10px;border-radius:7px;background:#f8fafc;color:#42566f;font-size:12px;line-height:1.7;
   display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 .scard.open .sc-excerpt{display:block;-webkit-line-clamp:unset}
@@ -152,6 +148,16 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 .scard .sc-links a{font-size:12px}
 .scard .sc-links{margin-top:4px}
 .no-link{font-size:11.5px;color:var(--muted)}
+.sc-unused{font-size:10.5px;font-weight:800;color:var(--muted);background:#eef1f6;border-radius:4px;
+  padding:1px 7px;flex:none}
+.sc-conf{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e8c98a;
+  border-radius:4px;padding:0 7px;flex:none}
+.sc-extag{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line-strong);font-size:11px;color:#0b6e4f;font-weight:700}
+.sc-chain{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600;line-height:1.6;cursor:help}
+.sc-more{display:none;margin:-3px 2px 4px;text-align:right;font-size:11px;color:var(--brand);font-weight:700;cursor:pointer;user-select:none}
+.scard.clampable .sc-more{display:block}
+.scard.clampable .sc-more::before{content:"展开全文 ▾"}
+.scard.clampable.open .sc-more::before{content:"收起 ▴"}
 .uncited-group{margin-top:12px;border-top:1px dashed var(--line-strong);padding-top:10px}
 .ug-title{font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.6}
 .uncited-group .uncited-list{margin-top:10px}
@@ -168,11 +174,6 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 .kb-arrow{margin-left:auto;color:var(--brand);font-weight:700;white-space:nowrap}
 .empty{color:var(--muted)}
 .foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
-@media (max-width:1020px){
-  .layout{grid-template-columns:1fr}
-  .sources{position:static;max-height:none}
-}
-/* —— 移动端专项适配（手机阅读核验报告） —— */
 .mobile-nav{display:none}
 .back-doc{display:none}
 /* 移动端材料底部弹层：点角标就地弹出材料卡，不跳转打断阅读 */
@@ -184,6 +185,8 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .topbar{padding:8px 12px;font-size:12px;gap:4px;flex-wrap:wrap}
   .topbar .tags span{font-size:10.5px;padding:1px 8px;margin-left:4px}
   .r-head{padding:16px 14px;border-radius:10px}
+  .r-badge{font-size:13.5px;letter-spacing:6px;text-indent:6px;gap:10px}
+  .r-badge::before,.r-badge::after{width:40px}
   .r-head h1{font-size:18px}
   .r-head .sub{font-size:11.5px;line-height:1.6}
   .verify{padding:13px 14px;border-radius:10px}
@@ -206,10 +209,6 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .sources{padding:12px;border-radius:10px}
   .scard{padding:10px 11px}
   .sc-excerpt{font-size:11.5px}
-  .sc-extag{font-size:10.5px}
-  .sc-chain{font-size:11px}
-  .cmp-tag{font-size:11px;font-weight:800;padding:3px 10px}
-  .cmp-side{padding:9px 12px;font-size:12.8px;line-height:1.7}
   .kb-chip{flex-wrap:wrap}
   .kb-label{white-space:normal}
   .mobile-nav{display:block;margin:0 0 14px;padding:11px 14px;border:1.5px solid var(--brand);
@@ -232,9 +231,23 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     font-size:12.5px;font-weight:700;padding:5px 14px;cursor:pointer}
   .sheet .scard{box-shadow:none;margin-bottom:0}
   .sheet .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
+  /* 正文表述 ↔ 原文原段 对照区（弹层顶部） */
+  .cmp{margin:0 0 10px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cmp-tag{font-size:11px;font-weight:800;padding:3px 10px}
+  .cmp-side{padding:9px 12px;font-size:12.8px;line-height:1.7}
+  .cmp-side p{margin:0}
+  .cmp-ai{background:#fbfcfe;color:#374151}
+  .cmp-ai .cmp-tag{background:#eef1f6;color:var(--ref)}
+  .cmp-src{background:#f4faf7;color:#2f4a3e;border-top:1px dashed var(--line-strong)}
+  .cmp-src .cmp-tag{background:var(--policy-soft);color:#0b6e4f}
+  .cmp-src .sc-excerpt{display:block;-webkit-line-clamp:unset;background:#fff;cursor:auto;font-size:12px;padding:8px 10px;margin:0}
+}
+@media (max-width:1020px){
+  .layout{grid-template-columns:1fr}
+  .sources{position:static;max-height:none}
 }
 @media print{
-  .topbar,.src-search{display:none!important}
+  .topbar,.filters,.src-search{display:none!important}
   .layout{grid-template-columns:1fr;max-width:none;padding:0;gap:14px}
   body{background:#fff;font-size:12.5px}
   .sources{position:static;max-height:none;border:0;padding:0;overflow:visible}
@@ -249,112 +262,80 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 <body>
 
 <header class="topbar">
-  <div class="tb-title">深知可信咨询核验报告 · 可信核验报告</div>
+  <div class="tb-title">某市数字经济发展情况汇报 · 提纲（示例数据） · 溯源核验报告（提纲版）</div>
   <div class="tags">
-    <span>生成于 2026-09-09 14:52</span>
-    <span>材料来源：深知可信统一问答</span>
+    <span>生成于 2026-09-11 10:12</span>
+    <span>素材来源：深知可信搜索</span>
   </div>
 </header>
 
-<div style="background:#fff7e6;border:1px solid #f0d48a;color:#8a6116;border-radius:8px;padding:8px 14px;font-size:13px;margin:10px 18px 0">本页面为可信核验报告的效果示例，内容为示例数据，非真实咨询结果，仅供展示，不作为交付物。</div>
 <div class="layout">
   <main class="report" aria-label="核验报告正文">
     <div class="r-head" id="doc-top">
-      <h1>深知可信咨询核验报告</h1>
-      <div class="q-line"><b>咨询问题：</b>示例</div>
-      <div class="sub">共 4 条 ｜ 点击答案角标 [1] 定位材料原文</div>
+      <div class="r-badge">溯源核验报告</div>
+      <h1>某市数字经济发展情况汇报 · 提纲（示例数据）</h1>
+      <div class="sub">溯源核验报告（提纲版） ｜ 素材：政策依据 1 · 数据支撑 1 · 参考案例 1 ｜ 共 4 条 ｜ 点击正文角标 [1] 定位材料原文</div>
     </div>
     
     
     <div class="verify ok">
-      <div class="v-head"><span class="v-shield">✓</span>核验完成，答案依据逐条对过原文<span class="v-stamp">已核验</span></div>
+      <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据逐条对过原文（提纲版）<span class="v-stamp">已核验</span></div>
       
       <div class="v-grid">
-        <div class="vi"><span class="s warn">◐ 依据溯源 3/4</span><span class="d">1 条材料接口未返回原文链接，可经摘录与知识专库回看</span></div><div class="vi"><span class="s ok">✓ 引用对应 6/6</span><span class="d">正文引用全部对应素材</span></div><div class="vi"><span class="s ok">✓ 材料新旧 完成</span><span class="d">材料日期 2023-12～2024-06（1 条历史材料，已按参考口径处理）</span></div><div class="vi"><span class="s ok">✓ 交付前检查 5/5</span><span class="d">角标/绑定/核验/一致/清单</span></div><div class="vi"><span class="s man">◐ 现行效力</span><span class="d">3 条材料建议按官方发布复核现行效力</span></div>
+        <div class="vi"><span class="s ok">✓ 依据溯源 3/3</span><span class="d">每条素材可回看原文</span></div><div class="vi"><span class="s ok">✓ 引用对应 4/4</span><span class="d">正文每处 [n] 都能找到对应材料</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2025-06～2026-03</span></div><div class="vi"><span class="s ok">✓ 材料构成</span><span class="d">政策依据 1 · 数据支撑 1 · 参考案例 1</span></div><div class="vi"><span class="s ok">✓ 交付前检查 5/5</span><span class="d">事实有据、口径一致、无占位残留、素材清单齐、类型标注</span></div><div class="vi"><span class="s man">◐ 现行效力</span><span class="d">1 份政策文件建议按官方发布确认是否现行有效</span></div>
       </div>
-      <div class="v-note">核验方法：深知可信统一问答召回权威来源 → 逐条溯源（摘录比对 + 原文链接 + 知识专库回看）→ 答案引用对应 → 交付前检查。政策现行效力以官方发布为准。</div>
+      <div class="v-note">核验方式：先用深知可信搜索找权威来源，再把提纲页面规划的每处依据和原文逐条比对（都能点开原文回看），最后做了交付前五项检查。政策是否现行有效，以官方发布为准。</div>
     </div>
     <a class="mobile-nav" href="#sources-panel">查看核验材料（4 条 · 点击角标可定位原文）↓</a>
-    <section class="doc-sec"><div class="sec-head"><span class="sec-badge ">本章引用 3 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>根据相关政策，北京市小微企业申请创业担保贷款需同时满足以下条件<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>：</p><div class="ev-row">
+    <section class="doc-sec"><div class="sec-head"><span class="sec-badge ">本节引用 3 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p><strong>受众</strong>：市政府专题会议 ｜ <strong>风格</strong>：gov-simple · 16:9 · 8 页</p></div><div class="doc-block"><div class="tbl-wrap"><table class="data-tbl wide"><thead><tr><th>页</th><th>类型</th><th>标题</th><th>事实要点</th></tr></thead><tbody><tr><td>P01</td><td>cover</td><td>某市数字经济发展情况汇报</td><td>无</td></tr><tr><td>P02</td><td>agenda</td><td>汇报提纲</td><td>无</td></tr><tr><td>P03</td><td>content</td><td>政策依据与目标</td><td>《十四五规划》提出核心产业增加值占 GDP 比重 10% 的目标 <button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button><div class="ev-row">
             <details class="ev-chip" data-cite="1">
-              <summary><b>[1]</b>北京市创业担保贷款管理办法</summary>
+              <summary><b>[1]</b>某市数字经济发展十四五规划（示例标题）</summary>
               <div class="ev-panel">
-                <div class="ev-title">北京市创业担保贷款管理办法</div>
-                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
-                <p>本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。
-申请创业担保贷款的企业应无不良信用记录，且近两年未因违法经营受到行政处罚。
-招用符合条件人员（含应届高校毕业生、登记失业人员、返乡创业农民工等）达到规定比例的，可提高贷款额度。</p>
-                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
+                <div class="ev-title">某市数字经济发展十四五规划（示例标题）</div>
+                <div class="ev-meta">某市人民政府 | 2026年01月15日</div>
+                <p>到 2025 年，数字经济核心产业增加值占 GDP 比重达到 10%，数字经济迈向全面扩展期。（示例摘录，用于展示报告形态）</p>
+                <div class="sc-links"><span><a href="https://example.gov.cn/demo/1" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
               </div>
             </details>
-            </div></div><div class="doc-item"><span class="doc-bullet">1.</span><div><p>企业注册地在北京，且符合小型微型企业划型标准<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>；</p><div class="ev-row">
-            <details class="ev-chip" data-cite="1">
-              <summary><b>[1]</b>北京市创业担保贷款管理办法</summary>
-              <div class="ev-panel">
-                <div class="ev-title">北京市创业担保贷款管理办法</div>
-                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
-                <p>本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。
-申请创业担保贷款的企业应无不良信用记录，且近两年未因违法经营受到行政处罚。
-招用符合条件人员（含应届高校毕业生、登记失业人员、返乡创业农民工等）达到规定比例的，可提高贷款额度。</p>
-                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
-              </div>
-            </details>
-            </div></div></div><div class="doc-item"><span class="doc-bullet">2.</span><div><p>无不良信用记录，近两年未因违法经营受到行政处罚<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>；</p><div class="ev-row">
-            <details class="ev-chip" data-cite="1">
-              <summary><b>[1]</b>北京市创业担保贷款管理办法</summary>
-              <div class="ev-panel">
-                <div class="ev-title">北京市创业担保贷款管理办法</div>
-                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
-                <p>本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。
-申请创业担保贷款的企业应无不良信用记录，且近两年未因违法经营受到行政处罚。
-招用符合条件人员（含应届高校毕业生、登记失业人员、返乡创业农民工等）达到规定比例的，可提高贷款额度。</p>
-                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
-              </div>
-            </details>
-            </div></div></div><div class="doc-item"><span class="doc-bullet">3.</span><div><p>有实际经营场所和稳定经营业务<button class="cite" data-cite="2" type="button" title="核验依据 [2]">[2]</button>；</p><div class="ev-row">
+            </div></td></tr><tr><td>P04</td><td>chart</td><td>发展现状：核心产业规模</td><td>2025 年核心产业增加值 6200 亿元、占 GDP 12.3% <button class="cite" data-cite="2" type="button" title="核验依据 [2]">[2]</button><div class="ev-row">
             <details class="ev-chip" data-cite="2">
-              <summary><b>[2]</b>小微企业划型标准规定</summary>
+              <summary><b>[2]</b>某市 2025 年国民经济和社会发展统计公报（示例标题）</summary>
               <div class="ev-panel">
-                <div class="ev-title">小微企业划型标准规定</div>
-                <div class="ev-meta">国家统计局 | 2023-12-01</div>
-                <p>小型微型企业划分依据从业人数、营业收入、资产总额等指标，结合行业特点制定。</p>
-                <div class="sc-links"><span><a href="https://www.stats.gov.cn/sj/2024/xhqx.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+                <div class="ev-title">某市 2025 年国民经济和社会发展统计公报（示例标题）</div>
+                <div class="ev-meta">某市统计局 | 2026-03-01</div>
+                <p>2025 年全市数字经济核心产业增加值 6200 亿元，占 GDP 比重 12.3%。（示例数据）</p>
+                <div class="sc-links"><span><a href="https://example.gov.cn/demo/2" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
               </div>
             </details>
-            </div></div></div><div class="doc-item"><span class="doc-bullet">4.</span><div><p>招用符合条件人员（含应届高校毕业生等）达到规定比例<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>。</p><div class="ev-row">
-            <details class="ev-chip" data-cite="1">
-              <summary><b>[1]</b>北京市创业担保贷款管理办法</summary>
-              <div class="ev-panel">
-                <div class="ev-title">北京市创业担保贷款管理办法</div>
-                <div class="ev-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15</div>
-                <p>本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。
-申请创业担保贷款的企业应无不良信用记录，且近两年未因违法经营受到行政处罚。
-招用符合条件人员（含应届高校毕业生、登记失业人员、返乡创业农民工等）达到规定比例的，可提高贷款额度。</p>
-                <div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div>
-              </div>
-            </details>
-            </div></div></div><div class="doc-block"><p>符合条件的可通过经办银行或区级人力资源社会保障部门提交申请<button class="cite" data-cite="3" type="button" title="核验依据 [3]">[3]</button>。</p><div class="ev-row">
+            </div></td></tr><tr><td>P05</td><td>content</td><td>典型做法</td><td>某区产业大脑平台接入规上企业 1200 家 <button class="cite" data-cite="3" type="button" title="核验依据 [3]">[3]</button><div class="ev-row">
             <details class="ev-chip" data-cite="3">
-              <summary><b>[3]</b>关于进一步做好创业担保贷款工作的通知</summary>
+              <summary><b>[3]</b>某市数字化转型典型案例集（示例标题）</summary>
               <div class="ev-panel">
-                <div class="ev-title">关于进一步做好创业担保贷款工作的通知</div>
-                <div class="ev-meta">人力资源和社会保障部 | 2024-06-20</div>
-                <p>各地应简化创业担保贷款申请流程，推广线上申请，优化经办银行服务网点布局。
-借款人应当如实提供申请材料，对提供虚假材料骗取贷款的，依法依规处理。</p>
-                <div class="sc-links"><span><a href="https://www.mohrss.gov.cn/cydk/tz2024.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+                <div class="ev-title">某市数字化转型典型案例集（示例标题）</div>
+                <div class="ev-meta">某市工业和信息化局 | 2025-11-20</div>
+                <p>某区建成全市首个产业大脑平台，接入规上企业 1200 家。（示例案例）</p>
+                <div class="sc-links"><span><a href="https://example.gov.cn/demo/3" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
               </div>
             </details>
-            </div></div></div></section>
-    <div class="foot">深知可信咨询 · 可信核验报告 ｜ 核验方法：统一问答召回 → 逐条溯源 → 引用对应 → 交付前检查 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
+            </div></td></tr></tbody></table></div></div></div></section>
+<section class="doc-sec"><div class="sec-head"><h3>口径事项清单</h3><span class="sec-badge ">本节引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-item"><span class="doc-bullet">1.</span><div><p>P04 占比口径为核心产业/全市 GDP（示例），页面图表标注统计时点 <button class="cite" data-cite="2" type="button" title="核验依据 [2]">[2]</button>。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="2">
+              <summary><b>[2]</b>某市 2025 年国民经济和社会发展统计公报（示例标题）</summary>
+              <div class="ev-panel">
+                <div class="ev-title">某市 2025 年国民经济和社会发展统计公报（示例标题）</div>
+                <div class="ev-meta">某市统计局 | 2026-03-01</div>
+                <p>2025 年全市数字经济核心产业增加值 6200 亿元，占 GDP 比重 12.3%。（示例数据）</p>
+                <div class="sc-links"><span><a href="https://example.gov.cn/demo/2" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+              </div>
+            </details>
+            </div></div></div></div></section>
+    <div class="foot">深知可信PPT · 溯源核验报告（提纲版） ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
   </main>
-  <aside class="sources" id="sources-panel" aria-label="核验材料面板"><a class="back-doc" href="#doc-top">↑ 返回核验报告单</a><h3>核验材料（3 条已引用 · 全部已核验）</h3><div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div><input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源"><div class="src-list"><article class="scard" id="src-1" data-cite-id="1"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="摘录可比对，原文链接与云端存档可回看">✓ 已核验</span></div><h4>北京市创业担保贷款管理办法</h4><div class="sc-meta">北京市人力资源和社会保障局、北京市财政局 | 2024-03-15 | 北京</div><div class="sc-chain" title="原文中的位置：北京市创业担保贷款管理办法 › 适用范围">标题：适用范围</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">本办法所称创业担保贷款，是指以具备规定条件的创业者个人或小微企业为借款人，由创业担保贷款担保基金提供担保的贷款。小微企业申请贷款须符合小型微型企业划型标准。
-申请创业担保贷款的企业应无不良信用记录，且近两年未因违法经营受到行政处罚。
-招用符合条件人员（含应届高校毕业生、登记失业人员、返乡创业农民工等）达到规定比例的，可提高贷款额度。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/2024/cydkbf.html" target="_blank" rel="noopener">查看原文 ↗</a></span><span><a href="https://open.dknowc.cn/kb/北京创业担保贷款管理办法" target="_blank" rel="noopener">知识专库原文 ↗</a></span></div></article><article class="scard" id="src-2" data-cite-id="2"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="摘录可比对，原文链接与云端存档可回看">✓ 已核验</span></div><h4>小微企业划型标准规定</h4><div class="sc-meta">国家统计局 | 2023-12-01 | 全国</div><div class="sc-chain" title="原文中的位置：小微企业划型标准规定 › 划型依据">标题：划型依据</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">小型微型企业划分依据从业人数、营业收入、资产总额等指标，结合行业特点制定。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://www.stats.gov.cn/sj/2024/xhqx.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard" id="src-3" data-cite-id="3"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-vk ok" title="摘录可比对，原文链接与云端存档可回看">✓ 已核验</span></div><h4>关于进一步做好创业担保贷款工作的通知</h4><div class="sc-meta">人力资源和社会保障部 | 2024-06-20 | 全国</div><div class="sc-chain" title="原文中的位置：关于进一步做好创业担保贷款工作的通知 › 流程优化">标题：流程优化</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">各地应简化创业担保贷款申请流程，推广线上申请，优化经办银行服务网点布局。
-借款人应当如实提供申请材料，对提供虚假材料骗取贷款的，依法依规处理。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://www.mohrss.gov.cn/cydk/tz2024.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><div class="uncited-group"><div class="ug-title">未引用素材（1 条 · 接口召回但答案未采用，供比对参考，不计入核验结论）</div><div class="uncited-list"><article class="scard" id="src-4" data-cite-id="4" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-vk warn" title="接口未提供，非核验失败">◐ 接口未返回原文链接</span></div><h4>北京市创业担保贷款经办指南</h4><div class="sc-meta">2024-05-01 | 北京</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">本篇材料未提供原文链接，仅给出申请流程和材料准备说明。</div><div class="sc-more" role="button" tabindex="0"></div></article></div></div></div><div class="kb-zone"><div class="kb-title">云端溯源存档（接口可信溯源报告）</div><div class="kb-desc">以下链接为深知云平台对本次问答留存的接口侧可信溯源报告，与本核验报告内容对应：本地报告便于离线查阅与打印归档；云端存档适合向他人出示查验，也可在本地文件遗失时兜底。逐条材料的核验仍以来源卡上的"查看原文"直达官方页面为准。</div><div class="kb-list"><a class="kb-chip" href="https://yun.dknowc.cn/wlcb/trace-report/?id=2026090200000000000000sample0" target="_blank" rel="noopener"><span class="kb-label">本次问答 · 接口侧可信溯源报告</span><span class="kb-count">对应 4 条来源 · 云端存档</span><span class="kb-arrow">打开 ↗</span></a></div></div></aside>
+  <aside class="sources" id="sources-panel" aria-label="核验材料面板"><a class="back-doc" href="#doc-top">↑ 返回核验报告单</a><h3>核验材料（已引用 3 条 · 全部已核验）</h3><div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div><div class="filters" role="group" aria-label="按检索分组筛选"><button class="on" data-cond="" type="button">全部</button><button data-cond="国家·政策" type="button">国家·政策（1）</button><button data-cond="某市·数据" type="button">某市·数据（1）</button><button data-cond="案例·参考" type="button">案例·参考（1）</button><button data-cond="__unused__" type="button">未引用（1）</button></div><input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源"><div class="src-list"><article class="scard pol" id="src-1" data-type="policy" data-cite-id="1" data-search="国家·政策"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>某市数字经济发展十四五规划（示例标题）</h4><div class="sc-meta">某市人民政府 | 2026年01月15日</div><div class="sc-chain" title="原文中的位置：某市数字经济发展十四五规划（示例标题） › 第三章 › 第二节 › 发展目标">标题：第三章 › 第二节 › 发展目标</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">到 2025 年，数字经济核心产业增加值占 GDP 比重达到 10%，数字经济迈向全面扩展期。（示例摘录，用于展示报告形态）</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://example.gov.cn/demo/1" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard dat" id="src-2" data-type="data" data-cite-id="2" data-search="某市·数据"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>某市 2025 年国民经济和社会发展统计公报（示例标题）</h4><div class="sc-meta">某市统计局 | 2026-03-01</div><div class="sc-chain" title="原文中的位置：某市 2025 年国民经济和社会发展统计公报（示例标题） › 二、综合">标题：二、综合</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">2025 年全市数字经济核心产业增加值 6200 亿元，占 GDP 比重 12.3%。（示例数据）</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://example.gov.cn/demo/2" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard cas" id="src-3" data-type="case" data-cite-id="3" data-search="案例·参考"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">参考案例</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>某市数字化转型典型案例集（示例标题）</h4><div class="sc-meta">某市工业和信息化局 | 2025-11-20</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">某区建成全市首个产业大脑平台，接入规上企业 1200 家。（示例案例）</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://example.gov.cn/demo/3" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><div class="uncited-group"><div class="ug-title">未引用素材（1 条 · 接口召回但正文未采用，供比对参考）</div><div class="uncited-list"><article class="scard mat" id="src-4" data-type="material" data-cite-id="4" data-search="" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看原文</span></div><h4>未采用的召回材料（示例）</h4><div class="sc-meta">某研究院 | 2025-06-01</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">这条材料检索召回了，但正文未采用，展示在未引用分组。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://example.gov.cn/demo/r1" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article></div></div></div><div class="kb-zone"><div class="kb-title">原始召回存档（深知知识专库）</div><div class="kb-desc">以下链接可回看每次搜索的完整召回结果（含未写入正文的材料）；原文页面改版或下线时可回看当时召回的快照。逐条材料的核验请点击来源卡上的"查看原文"直达官方页面。</div><div class="kb-list"><a class="kb-chip" href="https://example.gov.cn/demo/kb" target="_blank" rel="noopener"><span class="kb-label">相关搜索来源</span><span class="kb-count">4 条来源 · 可回看</span><span class="kb-arrow">打开 ↗</span></a></div></div></aside>
 </div>
 
 <div class="sheet-mask" aria-hidden="true"></div>
-<div class="sheet" role="dialog" aria-label="依据对照">
+<div class="sheet" role="dialog" aria-label="核验材料">
   <div class="sheet-grab"></div>
   <div class="sheet-head"><b>依据对照</b><button class="sheet-close" type="button">收起</button></div>
   <div class="sheet-body"></div>
@@ -445,18 +426,18 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     });
   });
 
-  /* 摘录点击展开/收起：内容被截断（超出 4 行）的卡片显示"展开全文"引导，
-     未截断的短摘录不显示，避免误导 */
+  /* 摘录折叠：按渲染实测高度判断是否截断（超 4 行），仅实际截断的卡片显示「展开全文」；
+     点摘录或「展开全文」切换；展开时滚动回卡片顶部。 */
   cards.forEach(function (c) {
     var ex = c.querySelector(".sc-excerpt");
     if (!ex) return;
     if (ex.scrollHeight > ex.clientHeight + 4) c.classList.add("clampable");
-    var more = c.querySelector(".sc-more");
     function toggleExcerpt() { c.classList.toggle("open"); }
     ex.addEventListener("click", function (e) {
       if (e.target.closest("a")) return;
       toggleExcerpt();
     });
+    var more = c.querySelector(".sc-more");
     if (more) {
       more.addEventListener("click", toggleExcerpt);
       more.addEventListener("keydown", function (e) {
@@ -470,10 +451,15 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     var summary = chip.querySelector("summary");
     if (summary) {
       summary.addEventListener("click", function (e) {
-        if (!isMobile()) return;
-        e.preventDefault();
-        var card = byId[chip.getAttribute("data-cite")];
-        if (card) openSheet(card, sentenceOf(chip));
+        if (isMobile()) {
+          e.preventDefault();
+          var card = byId[chip.getAttribute("data-cite")];
+          if (card) openSheet(card, sentenceOf(chip));
+          return;
+        }
+        var y = window.scrollY;
+        var restore = function () { window.scrollTo(0, y); };
+        requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
       });
     }
     chip.addEventListener("toggle", function () {
@@ -486,14 +472,26 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     });
   });
 
-  /* 搜索 */
+  /* 检索分组筛选（单选 + 全部 + 未引用，胶囊样式）+ 关键字搜索叠加 */
+  var cond = "";
   var kw = "";
   function apply() {
     cards.forEach(function (c) {
+      var okCond = !cond;
+      if (cond === "__unused__") okCond = c.getAttribute("data-unused") === "1";
+      else if (cond) okCond = c.getAttribute("data-search") === cond;
       var okKw = !kw || (c.textContent || "").toLowerCase().indexOf(kw) !== -1;
-      c.classList.toggle("hide", !okKw);
+      c.classList.toggle("hide", !(okCond && okKw));
     });
   }
+  document.querySelectorAll(".filters button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".filters button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      cond = b.getAttribute("data-cond") || "";
+      apply();
+    });
+  });
   var search = document.querySelector(".src-search");
   if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); apply(); });
 })();

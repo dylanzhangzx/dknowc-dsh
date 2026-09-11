@@ -120,6 +120,14 @@ def main() -> int:
 
     api_key = os.environ.get(API_KEY_ENV, "").strip()
     if not api_key:
+        # dsh 兜底：注册成功后 Key 已自动写入 ~/.zshrc（register_key.mjs 持久化），
+        # 本进程环境变量可能未注入——从 ~/.zshrc 解析（api_key.py 同源逻辑）。
+        try:
+            from api_key import resolve_api_key
+            api_key, _src = resolve_api_key()
+        except ImportError:
+            pass
+    if not api_key:
         print(f"错误：缺少环境变量 {API_KEY_ENV}（请用 DKNOWC_API_KEY=<key> 前缀赋值方式传入）。", file=sys.stderr)
         return 2
 

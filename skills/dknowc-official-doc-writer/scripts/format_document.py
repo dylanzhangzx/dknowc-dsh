@@ -134,7 +134,7 @@ SKILL_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录
 _ws = os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
     # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
     _sid = os.environ.get("DSH_SESSION_ID", "")
     _ws = os.path.join(os.getcwd(), "dknowc-output", (_sid[:8] if _sid else "_default"))
@@ -504,20 +504,6 @@ def add_gbt_page_numbers(doc, section):
     add_standard_page_number(section.even_page_footer, WD_ALIGN_PARAGRAPH.LEFT)
 
 
-def add_ai_disclaimer(doc):
-    """在文档最末尾添加 AI 生成提示。"""
-    if doc.paragraphs and doc.paragraphs[-1].text.strip() == AI_DISCLAIMER_TEXT:
-        return
-
-    para = doc.add_paragraph()
-    para.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    para.paragraph_format.space_before = Pt(0)
-    para.paragraph_format.space_after = Pt(0)
-    para.paragraph_format.line_spacing = Pt(18)
-    para.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
-
-    add_formatted_text(para, AI_DISCLAIMER_TEXT, '仿宋_GB2312', 10.5, color=RGBColor(0x80, 0x80, 0x80))
-
 
 def set_document_core_properties(doc, title=None):
     """清理并写入基础 DOCX 元数据。"""
@@ -868,7 +854,7 @@ def promote_plain_title(lines):
 
 
 def is_legacy_ai_disclaimer(line):
-    """过滤模型自行追加的旧版 AI 提示，统一由脚本在末尾生成规范提示。"""
+    """过滤模型自行追加的旧版 AI 提示——正文一律不内嵌，AI 标识仅由交付话术承担。"""
     stripped = line.strip()
     return stripped in {
         "---",
@@ -1376,6 +1362,10 @@ def create_document(content_text, output_path=None):
         if before == lines and inferred_title:
             lines = [f"# {inferred_title}", ""] + lines
     i = 0
+    # 落款定位状态：记录落款单位/成文日期，用于日期右移两字定位
+    last_signing_entity = ""
+    last_signing_para = None
+    last_sign_date = ""
     line_count = len(lines)
     
     # 从配置获取字体信息
@@ -1638,30 +1628,45 @@ def create_document(content_text, output_path=None):
             i += 1
             continue
 
-        # 落款单位
+        # 落款单位：右对齐并右空两字（单位最后一字内缩两字）
         if is_signing_entity(stripped):
+            last_signing_entity = stripped
             para = doc.add_paragraph()
             para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             add_formatted_text(para, stripped, body_font, body_size)
             set_paragraph_format(para, first_line_indent=False, alignment=WD_ALIGN_PARAGRAPH.RIGHT, line_spacing=body_line_spacing)
+            para.paragraph_format.right_indent = Pt(body_size * 2)
+            para.paragraph_format.keep_with_next = True
+            last_signing_para = para
             i += 1
             continue
 
-        # 联系信息
+        # 联系信息不再右对齐成结尾段：规范要求联系人电话写进正文（行文方向规则见文种标准），
+        # 独立联系段按普通正文渲染（首行缩进），保留对存量稿件的兼容。
         if is_contact_info(stripped):
-            para = doc.add_paragraph()
-            para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            add_formatted_text(para, stripped, body_font, body_size)
-            set_paragraph_format(para, first_line_indent=False, alignment=WD_ALIGN_PARAGRAPH.RIGHT, line_spacing=body_line_spacing)
-            i += 1
-            continue
+            print(f"格式提示：检测到独立联系人段（{stripped[:24]}…）——按规范联系人电话应写入正文相关事项段，"
+                  f"已按正文段落渲染；建议将联系人信息并入对应事项段后重新生成。", file=sys.stderr)
 
-        # 落款日期：优先根据前一行落款单位和后续附录标记判断，避免素材页影响位置比例
+        # 落款日期（GB/T 9704-2012 7.3.5.2）：首字比署名首字右移二字；日期长于署名时改为日期右空二字、
+        # 署名右空相应增加——两分支均满足"日期首字=署名首字+2字"，日期长时右端固定空二字更贴版心右缘
         if should_right_align_date(lines, i):
+            last_sign_date = stripped
+            date_text = re.sub(r'\s+', '', stripped)
+            unit_len = len(re.sub(r'\s+', '', last_signing_entity))
+            if len(date_text) > unit_len:
+                date_indent = 2
+                unit_indent = len(date_text) - unit_len
+            else:
+                unit_indent = 2
+                date_indent = max(2, unit_len + 4 - len(date_text))
+            if last_signing_para is not None and last_signing_para._p.getparent() is not None:
+                last_signing_para.paragraph_format.right_indent = Pt(body_size * unit_indent)
             para = doc.add_paragraph()
             para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             add_formatted_text(para, stripped, body_font, body_size)
             set_paragraph_format(para, first_line_indent=False, alignment=WD_ALIGN_PARAGRAPH.RIGHT, line_spacing=body_line_spacing)
+            para.paragraph_format.right_indent = Pt(body_size * date_indent)
+            para.paragraph_format.keep_with_next = True
             i += 1
             continue
 
@@ -1707,7 +1712,6 @@ def create_document(content_text, output_path=None):
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    add_ai_disclaimer(doc)
     set_document_core_properties(doc, default_title)
     doc.save(output_path)
     return display_path(output_path)

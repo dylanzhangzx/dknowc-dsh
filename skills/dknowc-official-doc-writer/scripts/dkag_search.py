@@ -37,7 +37,7 @@ DEFAULT_BASE_URL = "https://open.dknowc.cn/dependable/search/"
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
     # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
@@ -172,7 +172,11 @@ def attach_knowledge_base_aliases(result: dict, knowledge_base_url: str) -> dict
 
 # 余额/额度用尽的判定：HTTP 状态与业务错误消息双路径。
 # 命中后返回 quota_exhausted=true，Agent 必须停止重试并引导用户到 MaaS 处理，不得反复调用。
-QUOTA_EXHAUSTED_HTTP_CODES = {402, 403}
+# 错误码语义按接口文档区分：401=密钥校验失败（可能失效，需重新获取）；403=接口无权限（密钥类型不符）；
+# 402=余额类。429 接口文案为"繁忙/限流/余额不足"三义混合、无法归因——现阶段全部按额度用尽处理
+# （2026-09-10 产品决策），待后端把服务端问题与余额拆分为不同错误码后再调整回区分逻辑。
+MAAS_PLATFORM_URL = "https://platform.dknowc.cn/auth/#/login"
+QUOTA_EXHAUSTED_HTTP_CODES = {402, 429}
 QUOTA_EXHAUSTED_KEYWORDS = (
     "余额不足", "额度不足", "额度已用完", "额度已用尽", "体验额度已用完",
     "余额已不足", "欠费", "quota", "insufficient", "balance", "exceeded",
@@ -192,6 +196,21 @@ def detect_quota_exhausted(status_code=None, errmsg=None, biz_status=None):
     return False
 
 
+def user_message_for_error(status_code=None, quota_exhausted=False):
+    """按错误类型返回给用户的固定话术（Agent 必须原样转述，不得改写后发挥）。"""
+    if quota_exhausted:
+        return (f"检索调不动，很可能是额度用完了：到 {MAAS_PLATFORM_URL} 看一下额度，"
+                "完成实名认证可以领 100 元体验金。")
+    if status_code == 401:
+        return "访问密钥校验没通过（密钥可能已失效），我重新获取一下密钥；还不行的话需要重新验证手机号。"
+    if status_code == 403:
+        return (f"当前密钥没有检索权限（可能类型不符或已变更）。到 {MAAS_PLATFORM_URL} 查看密钥权限，"
+                "或重新验证手机号获取新密钥。")
+    if status_code == 500:
+        return "检索服务暂时异常，我稍后再试；持续异常的话先用已有材料写，政策依据处标'待补'，不影响交付。"
+    return "检索暂时没连上（网络波动），稍等我再试一次；持续失败的话先用已有材料写，政策依据处标'待补'。"
+
+
 def load_config(config_path: Optional[Path] = None) -> dict:
     """
     从统一环境变量加载 API Key。搜索接口地址固定为 DEFAULT_BASE_URL。
@@ -199,7 +218,11 @@ def load_config(config_path: Optional[Path] = None) -> dict:
     if config_path is not None:
         raise ValueError(f"当前版本不再读取 config.ini，请通过环境变量 {API_KEY_ENV} 配置 API Key。")
 
-    api_key = os.environ.get(API_KEY_ENV, "").strip()
+    try:
+        from api_key import resolve_api_key
+        api_key, _key_source = resolve_api_key()
+    except ImportError:
+        api_key = os.environ.get(API_KEY_ENV, "").strip()
     if not api_key or api_key in {"your_api_key_here", "你的深知搜索 API Key"}:
         raise ValueError(
             f"API Key 为空，请通过环境变量 {API_KEY_ENV} 配置有效 API Key。"
@@ -475,7 +498,7 @@ def dkag_search(
         "searchChannel": normalized_search_channels
     }
 
-    # 发送请求
+    # 发送请求（429 全部按额度用尽处理，不重试——见 detect_quota_exhausted 注释）
     try:
         response = requests.post(DEFAULT_BASE_URL, data=json.dumps(payload), headers=headers, timeout=30)
         response.raise_for_status()
@@ -500,11 +523,12 @@ def dkag_search(
                 "quota_exhausted": quota_exhausted,
                 "message": ("深知搜索额度或余额已用尽，请到 MaaS 管理平台实名认证领取赠金或充值后重试"
                             if quota_exhausted else "深知搜索接口返回异常"),
+                "user_message": user_message_for_error(quota_exhausted=quota_exhausted),
                 "ret": result.get("ret"),
                 "errcode": result.get("errcode"),
                 "errmsg": errmsg,
                 "bizStatus": biz_status,
-                "maas_platform_url": "https://platform.dknowc.cn/" if quota_exhausted else None,
+                "maas_platform_url": MAAS_PLATFORM_URL if quota_exhausted else None,
                 "search_meta": search_meta
             }
 
@@ -528,10 +552,11 @@ def dkag_search(
             "message": ("深知搜索额度或余额已用尽，请到 MaaS 管理平台实名认证领取赠金或充值后重试"
                         if quota_exhausted else
                         "请求失败：网络连接、代理或接口返回异常，请检查运行环境和 API Key"),
+            "user_message": user_message_for_error(status_code=status_code, quota_exhausted=quota_exhausted),
             "error_type": type(e).__name__,
             "payload": payload,
             "status_code": status_code,
-            "maas_platform_url": "https://platform.dknowc.cn/" if quota_exhausted else None,
+            "maas_platform_url": MAAS_PLATFORM_URL if quota_exhausted else None,
             "search_meta": search_meta
         }
 

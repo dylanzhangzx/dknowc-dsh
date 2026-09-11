@@ -18,7 +18,7 @@ API_KEY_ENV = "DKNOWC_API_KEY"
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
     # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
@@ -68,7 +68,11 @@ def load_api_key(config_path: Optional[Path] = None) -> str:
     if config_path is not None:
         raise ValueError(f"当前版本不再读取 config.ini，请通过环境变量 {API_KEY_ENV} 配置 API Key。")
 
-    api_key = os.environ.get(API_KEY_ENV, "").strip()
+    try:
+        from api_key import resolve_api_key
+        api_key, _key_source = resolve_api_key()
+    except ImportError:
+        api_key = os.environ.get(API_KEY_ENV, "").strip()
     if not api_key or api_key in {"your_api_key_here", "你的深知搜索 API Key"}:
         raise ValueError(f"API Key 为空，请通过环境变量 {API_KEY_ENV} 配置有效 API Key。")
     return api_key
@@ -100,14 +104,6 @@ def call_outline_api(query: str, api_key: str, timeout: int) -> tuple[int, dict 
     except ValueError:
         body = response.text
     return response.status_code, body, elapsed
-
-
-def _rel_to_ws(path: Path) -> str:
-    """把输出路径显示为相对工作区（WS_ROOT）的形式；不在工作区内则显示绝对路径。"""
-    try:
-        return str(path.relative_to(WS_ROOT))
-    except ValueError:
-        return str(path.resolve())
 
 
 def build_output(query: str, status_code: int, body: dict | str, elapsed: float) -> dict:
@@ -177,7 +173,7 @@ def main():
             json.dump(result, f, ensure_ascii=False, indent=2)
 
         summary = {
-            "output": _rel_to_ws(output_path),
+            "output": str(output_path.relative_to(SKILL_ROOT)),
             "status_code": status_code,
             "elapsed_seconds": elapsed,
             "request_success": result.get("success"),

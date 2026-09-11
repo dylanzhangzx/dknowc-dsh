@@ -3,7 +3,7 @@
 
 报告定位：不止展示"材料从哪来"（溯源），更要传达"我们查过了，可以交付"（核验）。
 三个核验层次：
-- 报告级：核验报告单（依据溯源 / 引用绑定 / 时效检查 / 类型覆盖 / 答案自检）
+- 报告级：核验报告单（依据溯源 / 引用对应 / 材料新旧 / 交付前检查）
 - 材料级：每条来源卡核验链标记（摘录可比对 + 原文可打开 + 知识专库可回溯）
 - 引用级：答案角标与来源卡一一绑定，未绑定角标红色警示
 
@@ -11,7 +11,7 @@
 "建议人工复核"；self_check 未传入时显示"未记录"，不假装通过。
 生成前硬校验：识别到来源材料而答案无 [n] 角标时拒绝生成并报错。
 
-布局：深色顶栏 + 左栏报告正文（分节卡片）+ 右栏核验材料面板（类型筛选/搜索）；
+布局：深色顶栏 + 左栏报告正文（分节卡片）+ 右栏核验材料面板（搜索）；
 打印归档模式（@media print 单栏全展开）。同时输出移除角标的干净 Markdown。
 """
 
@@ -91,10 +91,12 @@ def strip_citation_markers(text: str) -> str:
 # ============================================================
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 产物根：dsh 会话隔离 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/；DKNWOC_WS_ROOT 显式优先；无会话回退 _default
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
+    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
@@ -103,7 +105,7 @@ OUTPUT_DIR = WS_ROOT / "official-docs" / "output"
 
 
 def _resolve_input(value: str) -> Path:
-    """把待读取文件解析到会话工作区的 official-docs/search-results/。
+    """把待读取文件解析到本 Skill 的 official-docs/search-results/ 工作区。
 
     裸文件名进 search-results/；带子路径的相对路径按当前目录解析，
     因此 official-docs/search-results/xxx.json 这类写法也可直接使用。
@@ -117,7 +119,7 @@ def _resolve_input(value: str) -> Path:
 
 
 def _resolve_output(value: str) -> Path:
-    """把交付物解析到会话工作区的 official-docs/output/，自动补 .html 后缀。"""
+    """把交付物解析到本 Skill 的 official-docs/output/ 工作区，自动补 .html 后缀。"""
     raw = Path(value).expanduser()
     if raw.is_absolute():
         resolved = raw.resolve()
@@ -131,7 +133,7 @@ def _resolve_output(value: str) -> Path:
 
 
 def _resolve_output_md(value: str) -> Path:
-    """把干净 Markdown 交付物解析到会话工作区的 official-docs/output/，自动补 .md 后缀。"""
+    """把干净 Markdown 交付物解析到 official-docs/output/ 工作区，自动补 .md 后缀。"""
     raw = Path(value).expanduser()
     if raw.is_absolute():
         resolved = raw.resolve()
@@ -210,34 +212,8 @@ def renumber_citations(answer: str, sources: List[Dict[str, str]]) -> tuple:
 
 
 # ============================================================
-# 素材四分类
+# 素材提取（沿用原数据层）
 # ============================================================
-
-KIND_CATALOG = {
-    "policy": ("政策文件", "pol"),
-    "data": ("数据资料", "dat"),
-    "case": ("参考案例", "cas"),
-    "reference": ("参考资料", "ref"),
-    "material": ("材料", "mat"),
-}
-
-
-def normalize_kind(raw: str) -> Tuple[str, str, str]:
-    """把来源类型文本归一化为（类型键, 中文标签, css 类名）。"""
-    text = str(raw or "")
-    if "政策" in text or "法规" in text or "依据" in text or "policy" in text.lower():
-        key = "policy"
-    elif "数据" in text or "统计" in text or "指标" in text or "data" in text.lower():
-        key = "data"
-    elif "案例" in text or "经验" in text or "做法" in text or "case" in text.lower():
-        key = "case"
-    elif "表述" in text or "行文" in text or "reference" in text.lower():
-        key = "reference"
-    else:
-        key = "material"
-    label, css = KIND_CATALOG[key]
-    return key, label, css
-
 
 def parse_year_month(raw: str) -> Optional[Tuple[int, int]]:
     """从日期文本提取（年, 月）；识别 2025年8月 / 2025-08 / 2025.08 / 2025-08-15。"""
@@ -251,11 +227,6 @@ def parse_year_month(raw: str) -> Optional[Tuple[int, int]]:
     if m:
         return int(m.group(1)), 1
     return None
-
-
-# ============================================================
-# 素材提取（沿用原数据层）
-# ============================================================
 
 def paragraph_text(item: Dict[str, Any]) -> str:
     paragraphs = item.get("content") or item.get("段落") or item.get("paragraphs") or item.get("paragraphList")
@@ -301,11 +272,10 @@ def content_segments(item: Dict[str, Any]) -> List[Dict[str, str]]:
     return segments
 
 
-def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+def source_from_article(item: Dict[str, Any], index: int) -> Dict[str, str]:
     vo = item.get("vo") if isinstance(item.get("vo"), dict) else {}
-    segment = segment or {}
+    # 角标号只用"材料级"编号：接口段落 id（每篇从 1 重排）不得作为角标号，否则多篇绑定冲突。
     explicit_id = first_str(
-        segment.get("id"),
         item.get("角标"),
         item.get("编号"),
         item.get("index"),
@@ -347,16 +317,28 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
         "date": first_str(item.get("发布日期"), item.get("date"), item.get("发布时间"), item.get("createDate"), vo.get("dateTime"), vo.get("createDate")),
         "url": first_str(item.get("sourceUrl"), item.get("source_url"), item.get("源网址"), item.get("原文链接"), item.get("url"), item.get("原文"), vo.get("sourceUrl"), vo.get("url")),
         "policy_url": first_str(item.get("policyUrl"), item.get("policy_url"), item.get("知识专库原文"), vo.get("policyUrl")),
-        "excerpt": segment.get("text") or paragraph_text(item),
-        "section": first_str(segment.get("title"), item.get("正文对应"), item.get("section")),
-        "kind": first_str(item.get("类型"), item.get("type"), item.get("素材类型"), vo.get("typeName"), "材料"),
+        # 一篇材料一张卡：段落全部合并为摘录（不再按段拆卡，防止角标语义错位）
+        "excerpt": paragraph_text(item),
+        "section": first_str(item.get("正文对应"), item.get("section"), item.get("支撑")),
         "verify_note": first_str(item.get("核验"), item.get("verification"), item.get("核验说明")),
         "area": first_str(item.get("intentionArea"), item.get("area"), item.get("地域")),
+        # 发布日期可信度（"高"=模型治理入库，标题模型精抽；其余为门户抓取不标）
+        "conf": first_str(item.get("发布日期可信度"), item.get("可信度"), item.get("confidence"), item.get("createDateReliability"), item.get("时间可靠性"), item.get("reliability")),
     }
-    key, label, css = normalize_kind(source["kind"])
-    source["type_key"] = key
-    source["type_label"] = label
-    source["type_css"] = css
+    # 原文位置标题链：接口返回的段落标题即该段在原文件中的章节位置（层级以 > 分隔），统一转 ›。
+    # 一篇材料多段时取首个非空段落标题作位置；无段落标题如实不显示。
+    seg_title = ""
+    for seg in content_segments(item):
+        if first_str(seg.get("title")):
+            seg_title = first_str(seg.get("title"))
+            break
+    seg_title = re.sub(r"\s*>\s*", " › ", seg_title).strip("› ").strip()
+    if seg_title and seg_title != source["title"]:
+        source["doc_section"] = seg_title
+        source["chain_full"] = f"{source['title']} › {seg_title}"
+    else:
+        source["doc_section"] = ""
+        source["chain_full"] = ""
     source["has_link"] = bool(source["url"] and source["url"] != "接口未返回") or bool(source["policy_url"])
     source["verified"] = bool(source["excerpt"]) and source["has_link"]
     return source
@@ -408,17 +390,15 @@ def extract_sources(payload: Dict[str, Any]) -> List[Dict[str, str]]:
     sources: List[Dict[str, str]] = []
     seen = set()
     for item in raw_sources:
-        segments = content_segments(item)
-        candidates = segments or [None]
-        for segment in candidates:
-            source = source_from_article(item, len(sources) + 1, segment=segment)
-            key = (source["id"], source["title"], source["url"], source["excerpt"][:80])
-            if key in seen:
-                continue
-            seen.add(key)
-            if not source["id"]:
-                source["id"] = str(len(sources) + 1)
-            sources.append(source)
+        # 一篇材料一张卡：角标按"材料"粒度与正文一一对应，段落合并为摘录，不按段拆卡。
+        source = source_from_article(item, len(sources) + 1)
+        key = (source["id"], source["title"], source["url"], source["excerpt"][:80])
+        if key in seen:
+            continue
+        seen.add(key)
+        if not source["id"]:
+            source["id"] = str(len(sources) + 1)
+        sources.append(source)
     return sources
 
 
@@ -553,12 +533,14 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
     """核验报告单数据。只计算脚本真实可得的结果，不虚构通过。"""
     generated_at = generated_at or datetime.now()
 
-    # ① 依据溯源：摘录可比对 + 原文链接/知识专库可回看
-    missing_links = [s["title"] for s in sources if not s.get("has_link")]
-    missing_excerpts = [s["title"] for s in sources if not (s.get("excerpt") or "").strip()]
-    trace_passed = len(sources) - len(set(missing_links) | set(missing_excerpts))
+    # ① 依据溯源：只统计正文引用材料（未引用召回未进入正文核验流程，缺链不影响结论）
+    used_ids = set(citation_ids(answer))
+    used_sources = [s for s in sources if s["id"] in used_ids]
+    missing_links = [s["title"] for s in used_sources if not s.get("has_link")]
+    missing_excerpts = [s["title"] for s in used_sources if not (s.get("excerpt") or "").strip()]
+    trace_passed = len(used_sources) - len(set(missing_links) | set(missing_excerpts))
 
-    # ② 引用绑定：正文角标与来源卡一一对应（按角标出现次数计，与用户在正文中数到的一致）
+    # ② 引用对应：正文角标与来源卡一一对应（按角标出现次数计，与用户在正文中数到的一致）
     cited = citation_ids(answer)
     all_marks = re.findall(r"\[(\d+)\]", answer)
     source_ids = {s["id"] for s in sources}
@@ -566,7 +548,7 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
     unbound = [cid for cid in unbound_ids for _ in range(all_marks.count(cid))]
     no_citation = bool(sources) and not cited
 
-    # ③ 时效检查：材料日期范围与历史材料计数
+    # ③ 材料新旧：材料日期范围与历史材料计数
     dated = [parse_year_month(s.get("date")) for s in sources]
     dated = [d for d in dated if d]
     freshness = None
@@ -578,12 +560,7 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
             "old_count": sum(1 for y, _ in dated if y <= generated_at.year - 3),
         }
 
-    # ④ 类型覆盖：素材四分类分布
-    coverage = {key: 0 for key in KIND_CATALOG}
-    for s in sources:
-        coverage[s.get("type_key", "material")] = coverage.get(s.get("type_key", "material"), 0) + 1
-
-    # ⑤ 答案自检：由 --self-check-file 或 JSON 的 self_check 传入，未传入如实显示未记录
+    # ⑤ 交付前检查：由 --self-check-file 或 JSON 的 self_check 传入，未传入如实显示未记录
     self_check_raw = None
     for holder in (payload, payload.get("content") if isinstance(payload.get("content"), dict) else {}):
         self_check_raw = self_check_raw or holder.get("selfCheck") or holder.get("self_check")
@@ -597,7 +574,7 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
         self_check = {"items": {}, "passed": 0, "total": len(SELF_CHECK_ITEMS), "status": "missing"}
 
     # 政策效力：无法自动判定现行效力，列出建议人工复核
-    policy_count = coverage.get("policy", 0)
+    policy_count = len(used_sources)
 
     # 交付状态约束：核验报告是交付物，交付时必须为核验通过状态。
     # Agent 可修正的问题（无角标/未绑定/自检未过）在生成前已被硬校验拦截；
@@ -614,19 +591,18 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
     if unbound:
         reasons.append(f"{len(unbound)} 处答案角标未绑定材料")
     if self_check["status"] == "fail":
-        reasons.append("答案自检存在未通过项")
+        reasons.append("交付前检查存在未通过项")
 
     return {
         "overall": {
             "passed": overall_passed,
-            "label": "核验完成，答案依据可交付" if overall_passed else "核验未完全通过",
+            "label": "核验完成，答案依据逐条对过原文" if overall_passed else "核验未完全通过",
             "reasons": reasons,
         },
         "traceability": {"total": len(sources), "passed": trace_passed,
                          "missing_links": missing_links, "missing_excerpts": missing_excerpts},
         "binding": {"total": len(all_marks), "bound": len(all_marks) - len(unbound), "unbound": unbound_ids, "no_citation": no_citation},
         "freshness": freshness,
-        "coverage": coverage,
         "self_check": self_check,
         "policy_count": policy_count,
         "manual_checks": [str(x) for x in (payload.get("verificationChecks") or payload.get("verification_checks") or []) if str(x).strip()],
@@ -849,37 +825,31 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
 
     bd = v["binding"]
     if bd.get("no_citation"):
-        bd_html = (f'<div class="vi"><span class="s fail">✗ 引用绑定 0/0</span>'
+        bd_html = (f'<div class="vi"><span class="s fail">✗ 引用对应 0/0</span>'
                    f'<span class="d">正文未包含来源角标，{v["traceability"]["total"]} 条素材无法与正文对应</span></div>')
     elif not bd["total"]:
-        bd_html = '<div class="vi"><span class="s none">— 引用绑定 0/0</span><span class="d">正文未包含来源角标</span></div>'
+        bd_html = '<div class="vi"><span class="s none">— 引用对应 0/0</span><span class="d">正文未包含来源角标</span></div>'
     elif not bd["unbound"]:
-        bd_html = (f'<div class="vi"><span class="s ok">✓ 引用绑定 {bd["bound"]}/{bd["total"]}</span>'
+        bd_html = (f'<div class="vi"><span class="s ok">✓ 引用对应 {bd["bound"]}/{bd["total"]}</span>'
                    f'<span class="d">正文引用全部对应素材</span></div>')
     else:
         unbound_text = "、".join(f"[{esc(x)}]" for x in bd["unbound"][:8])
-        bd_html = (f'<div class="vi"><span class="s fail">✗ 引用绑定 {bd["bound"]}/{bd["total"]}</span>'
+        bd_html = (f'<div class="vi"><span class="s fail">✗ 引用对应 {bd["bound"]}/{bd["total"]}</span>'
                    f'<span class="d">未绑定角标 {unbound_text}</span></div>')
 
     fr = v["freshness"]
     if fr:
         rng = f"{fr['min'][0]}-{fr['min'][1]:02d}～{fr['max'][0]}-{fr['max'][1]:02d}"
         old = f"（{fr['old_count']} 条历史材料，已按参考口径处理）" if fr["old_count"] else ""
-        fr_html = f'<div class="vi"><span class="s ok">✓ 时效检查 完成</span><span class="d">材料日期 {esc(rng)}{esc(old)}</span></div>'
+        fr_html = f'<div class="vi"><span class="s ok">✓ 材料新旧 完成</span><span class="d">材料日期 {esc(rng)}{esc(old)}</span></div>'
     else:
-        fr_html = '<div class="vi"><span class="s none">— 时效检查 未记录</span><span class="d">素材未标注发布日期</span></div>'
-
-    cov = v["coverage"]
-    parts = [f"{KIND_CATALOG[k][0]} {cov[k]}" for k in ("policy", "data", "case", "reference") if cov.get(k)]
-    cov_state = "ok" if cov.get("policy") or cov.get("data") or cov.get("case") else "none"
-    cov_html = (f'<div class="vi"><span class="s {cov_state}">{"✓" if cov_state == "ok" else "—"} 类型覆盖</span>'
-                f'<span class="d">{esc(" · ".join(parts)) if parts else "未标注素材类型"}</span></div>')
+        fr_html = '<div class="vi"><span class="s none">— 材料新旧 未记录</span><span class="d">素材未标注发布日期</span></div>'
 
     sc = v["self_check"]
     if sc["status"] == "pass":
         notes = "；".join(note for _, note in sc["items"].values() if note)
         title_attr = f' title="{esc(notes)}"' if notes else ""
-        sc_html = (f'<div class="vi"><span class="s ok"{title_attr}>✓ 答案自检 {sc["passed"]}/{sc["total"]}</span>'
+        sc_html = (f'<div class="vi"><span class="s ok"{title_attr}>✓ 交付前检查 {sc["passed"]}/{sc["total"]}</span>'
                    f'<span class="d">角标/绑定/核验/一致/清单{esc(" · 悬停查看核验说明" if notes else "")}</span></div>')
     elif sc["status"] == "fail":
         failed_parts = []
@@ -887,24 +857,24 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
             if status != "pass":
                 suffix = f"（{note[:40]}…）" if len(note) > 40 else (f"（{note}）" if note else "")
                 failed_parts.append(label + suffix)
-        sc_html = (f'<div class="vi"><span class="s fail">✗ 答案自检 {sc["passed"]}/{sc["total"]}</span>'
+        sc_html = (f'<div class="vi"><span class="s fail">✗ 交付前检查 {sc["passed"]}/{sc["total"]}</span>'
                    f'<span class="d">未通过：{esc("、".join(failed_parts))}</span></div>')
     else:
-        sc_html = '<div class="vi"><span class="s none">— 答案自检 未记录</span><span class="d">本次未传入自检结果</span></div>'
+        sc_html = '<div class="vi"><span class="s none">— 交付前检查 未记录</span><span class="d">本次未传入自检结果</span></div>'
 
     manual = ""
     if v["policy_count"]:
-        manual = (f'<div class="vi"><span class="s man">◐ 效力复核</span>'
-                  f'<span class="d">{v["policy_count"]} 条政策依据建议按官方发布复核现行效力</span></div>')
+        manual = (f'<div class="vi"><span class="s man">◐ 现行效力</span>'
+                  f'<span class="d">{v["policy_count"]} 条材料建议按官方发布复核现行效力</span></div>')
 
     return f"""
     <div class="verify {state}">
       <div class="v-head"><span class="v-shield">{'✓' if ov['passed'] else '!'}</span>{esc(ov['label'])}{stamp}</div>
       {reasons_html}
       <div class="v-grid">
-        {tr_html}{bd_html}{fr_html}{cov_html}{sc_html}{manual}
+        {tr_html}{bd_html}{fr_html}{sc_html}{manual}
       </div>
-      <div class="v-note">核验方法：深知可信统一问答召回权威来源 → 逐条溯源（摘录比对 + 原文链接 + 知识专库回看）→ 答案引用绑定 → 答案自检。政策现行效力以官方发布为准。{manual_checks_html}</div>
+      <div class="v-note">核验方法：深知可信统一问答召回权威来源 → 逐条溯源（摘录比对 + 原文链接 + 知识专库回看）→ 答案引用对应 → 交付前检查。政策现行效力以官方发布为准。{manual_checks_html}</div>
     </div>"""
 
 
@@ -946,9 +916,9 @@ def render_section_cards(sections: List[Dict[str, Any]], sources: List[Dict[str,
     return "\n".join(cards)
 
 
-def render_source_card(source: Dict[str, str]) -> str:
+def render_source_card(source: Dict[str, str], used: bool = True) -> str:
     if source.get("verified"):
-        note = source.get("verify_note") or "摘录可比对，原文链接与知识专库可回看"
+        note = source.get("verify_note") or "摘录可比对，原文链接与云端存档可回看"
         vk = f'<span class="sc-vk ok" title="{esc(note)}">✓ 已核验</span>'
         note_html = f'<div class="sc-vnote">{esc(short(note, 90))}</div>' if source.get("verify_note") else ""
     else:
@@ -957,15 +927,31 @@ def render_source_card(source: Dict[str, str]) -> str:
         note_html = ""
     links = render_source_links(source.get("url"), source.get("policy_url", ""))
     meta = " | ".join(v for v in [source.get("agency"), source.get("date"), source.get("area")] if v)
+    # 标题链：段落标题即该段在原文件中的章节位置（悬停见含文章标题的完整链）；无则如实不显示
+    chain_html = ""
+    if source.get("doc_section"):
+        chain_html = (f'<div class="sc-chain" title="{esc("原文中的位置：" + source["chain_full"])}">'
+                      f'标题：{esc(source["doc_section"])}</div>')
     section_html = f'<div class="sc-section">支撑：{esc(source["section"])}</div>' if source.get("section") else ""
+    # 高可信徽标：仅"发布日期可信度=高"（模型治理入库、标题模型精抽）；其余不标
+    conf_badge = ""
+    if source.get("conf") == "高":
+        conf_badge = ('<span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，'
+                      '标题为模型从原文动态抽取，非规则提取">高可信</span>')
+    # 摘录上方标注：内容为接口返回的原文原段，非 AI 生成
+    excerpt_tag = '<div class="sc-extag">▍ 原文原段（非 AI 生成）</div>'
+    # 已引用材料显示角标编号；未引用召回材料显示"未引用"灰标（不占正文角标号）
+    id_html = f'<span class="sc-id">[{esc(source["id"])}]</span>' if used else '<span class="sc-unused">未引用</span>'
+    unused_attr = "" if used else ' data-unused="1"'
     return (
-        f'<article class="scard {source["type_css"]}" id="src-{esc(source["id"])}" data-type="{esc(source["type_key"])}" data-cite-id="{esc(source["id"])}">'
-        f'<div class="sc-head"><span class="sc-id">[{esc(source["id"])}]</span>'
-        f'<span class="sc-type">{esc(source["type_label"])}</span>{vk}</div>'
+        f'<article class="scard" id="src-{esc(source["id"])}" data-cite-id="{esc(source["id"])}"{unused_attr}>'
+        f'<div class="sc-head">{id_html}{conf_badge}{vk}</div>'
         f'<h4>{esc(source.get("title"))}</h4>'
         f'<div class="sc-meta">{esc(meta)}</div>'
-        f'{section_html}{note_html}'
+        f'{chain_html}{section_html}{note_html}'
+        f'{excerpt_tag}'
         f'{render_excerpt_html(source.get("excerpt") or "接口返回中未识别到可展示的摘录。")}'
+        f'<div class="sc-more" role="button" tabindex="0"></div>'
         f'{links}</article>'
     )
 
@@ -975,33 +961,25 @@ def render_sources_panel(sources: List[Dict[str, str]], used: List[str], archive
         return '<aside class="sources"><h3>核验材料</h3><p class="empty">接口返回中未识别到可展示的材料。</p></aside>'
     used_set = set(used)
     cited_sources = sorted((s for s in sources if s["id"] in used_set), key=lambda s: int(s["id"]))
-    cited_cards = [render_source_card(s) for s in cited_sources]
+    cited_cards = [render_source_card(s, used=True) for s in cited_sources]
     uncited = sorted((s for s in sources if s["id"] not in used_set), key=lambda s: int(s["id"]))
     uncited_html = ""
     if uncited:
-        uncited_cards = "".join(render_source_card(s) for s in uncited)
+        uncited_cards = "".join(render_source_card(s, used=False) for s in uncited)
         # 不用 <details> 折叠：部分宿主（WorkBuddy 等）的 HTML 预览服务会改写折叠区导致卡片丢失
         uncited_html = (
             '<div class="uncited-group"><div class="ug-title">未引用素材（'
-            f'{len(uncited)} 条核心依据未在正文角标引用；完整召回可通过下方知识专库链接回看）</div>'
+            f'{len(uncited)} 条 · 接口召回但答案未采用，供比对参考，不计入核验结论）</div>'
             f'<div class="uncited-list">{uncited_cards}</div></div>'
         )
-    verified_count = sum(1 for s in sources if s.get("verified"))
-    types_present = {s["type_key"] for s in sources}
-    filters_html = ""
-    if len(types_present) >= 2:
-        buttons = ['<button class="on" data-f="all" type="button">全部</button>']
-        for key in ("policy", "data", "case", "reference"):
-            if key in types_present:
-                buttons.append(f'<button data-f="{key}" type="button">{KIND_CATALOG[key][0]}</button>')
-        filters_html = f'<div class="filters" role="group" aria-label="类型筛选">{"".join(buttons)}</div>'
-    badge = "全部已核验" if verified_count == len(sources) else f"{verified_count}/{len(sources)} 已核验"
+    # "已核验"只统计正文引用材料：未引用召回未进入正文核验流程
+    verified_count = sum(1 for s in cited_sources if s.get("verified"))
+    badge = "全部已核验" if verified_count == len(cited_sources) else f"{verified_count}/{len(cited_sources)} 已核验"
     return (
         '<aside class="sources" id="sources-panel" aria-label="核验材料面板">'
         '<a class="back-doc" href="#doc-top">↑ 返回核验报告单</a>'
-        f'<h3>核验材料（{len(sources)} 条 · {esc(badge)}）</h3>'
+        f'<h3>核验材料（{len(cited_sources)} 条已引用 · {esc(badge)}）</h3>'
         '<div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div>'
-        f'{filters_html}'
         '<input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源">'
         f'<div class="src-list">{"".join(cited_cards)}{uncited_html}</div>'
         f'{archive_zone}'
@@ -1074,11 +1052,7 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
     display_title = doc_title or title
     kb_zone = render_archive_zone(kb_urls, len(sources))
 
-    cov = verification["coverage"]
     meta_bits = []
-    cov_bits = [f"{KIND_CATALOG[k][0]} {cov[k]}" for k in ("policy", "data", "case", "reference") if cov.get(k)]
-    if cov_bits:
-        meta_bits.append("材料：" + " · ".join(cov_bits))
     if sources:
         meta_bits.append(f"共 {len(sources)} 条")
     meta_bits.append("点击答案角标 [1] 定位材料原文")
@@ -1197,32 +1171,40 @@ code{{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}}
 .sources h3{{margin:0 0 3px;font-size:15px;color:var(--navy)}}
 .src-tip{{font-size:11.5px;color:var(--muted);margin-bottom:10px}}
-.filters{{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}}
-.filters button{{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
-  padding:3px 11px;font-size:12px;cursor:pointer}}
-.filters button.on{{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}}
 .src-search{{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;margin-bottom:12px}}
-.scard{{border:1px solid var(--line);border-left-width:3px;border-radius:10px;padding:11px 13px;margin-bottom:10px;
+.scard{{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:10px;
   background:#fff;transition:box-shadow .25s}}
-.scard.pol{{border-left-color:var(--policy)}}
-.scard.dat{{border-left-color:var(--brand)}}
-.scard.cas{{border-left-color:var(--case)}}
-.scard.ref,.scard.mat{{border-left-color:var(--ref)}}
 .scard.hl{{box-shadow:0 0 0 3px var(--brand)}}
 .scard.hide{{display:none}}
 .sc-head{{display:flex;align-items:center;gap:7px;margin-bottom:4px}}
 .sc-id{{font-family:monospace;font-weight:800;font-size:11px;color:var(--brand);background:var(--brand-soft);
   border-radius:4px;padding:1px 7px}}
-.sc-type{{font-size:11px;font-weight:700;border-radius:4px;padding:1px 8px;background:var(--ref-soft);color:var(--ref)}}
-.scard.pol .sc-type{{background:var(--policy-soft);color:var(--policy)}}
-.scard.dat .sc-type{{background:var(--brand-soft);color:var(--brand)}}
-.scard.cas .sc-type{{background:var(--case-soft);color:var(--case)}}
 .sc-vk{{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}}
 .sc-vk.warn{{color:var(--warn)}}
 .scard h4{{margin:0 0 4px;font-size:13px;color:var(--navy);line-height:1.55}}
 .sc-meta{{font-size:11.5px;color:var(--muted)}}
 .sc-section{{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600}}
 .sc-vnote{{margin-top:5px;font-size:11.3px;color:var(--ok);line-height:1.6}}
+.sc-unused{{font-size:10.5px;font-weight:800;color:var(--muted);background:#eef1f6;border-radius:4px;
+  padding:1px 7px;flex:none}}
+.scard[data-unused]{{opacity:.86}}
+.sc-conf{{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e8c98a;
+  border-radius:4px;padding:0 7px;flex:none}}
+.sc-extag{{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line-strong);font-size:11px;color:#0b6e4f;font-weight:700}}
+.sc-chain{{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600;line-height:1.6;cursor:help}}
+.sc-more{{display:none;margin:-3px 2px 4px;text-align:right;font-size:11px;color:var(--brand);font-weight:700;cursor:pointer;user-select:none}}
+.scard.clampable .sc-more{{display:block}}
+.scard.clampable .sc-more::before{{content:"展开全文 ▾"}}
+.scard.clampable.open .sc-more::before{{content:"收起 ▴"}}
+.cmp{{margin:0 0 10px;border:1px solid var(--line);border-radius:10px;overflow:hidden}}
+.cmp-tag{{font-size:11px;font-weight:800;padding:3px 10px}}
+.cmp-side{{padding:9px 12px;font-size:12.8px;line-height:1.7}}
+.cmp-side p{{margin:0}}
+.cmp-ai{{background:#fbfcfe;color:#374151}}
+.cmp-ai .cmp-tag{{background:#eef1f6;color:var(--ref)}}
+.cmp-src{{background:#f4faf7;color:#2f4a3e;border-top:1px dashed var(--line-strong)}}
+.cmp-src .cmp-tag{{background:var(--policy-soft);color:#0b6e4f}}
+.cmp-src .sc-excerpt{{display:block;-webkit-line-clamp:unset;background:#fff;cursor:auto;font-size:12px;padding:8px 10px;margin:0}}
 .sc-excerpt{{margin:7px 0;padding:9px 10px;border-radius:7px;background:#f8fafc;color:#42566f;font-size:12px;line-height:1.7;
   display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}}
 .scard.open .sc-excerpt{{display:block;-webkit-line-clamp:unset}}
@@ -1288,6 +1270,10 @@ code{{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .sources{{padding:12px;border-radius:10px}}
   .scard{{padding:10px 11px}}
   .sc-excerpt{{font-size:11.5px}}
+  .sc-extag{{font-size:10.5px}}
+  .sc-chain{{font-size:11px}}
+  .cmp-tag{{font-size:11px;font-weight:800;padding:3px 10px}}
+  .cmp-side{{padding:9px 12px;font-size:12.8px;line-height:1.7}}
   .kb-chip{{flex-wrap:wrap}}
   .kb-label{{white-space:normal}}
   .mobile-nav{{display:block;margin:0 0 14px;padding:11px 14px;border:1.5px solid var(--brand);
@@ -1312,7 +1298,7 @@ code{{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .sheet .sc-excerpt{{display:block;-webkit-line-clamp:unset;cursor:auto}}
 }}
 @media print{{
-  .topbar,.filters,.src-search{{display:none!important}}
+  .topbar,.src-search{{display:none!important}}
   .layout{{grid-template-columns:1fr;max-width:none;padding:0;gap:14px}}
   body{{background:#fff;font-size:12.5px}}
   .sources{{position:static;max-height:none;border:0;padding:0;overflow:visible}}
@@ -1345,15 +1331,15 @@ code{{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     {render_verify_panel(verification)}
     <a class="mobile-nav" href="#sources-panel">查看核验材料（{len(sources)} 条 · 点击角标可定位原文）↓</a>
     {render_section_cards(sections, sources)}
-    <div class="foot">深知可信咨询 · 可信核验报告 ｜ 核验方法：统一问答召回 → 逐条溯源 → 引用绑定 → 答案自检 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
+    <div class="foot">深知可信咨询 · 可信核验报告 ｜ 核验方法：统一问答召回 → 逐条溯源 → 引用对应 → 交付前检查 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
   </main>
   {render_sources_panel(sources, used, kb_zone)}
 </div>
 
 <div class="sheet-mask" aria-hidden="true"></div>
-<div class="sheet" role="dialog" aria-label="核验材料">
+<div class="sheet" role="dialog" aria-label="依据对照">
   <div class="sheet-grab"></div>
-  <div class="sheet-head"><b>核验材料</b><button class="sheet-close" type="button">收起</button></div>
+  <div class="sheet-head"><b>依据对照</b><button class="sheet-close" type="button">收起</button></div>
   <div class="sheet-body"></div>
 </div>
 
@@ -1373,14 +1359,35 @@ code{{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   function isMobile() {{
     return window.matchMedia("(max-width:680px)").matches;
   }}
-  function openSheet(card) {{
+  function escHtml(s) {{
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }}
+  function sentenceOf(el) {{
+    var para = el && el.closest ? el.closest(".doc-block,.doc-item") : null;
+    return para && para.querySelector("p") ? para.querySelector("p").innerText.trim() : "";
+  }}
+  function openSheet(card, sentence) {{
     if (!sheet) return;
     var body = sheet.querySelector(".sheet-body");
+    body.innerHTML = "";
+    if (sentence) {{
+      var excerpt = card.querySelector(".sc-excerpt");
+      var cmp = document.createElement("div");
+      cmp.className = "cmp";
+      cmp.innerHTML =
+        '<div class="cmp-side cmp-ai"><div class="cmp-tag">正文表述（AI 生成）</div><p>' + escHtml(sentence) + '</p></div>' +
+        '<div class="cmp-side cmp-src"><div class="cmp-tag">原文原段（非 AI 生成）</div>' +
+        '<div class="sc-excerpt">' + (excerpt ? excerpt.innerHTML : "") + '</div></div>';
+      body.appendChild(cmp);
+    }}
     var clone = card.cloneNode(true);
     clone.removeAttribute("id");
     clone.classList.remove("hide");
     clone.classList.add("open");
-    body.innerHTML = "";
+    var sheetMore = clone.querySelector(".sc-more");
+    if (sheetMore) sheetMore.remove();
     body.appendChild(clone);
     sheet.classList.add("show");
     mask.classList.add("show");
@@ -1411,7 +1418,7 @@ code{{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
         return;
       }}
       if (isMobile()) {{
-        openSheet(card);
+        openSheet(card, sentenceOf(btn));
         return;
       }}
       card.classList.remove("hide", "open");
@@ -1421,14 +1428,24 @@ code{{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     }});
   }});
 
-  /* 摘录点击展开/收起 */
+  /* 摘录点击展开/收起：内容被截断（超出 4 行）的卡片显示"展开全文"引导，
+     未截断的短摘录不显示，避免误导 */
   cards.forEach(function (c) {{
     var ex = c.querySelector(".sc-excerpt");
     if (!ex) return;
+    if (ex.scrollHeight > ex.clientHeight + 4) c.classList.add("clampable");
+    var more = c.querySelector(".sc-more");
+    function toggleExcerpt() {{ c.classList.toggle("open"); }}
     ex.addEventListener("click", function (e) {{
       if (e.target.closest("a")) return;
-      c.classList.toggle("open");
+      toggleExcerpt();
     }});
+    if (more) {{
+      more.addEventListener("click", toggleExcerpt);
+      more.addEventListener("keydown", function (e) {{
+        if (e.key === "Enter" || e.key === " ") {{ e.preventDefault(); toggleExcerpt(); }}
+      }});
+    }}
   }});
 
   /* 证据 chips（灰框）：桌面端点击就地展开并高亮右栏来源卡；手机端不就地展开，点击直接弹出底部材料弹层 */
@@ -1439,7 +1456,7 @@ code{{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
         if (!isMobile()) return;
         e.preventDefault();
         var card = byId[chip.getAttribute("data-cite")];
-        if (card) openSheet(card);
+        if (card) openSheet(card, sentenceOf(chip));
       }});
     }}
     chip.addEventListener("toggle", function () {{
@@ -1452,24 +1469,14 @@ code{{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     }});
   }});
 
-  /* 类型筛选 + 搜索 */
-  var filter = "all";
+  /* 搜索 */
   var kw = "";
   function apply() {{
     cards.forEach(function (c) {{
-      var okType = filter === "all" || c.getAttribute("data-type") === filter;
       var okKw = !kw || (c.textContent || "").toLowerCase().indexOf(kw) !== -1;
-      c.classList.toggle("hide", !(okType && okKw));
+      c.classList.toggle("hide", !okKw);
     }});
   }}
-  document.querySelectorAll(".filters button").forEach(function (b) {{
-    b.addEventListener("click", function () {{
-      document.querySelectorAll(".filters button").forEach(function (x) {{ x.classList.remove("on"); }});
-      b.classList.add("on");
-      filter = b.getAttribute("data-f");
-      apply();
-    }});
-  }});
   var search = document.querySelector(".src-search");
   if (search) search.addEventListener("input", function () {{ kw = search.value.trim().toLowerCase(); apply(); }});
 }})();
@@ -1490,9 +1497,6 @@ def align_sources_to_answer(answer: str, sources: List[Dict[str, str]]) -> List[
         if idx >= len(aligned):
             break
         aligned[idx]["id"] = citation
-        aligned[idx]["type_key"] = aligned[idx].get("type_key", "material")
-        aligned[idx]["type_label"] = aligned[idx].get("type_label", "材料")
-        aligned[idx]["type_css"] = aligned[idx].get("type_css", "mat")
     return aligned
 
 
@@ -1502,7 +1506,7 @@ def main() -> None:
     parser.add_argument("--output", help="输出 HTML 路径；不传时根据问题自动生成短文件名到 official-docs/output/")
     parser.add_argument("--title", default="深知可信咨询核验报告", help="页面标题")
     parser.add_argument("--answer-file", help="最终回答正文文件。整理综合后必须传入，确保 HTML 展示的答案与聊天答案一致。")
-    parser.add_argument("--self-check-file", help="答案自检结果 JSON（五项：角标存在/角标对应来源/结论可核验/答案一致/来源清单覆盖），值支持 通过/pass/✓ 等写法。")
+    parser.add_argument("--self-check-file", help="交付前检查结果 JSON（五项：角标存在/角标对应来源/结论可核验/答案一致/来源清单覆盖），值支持 通过/pass/✓ 等写法。")
     parser.add_argument("--clean-md-output", help="输出干净 Markdown 路径；内容来自同一份最终答案，并移除 [1]、【1】等溯源角标。")
     parser.add_argument("--question", default="", help="用户问题，用于生成咨询问题行与文件名。")
     args = parser.parse_args()
@@ -1542,15 +1546,15 @@ def main() -> None:
     self_check_items = normalize_self_check(payload.get("data", payload).get("selfCheck") if isinstance(payload.get("data"), dict) else payload.get("selfCheck"))
     if not self_check_items:
         print(
-            "错误：缺少答案自检结果（--self-check-file），已拒绝生成。\n"
-            "请先完成答案自检并把五项结果写入自检 JSON，再重新运行本脚本。",
+            "错误：缺少交付前检查结果（--self-check-file），已拒绝生成。\n"
+            "请先完成交付前检查并把五项结果写入自检 JSON，再重新运行本脚本。",
             file=sys.stderr,
         )
         raise SystemExit(1)
     failed_checks = [label for label, (status, _) in self_check_items.items() if status != "pass"]
     if failed_checks:
         print(
-            f"错误：答案自检存在未通过项（{'、'.join(failed_checks)}），已拒绝生成。\n"
+            f"错误：交付前检查存在未通过项（{'、'.join(failed_checks)}），已拒绝生成。\n"
             "请先修正答案或自检结果至全部通过，再重新运行本脚本；不得带未通过项交付核验报告。",
             file=sys.stderr,
         )

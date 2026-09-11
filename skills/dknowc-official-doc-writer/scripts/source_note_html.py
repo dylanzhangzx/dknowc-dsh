@@ -17,7 +17,7 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<会话ID前8位>/，
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
     # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
@@ -57,7 +57,7 @@ def safe_output(value: str, title: str) -> Path:
         path = raw.resolve() if raw.is_absolute() else (OUTPUT_DIR / raw.name).resolve()
     else:
         safe_title = "".join("_" if char in '\\/:*?"<>| ' else char for char in title).strip("_")
-        path = (OUTPUT_DIR / f"{safe_title[:80] or '可信核验报告'}_可信核验报告.html").resolve()
+        path = (OUTPUT_DIR / f"{safe_title[:80] or '溯源核验报告'}_溯源核验报告.html").resolve()
     if path.suffix.lower() not in {".html", ".htm"}:
         path = path.with_suffix(".html")
     try:
@@ -120,41 +120,39 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
     if isinstance(data.get("document_content"), list):
         answer = "\n\n".join(first_value(item, "text", "content") for item in data["document_content"] if isinstance(item, dict))
     materials = data.get("materials") or data.get("素材使用情况") or []
+    # 未引用召回材料：接口召回但正文未采用，同样进入材料面板（排在已引用材料之后）
+    recalled = data.get("recalled_materials") or data.get("未引用素材") or []
     articles = []
     source_index = load_source_index()
-    for index, item in enumerate(materials, 1):
-        if not isinstance(item, dict):
-            continue
-        material_name = first_value(item, "material_name", "材料名称", "title", "文章标题") or f"来源材料{index}"
-        # 新结果必须直接携带 source_url；标题匹配仅兼容历史 JSON。
-        matched = source_index.get(material_name) or source_index.get(normalize_title(material_name), {})
-        source_url = first_value(item, "source_url", "sourceUrl", "源网址", "原文链接", "url") or matched.get("source_url", "")
-        policy_url = first_value(item, "policyUrl", "policy_url", "knowledgeBase", "知识专库链接") or matched.get("policy_url", "")
-        articles.append({
-            "文章标题": material_name,
-            "来源": first_value(item, "source", "来源", "publisher"),
-            "发布日期": first_value(item, "date", "发布日期", "time"),
-            "相关段落": first_value(item, "excerpt", "摘录", "支撑内容", "support"),
-            "正文对应": first_value(item, "section", "正文对应"),
-            "源网址": source_url,
-            "知识专库原文": policy_url,
-            "policyUrl": first_value(item, "policyUrl", "policy_url"),
-            "类型": first_value(item, "type", "素材类型") or "材料",
-            "核验": first_value(item, "verification", "核验", "核验说明"),
-        })
-    knowledge_bases = data.get("knowledge_bases") or data.get("knowledgeBases") or data.get("知识专库链接") or []
-    kb_urls = []
-    kb_labels = []
-    for item in knowledge_bases if isinstance(knowledge_bases, list) else [knowledge_bases]:
-        if isinstance(item, dict):
-            url = first_value(item, "url", "knowledgeBase", "知识专库链接")
-            label = first_value(item, "label", "purpose", "搜索目的", "query") or "相关搜索来源"
-        else:
-            url = str(item)
-            label = "相关搜索来源"
-        if url and url not in kb_urls:
-            kb_urls.append(url)
-            kb_labels.append(label)
+    for used, group in ((True, materials), (False, recalled)):
+        for index, item in enumerate(group, 1):
+            if not isinstance(item, dict):
+                continue
+            material_name = first_value(item, "material_name", "材料名称", "title", "文章标题") or f"来源材料{index}"
+            # 新结果必须直接携带 source_url；标题匹配仅兼容历史 JSON。
+            matched = source_index.get(material_name) or source_index.get(normalize_title(material_name), {})
+            source_url = first_value(item, "source_url", "sourceUrl", "源网址", "原文链接", "url") or matched.get("source_url", "")
+            policy_url = first_value(item, "policyUrl", "policy_url", "knowledgeBase", "知识专库链接") or matched.get("policy_url", "")
+            articles.append({
+                "文章标题": material_name,
+                "来源": first_value(item, "source", "来源", "publisher"),
+                "发布日期": first_value(item, "date", "发布日期", "time"),
+                # 接口原始结构透传：发布日期可信度 + 段落（含段落标题，用于"原文位置"标题链）
+                "发布日期可信度": first_value(item, "发布日期可信度", "可信度", "confidence"),
+                "段落": item.get("段落") if isinstance(item.get("段落"), list) else [],
+                "相关段落": first_value(item, "excerpt", "摘录", "支撑内容", "support"),
+                "正文对应": first_value(item, "section", "正文对应"),
+                "源网址": source_url,
+                "知识专库原文": policy_url,
+                "policyUrl": first_value(item, "policyUrl", "policy_url"),
+                "类型": first_value(item, "type", "素材类型") or "材料",
+                "核验": first_value(item, "verification", "核验", "核验说明"),
+                # 所属搜索条件（多路检索时按来源分组筛选）与引用状态
+                "搜索条件": first_value(item, "search_key", "搜索条件"),
+                "已引用": used,
+            })
+    # 知识专库链接区已随 3.6.0 未引用召回全量展示移除：召回内容都在报告材料面板中，
+    # JSON 中残留的 knowledge_bases 字段被忽略（兼容旧 JSON，不报错）。
     content = {"data": {"检索文章": articles}}
     payload = {"answer": answer, "question": title, "content": content}
     # 成稿自检结果（5 项）由生成流程写入溯源 JSON；未写入时渲染器如实显示"未记录"
@@ -167,14 +165,6 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
     if isinstance(verify_checks, list) and verify_checks:
         payload["verificationChecks"] = [str(x) for x in verify_checks]
         content["verificationChecks"] = [str(x) for x in verify_checks]
-    if kb_urls:
-        payload["knowledgeBase"] = kb_urls[0]
-        payload["knowledgeBases"] = kb_urls
-        payload["knowledgeBaseLabels"] = kb_labels
-        # 可信搜索渲染器会优先展开 content，必须在该层保留这些字段。
-        content["knowledgeBase"] = kb_urls[0]
-        content["knowledgeBases"] = kb_urls
-        content["knowledgeBaseLabels"] = kb_labels
     return payload, title, answer
 
 
@@ -196,7 +186,7 @@ def main() -> None:
     renderer = load_renderer()
     rendered = renderer.render_html(payload, title, answer_override=answer, question_override=title)
     output_path.write_text(rendered, encoding="utf-8")
-    print(f"可信溯源报告 HTML 已生成: {output_path}")
+    print(f"溯源核验报告 HTML 已生成: {output_path}")
 
 
 if __name__ == "__main__":

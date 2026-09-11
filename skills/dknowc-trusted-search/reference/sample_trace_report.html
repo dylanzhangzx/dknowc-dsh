@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>可信溯源核验报告 · 可信溯源核验报告</title>
+<title>溯源核验报告 · 溯源核验报告</title>
 <style>
 :root{
   --navy:#0b1f3a; --ink:#172236; --muted:#667085; --line:#dce4ef; --line-strong:#b9c6d9;
@@ -27,6 +27,9 @@ a{color:var(--brand)}
 /* 左栏 */
 .report{min-width:0}
 .r-head{padding:22px 26px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;text-align:center}
+.r-badge{display:inline-flex;align-items:center;gap:14px;margin:0 0 6px;color:var(--navy);
+  font-size:16px;font-weight:800;letter-spacing:7px;text-indent:7px;line-height:1.5}
+.r-badge::before,.r-badge::after{content:"";width:64px;border-top:1px solid var(--line-strong)}
 .r-head h1{margin:0 0 8px;font-size:22px;color:var(--navy);line-height:1.5}
 .r-head .sub{color:var(--muted);font-size:12.5px}
 .warn-box{margin:0 0 16px;padding:13px 16px;border:1.5px solid var(--danger);border-radius:10px;
@@ -42,6 +45,7 @@ a{color:var(--brand)}
   padding:1px 8px;letter-spacing:2px;flex:none}
 .v-stamp.bad{border-color:var(--danger);color:var(--danger)}
 .v-reasons{margin-top:6px;font-size:12.5px;color:var(--danger)}
+.v-reasons.note{color:var(--warn)}
 .v-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-top:10px}
 .vi{display:flex;gap:7px;align-items:baseline;font-size:12.5px;color:#35445c;line-height:1.7;min-width:0}
 .vi .s{font-weight:800;flex:none}
@@ -109,6 +113,8 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 .filters button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
   padding:3px 11px;font-size:12px;cursor:pointer}
 .filters button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
+.sc-unused{font-size:10.5px;font-weight:800;color:var(--muted);background:#eef1f6;border-radius:4px;
+  padding:1px 7px;flex:none}
 .src-search{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;margin-bottom:12px}
 .scard{border:1px solid var(--line);border-left-width:3px;border-radius:10px;padding:11px 13px;margin-bottom:10px;
   background:#fff;transition:box-shadow .25s}
@@ -127,9 +133,10 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 .scard.cas .sc-type{background:var(--case-soft);color:var(--case)}
 .sc-vk{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}
 .sc-vk.warn{color:var(--warn)}
-.sc-vk.none{color:#98a2b3}
-.sc-id.unc{font-family:inherit;font-size:10px;color:#9ca3af;background:#f3f4f6;padding:1px 8px}
-.v-reasons.note{color:var(--warn)}
+.sc-conf{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e8c98a;
+  border-radius:4px;padding:0 7px;flex:none}
+.sc-extag{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line-strong);font-size:11px;color:#0b6e4f;font-weight:700}
+.sc-chain{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600;line-height:1.6;cursor:help}
 .scard h4{margin:0 0 4px;font-size:13px;color:var(--navy);line-height:1.55}
 .sc-meta{font-size:11.5px;color:var(--muted)}
 .sc-section{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600}
@@ -137,6 +144,10 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 .sc-excerpt{margin:7px 0;padding:9px 10px;border-radius:7px;background:#f8fafc;color:#42566f;font-size:12px;line-height:1.7;
   display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 .scard.open .sc-excerpt{display:block;-webkit-line-clamp:unset}
+.sc-more{display:none;margin:-3px 2px 4px;text-align:right;font-size:11px;color:var(--brand);font-weight:700;cursor:pointer;user-select:none}
+.scard.clampable .sc-more{display:block}
+.scard.clampable .sc-more::before{content:"展开全文 ▾"}
+.scard.clampable.open .sc-more::before{content:"收起 ▴"}
 .sc-excerpt.rich{overflow-x:auto}
 .sc-excerpt.rich table{width:max-content;min-width:100%;border-collapse:collapse;background:#fff;font-size:12px}
 .sc-excerpt.rich td,.sc-excerpt.rich th{min-width:92px;max-width:220px;padding:7px 8px;border:1px solid var(--line);
@@ -148,17 +159,6 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 .uncited-group{margin-top:12px;border-top:1px dashed var(--line-strong);padding-top:10px}
 .ug-title{font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.6}
 .uncited-group .uncited-list{margin-top:10px}
-/* 知识专库 */
-.kb-zone{margin-top:14px;border-top:1px dashed var(--line-strong);padding-top:12px}
-.kb-title{font-size:12.5px;font-weight:800;color:var(--navy)}
-.kb-desc{font-size:11.3px;color:var(--muted);line-height:1.65;margin:3px 0 8px}
-.kb-list{display:flex;flex-direction:column;gap:7px}
-.kb-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
-  background:#fbfcfe;text-decoration:none;font-size:11.5px}
-.kb-chip:hover{border-color:var(--brand);background:var(--brand-soft)}
-.kb-label{font-weight:700;color:#374151;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kb-count{padding-left:8px;border-left:1px solid var(--line);color:var(--muted);white-space:nowrap}
-.kb-arrow{margin-left:auto;color:var(--brand);font-weight:700;white-space:nowrap}
 .empty{color:var(--muted)}
 .foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
 @media (max-width:1020px){
@@ -176,6 +176,8 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .layout{grid-template-columns:1fr;padding:12px 10px 40px;gap:14px}
   .topbar{padding:8px 12px;font-size:12px;gap:4px;flex-wrap:wrap}
   .topbar .tags span{font-size:10.5px;padding:1px 8px;margin-left:4px}
+  .r-badge{font-size:13.5px;letter-spacing:6px;text-indent:6px;gap:10px}
+  .r-badge::before,.r-badge::after{width:40px}
   .r-head{padding:16px 14px;border-radius:10px}
   .r-head h1{font-size:18px}
   .r-head .sub{font-size:11.5px;line-height:1.6}
@@ -198,9 +200,9 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .ev-chip summary{font-size:11px}
   .sources{padding:12px;border-radius:10px}
   .scard{padding:10px 11px}
+  .sc-extag{font-size:10.5px}
+  .sc-chain{font-size:11px}
   .sc-excerpt{font-size:11.5px}
-  .kb-chip{flex-wrap:wrap}
-  .kb-label{white-space:normal}
   .mobile-nav{display:block;margin:0 0 14px;padding:11px 14px;border:1.5px solid var(--brand);
     border-radius:10px;background:var(--brand-soft);color:var(--brand);font-weight:800;
     font-size:13.5px;text-decoration:none;text-align:center}
@@ -221,6 +223,16 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     font-size:12.5px;font-weight:700;padding:5px 14px;cursor:pointer}
   .sheet .scard{box-shadow:none;margin-bottom:0}
   .sheet .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
+  /* 正文表述 ↔ 原文原段 对照区（弹层顶部） */
+  .cmp{margin:0 0 10px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cmp-tag{font-size:11px;font-weight:800;padding:3px 10px}
+  .cmp-side{padding:9px 12px;font-size:12.8px;line-height:1.7}
+  .cmp-side p{margin:0}
+  .cmp-ai{background:#fbfcfe;color:#374151}
+  .cmp-ai .cmp-tag{background:#eef1f6;color:var(--ref)}
+  .cmp-src{background:#f4faf7;color:#2f4a3e;border-top:1px dashed var(--line-strong)}
+  .cmp-src .cmp-tag{background:var(--policy-soft);color:#0b6e4f}
+  .cmp-src .sc-excerpt{display:block;-webkit-line-clamp:unset;background:#fff;cursor:auto;font-size:12px;padding:8px 10px;margin:0}
 }
 @media print{
   .topbar,.filters,.src-search{display:none!important}
@@ -238,9 +250,9 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 <body>
 
 <header class="topbar">
-  <div class="tb-title">可信溯源核验报告 · 可信溯源核验报告</div>
+  <div class="tb-title">溯源核验报告 · 溯源核验报告</div>
   <div class="tags">
-    <span>生成于 2026-09-02 13:31</span>
+    <span>生成于 2026-09-09 14:19</span>
     <span>素材来源：深知可信搜索</span>
   </div>
 </header>
@@ -248,51 +260,55 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 <div class="layout">
   <main class="report" aria-label="核验报告正文">
     <div class="r-head" id="doc-top">
-      <h1>可信溯源核验报告</h1>
-      <div class="sub">素材：政策依据 1 ｜ 共 2 条 ｜ 点击正文角标 [1] 定位材料原文</div>
+      <div class="r-badge">溯源核验报告</div>
+      <h1>溯源核验报告</h1>
+      <div class="sub">素材：政策依据 1 ｜ 共 1 条 ｜ 点击正文角标 [1] 定位材料原文</div>
     </div>
     
     
     <div class="verify ok">
-      <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据可交付<span class="v-stamp">已核验</span></div>
+      <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据逐条对过原文<span class="v-stamp">已核验</span></div>
       
       <div class="v-grid">
-        <div class="vi"><span class="s ok">✓ 依据溯源 2/2</span><span class="d">每条引用素材可回看原文</span></div><div class="vi"><span class="s ok">✓ 引用绑定 2/2</span><span class="d">正文引用全部对应素材</span></div><div class="vi"><span class="s ok">✓ 时效检查 完成</span><span class="d">材料日期 2025-12～2026-03</span></div><div class="vi"><span class="s ok">✓ 类型覆盖</span><span class="d">政策依据 1</span></div><div class="vi"><span class="s ok">✓ 答案自检 5/5</span><span class="d">事实有据/角标绑定/答案一致/时效确认/无未核验断言</span></div><div class="vi"><span class="s man">◐ 效力复核</span><span class="d">1 条政策依据建议按官方发布复核现行效力</span></div>
+        <div class="vi"><span class="s ok">✓ 依据溯源 1/1</span><span class="d">每条引用材料可回看原文</span></div><div class="vi"><span class="s ok">✓ 引用对应 2/2</span><span class="d">正文每处 [n] 都能找到对应材料</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2025-12～2025-12</span></div><div class="vi"><span class="s ok">✓ 材料构成</span><span class="d">政策依据 1</span></div><div class="vi"><span class="s ok">✓ 交付前检查 5/5</span><span class="d">事实有据、角标绑定、答案一致、时效确认、无未核验断言</span></div><div class="vi"><span class="s man">◐ 现行效力</span><span class="d">1 份政策文件建议按官方发布确认是否现行有效</span></div>
       </div>
-      <div class="v-note">核验方法：深知可信搜索召回权威来源 → 逐条溯源（摘录比对 + 原文链接 + 知识专库回看）→ 正文引用绑定 → 答案自检。政策现行效力以官方发布为准。</div>
+      <div class="v-note">核验方式：先用深知可信搜索找权威来源，再把正文每处依据和原文逐条比对（都能点开原文回看），最后做了交付前五项检查。政策是否现行有效，以官方发布为准。</div>
     </div>
-    <a class="mobile-nav" href="#sources-panel">查看核验材料（2 条引用 · 点击角标可定位原文）↓</a>
+    <a class="mobile-nav" href="#sources-panel">查看核验材料（1 条 · 点击角标可定位原文）↓</a>
     <section class="doc-sec"><div class="sec-head"><h3>抵免要点</h3><span class="sec-badge ">本章引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>投资额 10% 可抵免，可结转 5 年 <button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>。</p><div class="ev-row">
             <details class="ev-chip" data-cite="1">
               <summary><b>[1]</b>财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</summary>
               <div class="ev-panel">
                 <div class="ev-title">财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</div>
                 <div class="ev-meta">财政部官网 | 2025年12月10日</div>
-                <p>投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转。</p>
+                <p>投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转抵免。
+申报时填报抵免明细，留存购置发票与目录归属证明备查。</p>
                 <div class="sc-links"><span><a href="https://example.gov.cn/notice.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
               </div>
             </details>
             </div></div></div></section>
-<section class="doc-sec"><div class="sec-head"><h3>申报</h3><span class="sec-badge ">本章引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>填报明细留存发票备查 <button class="cite" data-cite="2" type="button" title="核验依据 [2]">[2]</button>。</p><div class="ev-row">
-            <details class="ev-chip" data-cite="2">
-              <summary><b>[2]</b>某省税务局抵免操作指引（示例）</summary>
+<section class="doc-sec"><div class="sec-head"><h3>申报</h3><span class="sec-badge ">本章引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>填报明细留存发票备查 <button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>。</p><div class="ev-row">
+            <details class="ev-chip" data-cite="1">
+              <summary><b>[1]</b>财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</summary>
               <div class="ev-panel">
-                <div class="ev-title">某省税务局抵免操作指引（示例）</div>
-                <div class="ev-meta">某省税务局 | 2026年03月01日</div>
-                <p>申报填报抵免明细，留存购置发票备查。</p>
-                <div class="sc-links"><span><a href="https://example.gov.cn/guide.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
+                <div class="ev-title">财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</div>
+                <div class="ev-meta">财政部官网 | 2025年12月10日</div>
+                <p>投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转抵免。
+申报时填报抵免明细，留存购置发票与目录归属证明备查。</p>
+                <div class="sc-links"><span><a href="https://example.gov.cn/notice.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
               </div>
             </details>
             </div></div></div></section>
-    <div class="foot">深知可信搜索（法律、政策、标准）· 可信溯源核验报告 ｜ 核验方法：可信搜索召回 → 逐条溯源 → 正文绑定 → 答案自检 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
+    <div class="foot">深知可信搜索（法律、政策、标准）· 溯源核验报告 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
   </main>
-  <aside class="sources" id="sources-panel" aria-label="核验材料面板"><a class="back-doc" href="#doc-top">↑ 返回核验报告单</a><h3>核验材料（引用 2 条 · 全部已核验）</h3><div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div><div class="filters" role="group" aria-label="类型筛选"><button class="on" data-f="all" type="button">全部</button><button data-f="policy" type="button">政策依据</button></div><input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源"><div class="src-list"><article class="scard pol" id="src-1" data-type="policy" data-cite-id="1"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</h4><div class="sc-meta">财政部官网 | 2025年12月10日</div><div class="sc-excerpt plain">投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转。</div><div class="sc-links"><span><a href="https://example.gov.cn/notice.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard mat" id="src-2" data-type="material" data-cite-id="2"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>某省税务局抵免操作指引（示例）</h4><div class="sc-meta">某省税务局 | 2026年03月01日</div><div class="sc-excerpt plain">申报填报抵免明细，留存购置发票备查。</div><div class="sc-links"><span><a href="https://example.gov.cn/guide.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article></div><div class="kb-zone"><div class="kb-title">原始召回存档（深知知识专库）</div><div class="kb-desc">以下链接可回看每次搜索的完整召回结果（含未写入正文的材料）；原文页面改版或下线时可回看当时召回的快照。逐条材料的核验请点击来源卡上的"查看原文"直达官方页面。</div><div class="kb-list"><a class="kb-chip" href="https://yun.dknowc.cn/wlcb/ShenZhi-policy/#/knowledgebase/?id=demo" target="_blank" rel="noopener"><span class="kb-label">相关搜索来源</span><span class="kb-count">2 条来源 · 可回看</span><span class="kb-arrow">打开 ↗</span></a></div></div></aside>
+  <aside class="sources" id="sources-panel" aria-label="核验材料面板"><a class="back-doc" href="#doc-top">↑ 返回核验报告单</a><h3>核验材料（已引用 1 条 · 全部已核验）</h3><div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div><input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源"><div class="src-list"><article class="scard pol" id="src-1" data-type="policy" data-cite-id="1" data-search=""><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</h4><div class="sc-meta">财政部官网 | 2025年12月10日</div><div class="sc-chain" title="原文中的位置：财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例） › 一、抵免比例与结转 › （一）比例">标题：一、抵免比例与结转 › （一）比例</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转抵免。
+申报时填报抵免明细，留存购置发票与目录归属证明备查。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://example.gov.cn/notice.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article></div></aside>
 </div>
 
 <div class="sheet-mask" aria-hidden="true"></div>
 <div class="sheet" role="dialog" aria-label="核验材料">
   <div class="sheet-grab"></div>
-  <div class="sheet-head"><b>核验材料</b><button class="sheet-close" type="button">收起</button></div>
+  <div class="sheet-head"><b>依据对照</b><button class="sheet-close" type="button">收起</button></div>
   <div class="sheet-body"></div>
 </div>
 
@@ -306,20 +322,41 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     if (id) byId[id] = c;
   });
 
-  /* 移动端底部弹层：点角标就地展示材料卡，不打断正文阅读 */
+  /* 移动端底部弹层：点角标就地展示"正文表述 ↔ 原文原段"对照 + 材料卡，不打断正文阅读 */
   var sheet = document.querySelector(".sheet");
   var mask = document.querySelector(".sheet-mask");
   function isMobile() {
     return window.matchMedia("(max-width:680px)").matches;
   }
-  function openSheet(card) {
+  function escHtml(s) {
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  function sentenceOf(el) {
+    var para = el && el.closest ? el.closest(".doc-block,.doc-item") : null;
+    return para && para.querySelector("p") ? para.querySelector("p").innerText.trim() : "";
+  }
+  function openSheet(card, sentence) {
     if (!sheet) return;
     var body = sheet.querySelector(".sheet-body");
+    body.innerHTML = "";
+    if (sentence) {
+      var excerpt = card.querySelector(".sc-excerpt");
+      var cmp = document.createElement("div");
+      cmp.className = "cmp";
+      cmp.innerHTML =
+        '<div class="cmp-side cmp-ai"><div class="cmp-tag">正文表述（AI 生成）</div><p>' + escHtml(sentence) + '</p></div>' +
+        '<div class="cmp-side cmp-src"><div class="cmp-tag">原文原段（非 AI 生成）</div>' +
+        '<div class="sc-excerpt">' + (excerpt ? excerpt.innerHTML : "") + '</div></div>';
+      body.appendChild(cmp);
+    }
     var clone = card.cloneNode(true);
     clone.removeAttribute("id");
     clone.classList.remove("hide");
     clone.classList.add("open");
-    body.innerHTML = "";
+    var sheetMore = clone.querySelector(".sc-more");
+    if (sheetMore) sheetMore.remove();
     body.appendChild(clone);
     sheet.classList.add("show");
     mask.classList.add("show");
@@ -350,7 +387,7 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
         return;
       }
       if (isMobile()) {
-        openSheet(card);
+        openSheet(card, sentenceOf(btn));
         return;
       }
       card.classList.remove("hide", "open");
@@ -360,25 +397,42 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     });
   });
 
-  /* 摘录点击展开/收起 */
+  /* 摘录点击展开/收起：内容被截断（超出 4 行）的卡片显示"展开全文"引导，
+     未截断的短摘录不显示，避免误导 */
   cards.forEach(function (c) {
     var ex = c.querySelector(".sc-excerpt");
     if (!ex) return;
+    if (ex.scrollHeight > ex.clientHeight + 4) c.classList.add("clampable");
+    var more = c.querySelector(".sc-more");
+    function toggleExcerpt() { c.classList.toggle("open"); }
     ex.addEventListener("click", function (e) {
       if (e.target.closest("a")) return;
-      c.classList.toggle("open");
+      toggleExcerpt();
     });
+    if (more) {
+      more.addEventListener("click", toggleExcerpt);
+      more.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExcerpt(); }
+      });
+    }
   });
 
-  /* 证据 chips（灰框）：桌面端点击就地展开并高亮右栏来源卡；手机端不就地展开，点击直接弹出底部材料弹层 */
+  /* 证据 chips（灰框）：桌面端点击就地展开并高亮右栏来源卡；手机端不就地展开，点击直接弹出底部材料弹层。
+     展开锁定：浏览器（Chrome 系）对 <details> 展开会自动滚动露出内容、收起时滚动位置会被回夹，
+     点击时锁定滚动位置并在展开/收起后滚回，消除页面"轻微滚动"感。 */
   document.querySelectorAll(".ev-chip").forEach(function (chip) {
     var summary = chip.querySelector("summary");
     if (summary) {
       summary.addEventListener("click", function (e) {
-        if (!isMobile()) return;
-        e.preventDefault();
-        var card = byId[chip.getAttribute("data-cite")];
-        if (card) openSheet(card);
+        if (isMobile()) {
+          e.preventDefault();
+          var card = byId[chip.getAttribute("data-cite")];
+          if (card) openSheet(card, sentenceOf(chip));
+          return;
+        }
+        var y = window.scrollY;
+        var restore = function () { window.scrollTo(0, y); };
+        requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
       });
     }
     chip.addEventListener("toggle", function () {
@@ -391,21 +445,23 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     });
   });
 
-  /* 类型筛选 + 搜索 */
-  var filter = "all";
+  /* 检索分组筛选（单选 + 全部 + 未引用，胶囊样式）+ 关键字搜索叠加 */
+  var cond = "";
   var kw = "";
   function apply() {
     cards.forEach(function (c) {
-      var okType = filter === "all" || c.getAttribute("data-type") === filter;
+      var okCond = !cond;
+      if (cond === "__unused__") okCond = c.getAttribute("data-unused") === "1";
+      else if (cond) okCond = c.getAttribute("data-search") === cond;
       var okKw = !kw || (c.textContent || "").toLowerCase().indexOf(kw) !== -1;
-      c.classList.toggle("hide", !(okType && okKw));
+      c.classList.toggle("hide", !(okCond && okKw));
     });
   }
   document.querySelectorAll(".filters button").forEach(function (b) {
     b.addEventListener("click", function () {
       document.querySelectorAll(".filters button").forEach(function (x) { x.classList.remove("on"); });
       b.classList.add("on");
-      filter = b.getAttribute("data-f");
+      cond = b.getAttribute("data-cond") || "";
       apply();
     });
   });

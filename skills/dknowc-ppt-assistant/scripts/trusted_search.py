@@ -19,22 +19,25 @@ from typing import Any, Dict, Iterable, List, Optional
 
 DEFAULT_ENDPOINT = "https://open.dknowc.cn/dependable/search"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 产物根：dsh 会话隔离 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/；DKNWOC_WS_ROOT 显式优先；无会话回退 _default
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
+    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 
-
-def _rel_to_ws(path: Path) -> str:
-    """把输出路径显示为相对工作区根的形式；不在其内则显示绝对路径。"""
+def _resolve_key():
+    """环境变量优先，缺失时从 ~/.zshrc 兜底解析（宿主进程读不到 env 时不误报，与公文写作同源）。"""
     try:
-        return str(path.relative_to(WS_ROOT))
-    except ValueError:
-        return str(path.resolve())
+        from api_key import resolve_api_key
+        key, _ = resolve_api_key()
+        return key
+    except ImportError:
+        return os.environ.get("DKNOWC_API_KEY")
 
 
 def resolve_output_json(output_path: str) -> Path:
@@ -120,6 +123,56 @@ def _build_payload(args: argparse.Namespace) -> Dict[str, Any]:
     return payload
 
 
+MAAS_PLATFORM_URL = "https://platform.dknowc.cn/auth/#/login"
+
+# 额度用尽识别：命中后返回 quota_exhausted=true，Agent 必须停止重试并引导用户到 MaaS 处理。
+# 错误码语义按接口文档区分：401=密钥校验失败（可能失效，需重新获取）；403=接口无权限（密钥类型不符）；
+# 402=余额类。429 接口文案为"繁忙/限流/余额不足"三义混合、无法归因——现阶段全部按额度用尽处理。
+QUOTA_EXHAUSTED_HTTP_CODES = {402, 429}
+QUOTA_KEYWORDS = (
+    "余额已不足", "欠费", "quota", "insufficient", "balance", "exceeded",
+    "额度已用完", "额度不足", "繁忙", "限流",
+)
+
+
+def detect_quota_exhausted(status_code=None, errmsg=None, biz_status=None):
+    """判定是否额度/余额类失败（HTTP 402/429 或业务错误文案命中关键词）。"""
+    if status_code in QUOTA_EXHAUSTED_HTTP_CODES:
+        return True
+    text = f"{errmsg or ''} {biz_status or ''}"
+    return any(k.lower() in text.lower() for k in QUOTA_KEYWORDS)
+
+
+def user_message_for_error(status_code=None, quota_exhausted=False):
+    """给用户的固定话术（Agent 必须原样转述），按错误类型区分。"""
+    if quota_exhausted:
+        return ("检索调不动，很可能是额度用完了：到 " + MAAS_PLATFORM_URL +
+                " 看一下额度，完成实名认证可以领 100 元体验金。")
+    if status_code == 401:
+        return ("访问密钥校验没通过（密钥可能已失效），我重新获取一下密钥；"
+                "还不行的话需要重新验证手机号。")
+    if status_code == 403:
+        return ("当前密钥没有检索权限（可能类型不符或已变更）。到 " + MAAS_PLATFORM_URL +
+                " 查看密钥权限，或重新验证手机号获取新密钥。")
+    if status_code and status_code >= 500:
+        return "检索服务暂时异常，我稍后再试；持续异常的话先用已有材料做，政策数据处标「待核验」，不影响交付。"
+    return "检索暂时没连上（网络波动），稍等我再试一次；持续失败的话先用已有材料做，政策数据处标「待核验」。"
+
+
+def _fail(status_code, detail, reason=""):
+    """统一错误出口：输出 JSON（含 quota_exhausted / user_message / maas_platform_url）后退出。"""
+    quota = detect_quota_exhausted(status_code=status_code, errmsg=detail)
+    print(json.dumps({
+        "status": "error",
+        "http_status": status_code,
+        "error": detail or reason,
+        "quota_exhausted": quota,
+        "user_message": user_message_for_error(status_code=status_code, quota_exhausted=quota),
+        "maas_platform_url": MAAS_PLATFORM_URL,
+    }, ensure_ascii=False, indent=2))
+    sys.exit(1)
+
+
 def _post(url: str, api_key: str, payload: Dict[str, Any], timeout: int) -> Dict[str, Any]:
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(url, data=data, method="POST")
@@ -131,14 +184,11 @@ def _post(url: str, api_key: str, payload: Dict[str, Any], timeout: int) -> Dict
             text = resp.read().decode("utf-8", errors="replace").replace("\x00", "")
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="ignore")
-        print(f"错误：HTTP {e.code} {detail or e.reason}", file=sys.stderr)
-        sys.exit(1)
+        _fail(e.code, detail, e.reason)
     except urllib.error.URLError as e:
-        print(f"错误：网络请求失败 - {e.reason}", file=sys.stderr)
-        sys.exit(1)
+        _fail(None, "", str(e.reason))
     except socket.timeout:
-        print("错误：可信搜索接口请求超时。", file=sys.stderr)
-        sys.exit(1)
+        _fail(None, "", "请求超时")
 
     try:
         body = json.loads(text)
@@ -303,7 +353,7 @@ def main() -> None:
         DEFAULT_ENDPOINT,
     )
     api_key = _pick(
-        os.environ.get("DKNOWC_API_KEY"),
+        _resolve_key(),
     )
 
     if not api_key:
@@ -325,7 +375,7 @@ def main() -> None:
             output_path = resolve_output_json(args.output)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(raw_json, encoding="utf-8")
-            print(f"已保存搜索结果 JSON：{_rel_to_ws(output_path)}")
+            print(f"已保存搜索结果 JSON：{output_path.relative_to(SKILL_ROOT)}")
         else:
             print(raw_json)
         return
