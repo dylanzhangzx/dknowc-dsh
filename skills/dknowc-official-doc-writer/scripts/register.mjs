@@ -16,8 +16,8 @@ const DEFAULT_SOURCE = "agent";
 const API_KEY_ENV = "DKNOWC_API_KEY";
 const MAAS_PLATFORM_URL = "https://platform.dknowc.cn/auth/#/login";
 const FALLBACK_REGISTER_URL = MAAS_PLATFORM_URL;
-const ZSHRC_START = "# >>> dknowc official doc writer api key >>>";
-const ZSHRC_END = "# <<< dknowc official doc writer api key <<<";
+const ZSHRC_START = "# >>> dknowc api key >>>";
+const ZSHRC_END = "# <<< dknowc api key <<<";
 // 早期版本遗留的标记块名（无 export 也一并清理，避免 ~/.zshrc 残留）
 const LEGACY_BLOCKS = [
   ["# >>> dknowc api key >>>", "# <<< dknowc api key <<<"],

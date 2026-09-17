@@ -302,6 +302,11 @@ def clean_dkag_response(api_response: dict) -> dict:
                 if art.get(key):
                     cleaned_art["知识专库原文"] = str(art[key]).strip()
                     break
+            # 快照链接：接口在材料存在存档快照时返回，用于原文链接 404 时的兜底回看
+            for key in ("screenShotPath", "screenshot_path", "snapshot", "快照链接"):
+                if art.get(key):
+                    cleaned_art["快照链接"] = str(art[key]).strip()
+                    break
 
             # 遍历段落并清洗
             paragraphs = art.get("段落", [])
@@ -580,7 +585,9 @@ def main():
     parser.add_argument("--api-key", help=f"API 密钥（可选，默认从环境变量 {API_KEY_ENV} 读取）")
     parser.add_argument("--json", action="store_true", help="以 JSON 格式输出")
     parser.add_argument("--clean", action="store_true", help="对返回结果进行数据清洗（去除HTML转义、网页干扰词等）")
-    parser.add_argument("--policy", action="store_true", help="返回规范性文件清单（policyFiles）")
+    parser.add_argument("--no-policy", dest="policy", action="store_false",
+                        help="不返回规范性文件清单（policyFiles）；默认返回——policyFiles 携带发文字号（writtenText），"
+                             "溯源核验报告的材料卡据此展示文号关键性信息")
     parser.add_argument("--full", action="store_true", help="返回文章全文（return_full_content）")
     parser.add_argument(
         "--search-type",
@@ -600,6 +607,7 @@ def main():
     )
     parser.add_argument("--output", "-o", help="输出 JSON 文件路径（可选，默认输出到标准输出）")
 
+    parser.set_defaults(policy=True)
     args = parser.parse_args()
 
     # 调用搜索。配置缺失、API Key 缺失等启动阶段异常也输出为结构化 JSON，便于 Agent 稳定转述配置引导。

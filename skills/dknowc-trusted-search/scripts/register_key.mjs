@@ -17,8 +17,8 @@ const DEFAULT_SOURCE = "agent";
 const API_KEY_ENV = "DKNOWC_API_KEY";
 const MAAS_PLATFORM_URL = "https://platform.dknowc.cn/auth/#/login";
 const FALLBACK_REGISTER_URL = MAAS_PLATFORM_URL;
-const ZSHRC_START = "# >>> dknowc trusted search api key >>>";
-const ZSHRC_END = "# <<< dknowc trusted search api key <<<";
+const ZSHRC_START = "# >>> dknowc api key >>>";
+const ZSHRC_END = "# <<< dknowc api key <<<";
 
 function maskPhone(phone) {
   const p = String(phone || "");

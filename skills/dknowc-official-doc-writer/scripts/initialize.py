@@ -146,10 +146,9 @@ def _in_dsh() -> bool:
 
 def check_api_key_config():
     if _in_dsh():
-        # dsh 场景：优先插件经 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源，
-        # 来源为 dsh 主进程环境变量 DKNOWC_API_KEY）；缺失时 ~/.zshrc 兜底（注册成功
-        # 自动持久化后、dsh 重启前的窗口期不误报缺失）。搜索子能力走 MCP 转接，
-        # 无 Key 时仅暂停搜索，不阻断纯写作。
+        # dsh 场景：优先插件经 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源）；
+        # 缺失时 ~/.zshrc 兜底（注册成功自动持久化后、dsh 重启前的窗口期不误报缺失）。
+        # 无 Key 仅暂停搜索，不阻断纯写作。
         api_key = os.environ.get("DSH_DKNOWC_API_KEY", "").strip()
         source = "environment"
         if not _valid_api_key(api_key):
@@ -161,16 +160,9 @@ def check_api_key_config():
             except ImportError:
                 pass
         if not _valid_api_key(api_key):
-            return {
-                "api_key_configured": False,
-                "api_key_source": None,
-                "api_key_hint": f"未检测到可用的 {API_KEY_ENV}（dsh 主进程环境变量与 ~/.zshrc 中均未找到）。需要先将有效的 API Key 配置到启动 dsh 的环境变量 {API_KEY_ENV}（如 ~/.zshrc），再重启 dsh 或新建会话。仅搜索任务受影响，不涉及搜索的写作任务可继续。",
-            }
-        return {
-            "api_key_configured": True,
-            "api_key_source": source,
-            "api_key_hint": None,
-        }
+            return {"api_key_configured": False, "api_key_source": None,
+                "api_key_hint": f"未检测到可用的 {API_KEY_ENV}（dsh 主进程环境变量与 ~/.zshrc 中均未找到）。需要先将有效的 API Key 配置到启动 dsh 的环境变量 {API_KEY_ENV}（如 ~/.zshrc），再重启 dsh 或新建会话。仅搜索任务受影响，不涉及搜索的写作任务可继续。"}
+        return {"api_key_configured": True, "api_key_source": source, "api_key_hint": None}
 
     # 环境变量优先，缺失时从 ~/.zshrc 兜底解析（宿主进程早于 key 写入启动时不误报缺失）
     try:

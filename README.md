@@ -2,7 +2,7 @@
 
 深知可信办公全家桶 —— DeepSeek Harness（dsh）插件包。
 
-通过一个 bundle 交付彩智科技的四个深知 Skill（深知可信咨询 / 深知可信搜索 / 深知可信PPT / 深知公文写作），并内置深知可信工作台 MCP 转接层配置：**接口能力统一走 MCP，skill 不再直连深知接口**。
+通过一个 bundle 交付彩智科技的四个深知 Skill（深知可信咨询 / 深知可信搜索 / 深知可信PPT / 深知公文写作），并内置深知可信工作台 MCP 转接层配置：**接口能力统一走 MCP（credible_chat / trusted_search / deep_query / doc_outline 四工具），skill 不再直连深知接口**。
 
 ## 包含什么
 
@@ -21,7 +21,7 @@ dknowc-dsh/
 |---|---|---|
 | 深知可信咨询 | 政策/法规/办事咨询，带角标答案 + 可信核验报告（首屏核验报告单五项指标） | `mcp__dknowc__credible_chat` |
 | 深知可信搜索 | 权威材料检索/深度研究（deep-query/v3 多地域），核验报告 + 干净 Markdown + 政策可视化 | `mcp__dknowc__trusted_search` / `mcp__dknowc__deep_query` |
-| 深知公文写作 | 正式公文起草/改写/多轮改稿/Word/红头交付，核验报告（self_check + 素材四分类） | 搜索走 `mcp__dknowc__trusted_search`；范文大纲 `outline_reference.py` 保留原脚本直连（特殊能力，不进 MCP） |
+| 深知公文写作 | 正式公文起草/改写/多轮改稿/Word/红头交付，核验报告（self_check + 素材四分类） | 搜索 `mcp__dknowc__trusted_search`；范文大纲 `mcp__dknowc__doc_outline`（第四工具）；`outline_reference.py` 降为离线兜底 |
 | 深知可信PPT | 演示文稿制作：SVG 逐页创作→编译原生可编辑 .pptx，双版核验报告（提纲/成稿）+ 页面预览页 | 素材检索走 `mcp__dknowc__trusted_search`；编译纯本地（python-pptx，uv 隔离依赖） |
 
 ## dsh 版本兼容性
@@ -31,6 +31,8 @@ dknowc-dsh/
 - dsh 0.1.0-rc.7（本插件首发基线）
 - dsh 0.1.1-rc.2（npm `latest`，`npx @deepseek-ai/dsh` 默认拿到）
 - dsh 0.1.2-rc.1（npm `next`，SDK 破坏性变更版本）
+
+v1.4.0：四 skill 溯源核验报告整体重构（双视图单页/句后引文胶囊/材料专库视图/链接活性检测+存档快照兜底/核验结论分级）；公文范文大纲接入 MCP 第四工具 `doc_outline`；注册统一自动持久化（四 skill 共用同一 `~/.zshrc` 标记块）。
 
 > 注意：dsh 0.1.2 起 SDK 有破坏性变更（如 `dsh-settings` 移除部分导出），一批引用 SDK 内部包的第三方插件会加载失败，且 dsh 的加载机制是**任一插件导入失败即整个 profile 启动失败**。如升级 dsh 后无法启动，可先用 `dsh --profile web --patch <禁用清单.yml>` 临时禁用可疑插件定位问题（`- id: <插件id>` + `disabled: true`），本插件本身在 0.1.2 上无需任何改动。
 

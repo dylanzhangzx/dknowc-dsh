@@ -32,10 +32,9 @@ def _in_dsh() -> bool:
 
 
 def check_api_key_config():
-    # dsh 场景：优先插件经 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源，
-    # 来源为 dsh 主进程环境变量 DKNOWC_API_KEY）；缺失时本地环境变量 / ~/.zshrc 兜底
-    # （注册成功自动持久化后、dsh 重启前的窗口期不误报缺失）。
     if _in_dsh():
+        # dsh 场景：优先插件经 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源）；
+        # 缺失时 ~/.zshrc 兜底（注册成功自动持久化后、dsh 重启前的窗口期不误报缺失）。
         api_key = os.environ.get("DSH_DKNOWC_API_KEY", "").strip()
         source = "environment"
         if not _looks_like_key(api_key):

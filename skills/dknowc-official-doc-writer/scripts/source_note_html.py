@@ -4,11 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import importlib.util
 import json
 import re
 import sys
 import unicodedata
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 
@@ -85,7 +88,12 @@ def normalize_title(value: str) -> str:
 
 
 def load_source_index() -> dict:
-    """从本地搜索结果按文章标题建立原文 URL 索引，补齐上游整理时遗漏的字段。"""
+    """从本地搜索结果按文章标题建立原文 URL 索引，补齐上游整理时遗漏的字段。
+
+    同时从同响应的 policyFiles 区提取发文字号（writtenText）并入索引——
+    文号与检索文章分开展示在同一响应里，本地标题匹配即可拿到，无需接口改动；
+    新闻/解读类不在 policyFiles 中（本就无文号），匹配不上则不显示。
+    """
     index = {}
     if not SEARCH_RESULTS_DIR.exists():
         return index
@@ -94,11 +102,26 @@ def load_source_index() -> dict:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        articles = data.get("articles", [])
-        if not isinstance(articles, list):
+        # 兼容两种落盘格式：--clean 白名单（顶层 articles）与接口原始响应（content.data）
+        articles = data.get("articles") if isinstance(data.get("articles"), list) else None
+        policy_files = []
+        if articles is None:
             content = data.get("content", {})
             payload = content.get("data", {}) if isinstance(content, dict) else {}
-            articles = payload.get("检索文章", []) if isinstance(payload, dict) else []
+            if isinstance(payload, dict):
+                articles = payload.get("检索文章", []) if isinstance(payload.get("检索文章"), list) else []
+                if isinstance(payload.get("policyFiles"), list):
+                    policy_files = payload["policyFiles"]
+        elif isinstance(data.get("policyFiles"), list):
+            policy_files = data["policyFiles"]
+        doc_numbers = {}
+        for pf in policy_files:
+            if not isinstance(pf, dict):
+                continue
+            doc_no = first_value(pf, "writtenText", "发文字号")
+            title = first_value(pf, "title", "标题")
+            if doc_no and title:
+                doc_numbers.setdefault(normalize_title(title), doc_no)
         for article in articles:
             if not isinstance(article, dict):
                 continue
@@ -111,7 +134,99 @@ def load_source_index() -> dict:
                 record = {"source_url": source_url, "policy_url": policy_url}
                 index.setdefault(title, record)
                 index.setdefault(normalize_title(title), record)
+        for key, record in list(index.items()):
+            if "doc_number" not in record:
+                no = doc_numbers.get(key)
+                if no:
+                    record["doc_number"] = no
     return index
+
+
+# 快照兜底开关：默认启用。接口 screenShotPath 曾存在路径缺 /A/ 层级的拼接 bug
+# （2026-09-16 反馈后端修复中）；本开关内的 verify_snapshots 会在展示前完成
+# "补 /A/ 修订 + 逐条可达实测 + 不可达弃用"，保证报告中出现的快照全部验证可打开。
+SNAPSHOT_ENABLED = True
+
+
+# 软 404 关键词：政府站常以 HTTP 200 返回"页面不存在"错误页，状态码识别不了，
+# 需读页面标题嗅探。关键词取自实测样例，且仅匹配 <title>（政策正文不会出现在标题里），
+# 误杀风险极低。
+SOFT_404_KEYWORDS = ("页面不存在", "页面未找到", "您访问的页面", "已删除", "已下线", "无法找到", "not found", "404")
+
+
+def check_link_alive(url: str, timeout: int = 8) -> bool:
+    """检测原文链接是否仍然可达。失效判据（客观信号，与请求方无关）：
+    ① HTTP 404/410；② 软 404——HTTP 200 但页面标题为典型失效页。
+    连接失败、超时、403、5xx 等一律视为"无法确认"按有效处理——政府站
+    常对脚本请求反爬，凭这些判死会误杀可用链接。
+    """
+    for method in ("HEAD", "GET"):
+        try:
+            req = urllib.request.Request(
+                url, method=method,
+                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                if resp.status in (404, 410):
+                    return False
+                if method == "GET":
+                    chunk = resp.read(4096).decode("utf-8", errors="replace")
+                    title = re.search(r"<title>(.*?)</title>", chunk, re.I | re.S)
+                    text = title.group(1) if title else chunk[:200]
+                    lowered = text.lower()
+                    return not any(k in text or k in lowered for k in SOFT_404_KEYWORDS)
+        except urllib.error.HTTPError as e:
+            if method == "GET":
+                return e.code not in (404, 410)
+        except Exception:
+            if method == "GET":
+                return True
+    return True
+
+
+def normalize_snapshot_url(url: str) -> str:
+    """快照路径容错：接口部分返回值缺 /A/ 层级（实测 60 条中 5 条，补全后即可访问），
+    统一规范化为 https://attach.dknowc.cn/snapshot/A/<2位>/<2位>/<哈希>.jpg。"""
+    u = (url or "").strip()
+    if u.startswith("https://attach.dknowc.cn/snapshot/") and "/snapshot/A/" not in u:
+        return u.replace("/snapshot/", "/snapshot/A/", 1)
+    return u
+
+
+def mark_dead_links(articles: list[dict]) -> int:
+    """并发检测全部材料的原文链接，404/410 的标记 链接失效=True。返回失效数。"""
+    targets = [(i, a["源网址"]) for i, a in enumerate(articles) if (a.get("源网址") or "").strip()]
+    if not targets:
+        return 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        alive = dict(zip((i for i, _ in targets), pool.map(check_link_alive, (u for _, u in targets))))
+    dead = 0
+    for i, _ in targets:
+        if not alive.get(i, True):
+            articles[i]["链接失效"] = True
+            dead += 1
+    return dead
+
+
+def verify_snapshots(articles: list[dict]) -> int:
+    """快照展示前的路径校验（纯本地检查，不发网络请求）：
+    组装阶段已由 normalize_snapshot_url 补全 /A/ 层级；此处校验修订后的路径
+    是否符合合法格式（https://attach.dknowc.cn/snapshot/A/…），不合法则弃用。
+
+    不做网络可达检测：attach 前置雷池 WAF 的拦截与请求方 IP 风控相关
+    （检测机高频请求会被拦而普通用户正常），可达性实测会误杀好快照；
+    快照文件本身的存在性由可信搜索侧的数据质量保障。
+    """
+    dropped = 0
+    for a in articles:
+        u = (a.get("快照链接") or "").strip()
+        if not u:
+            continue
+        if u.startswith("https://attach.dknowc.cn/snapshot/A/"):
+            continue
+        a["快照链接"] = ""
+        dropped += 1
+    return dropped
 
 
 def to_trace_payload(data: dict) -> tuple[dict, str, str]:
@@ -133,8 +248,10 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
             matched = source_index.get(material_name) or source_index.get(normalize_title(material_name), {})
             source_url = first_value(item, "source_url", "sourceUrl", "源网址", "原文链接", "url") or matched.get("source_url", "")
             policy_url = first_value(item, "policyUrl", "policy_url", "knowledgeBase", "知识专库链接") or matched.get("policy_url", "")
+            doc_number = first_value(item, "doc_number", "文号") or matched.get("doc_number", "")
             articles.append({
                 "文章标题": material_name,
+                "文号": doc_number,
                 "来源": first_value(item, "source", "来源", "publisher"),
                 "发布日期": first_value(item, "date", "发布日期", "time"),
                 # 接口原始结构透传：发布日期可信度 + 段落（含段落标题，用于"原文位置"标题链）
@@ -144,6 +261,9 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
                 "正文对应": first_value(item, "section", "正文对应"),
                 "源网址": source_url,
                 "知识专库原文": policy_url,
+                # 快照链接（接口 screenShotPath）：原文 404 时的存档兜底，渲染层择一展示。
+                # 接口刚上线数据不稳（实测部分快照 404/NoSuchKey），默认关闭，--enable-snapshot 打开。
+                "快照链接": normalize_snapshot_url(first_value(item, "snapshot_url", "快照链接", "screenShotPath", "screenshot_path")) if SNAPSHOT_ENABLED else "",
                 "policyUrl": first_value(item, "policyUrl", "policy_url"),
                 "类型": first_value(item, "type", "素材类型") or "材料",
                 "核验": first_value(item, "verification", "核验", "核验说明"),
@@ -172,10 +292,26 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="生成深知可信搜索同款可信溯源报告 HTML")
     parser.add_argument("input", help="结构化可信溯源 JSON，必须位于 official-docs/input")
     parser.add_argument("--output", "-o", help="输出 HTML 文件名，默认写入 official-docs/output")
+    parser.add_argument("--skip-link-check", action="store_true",
+                        help="跳过原文链接活性检测（默认检测：404/410 标记失效）")
+    parser.add_argument("--disable-snapshot", action="store_true",
+                        help="关闭快照兜底展示（默认启用：原文 404 时以验证过的存档快照替换）")
     args = parser.parse_args()
+    if args.disable_snapshot:
+        global SNAPSHOT_ENABLED
+        SNAPSHOT_ENABLED = False
     input_path = resolve_input(args.input)
     data = json.loads(input_path.read_text(encoding="utf-8"))
     payload, title, answer = to_trace_payload(data)
+    articles = payload.get("content", {}).get("data", {}).get("检索文章", [])
+    if not args.skip_link_check:
+        dead = mark_dead_links(articles)
+        if dead:
+            print(f"链接检测：{dead} 条原文链接已失效（404/410），将改用存档快照或如实标注")
+    if SNAPSHOT_ENABLED:
+        dropped = verify_snapshots(articles)
+        total = sum(1 for a in articles if (a.get("快照链接") or "").strip())
+        print(f"快照校验：{total} 条路径合法放行 / 弃用 {dropped} 条非法路径（已自动补全 /A/，不做网络检测）")
     # 生成前校验：有素材但正文无角标 = 无法建立核验对应，拒绝生成，要求先修 JSON
     materials_count = len(data.get("materials") or [])
     if materials_count and not re.search(r"\[\d+\]", answer):

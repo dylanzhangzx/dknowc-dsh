@@ -111,7 +111,7 @@ def _call_tool(api_key: str, tool: str, arguments: Dict[str, Any], endpoint: str
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="MCP 临时直连客户端（注册后临时 Key 通道）")
-    parser.add_argument("tool", help="MCP 工具名：credible_chat / trusted_search / deep_query")
+    parser.add_argument("tool", help="MCP 工具名：credible_chat / trusted_search / deep_query / doc_outline")
     parser.add_argument("args_json", help="工具参数 JSON 字符串")
     parser.add_argument("--output", "-o", help="输出 JSON 文件路径（保存 MCP 原始返回）")
     parser.add_argument("--endpoint", default=None, help="MCP 端点，默认 https://mcp.dknowc.cn/s6/mcp/")

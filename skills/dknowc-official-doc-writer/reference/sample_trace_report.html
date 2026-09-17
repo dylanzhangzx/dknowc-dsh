@@ -3,39 +3,113 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>深圳市人工智能赋能政务服务应用情况调研报告 · 溯源核验报告</title>
+<title>关于北京市养老产业发展情况的调研报告 · 溯源核验报告</title>
 <style>
 :root{
-  --navy:#0b1f3a; --ink:#172236; --muted:#667085; --line:#dce4ef; --line-strong:#b9c6d9;
-  --brand:#1559c7; --brand-soft:#e8f0ff;
-  --policy:#0c9b78; --policy-soft:#e2f6ef;
-  --case:#b26a00; --case-soft:#fff4e0;
-  --ref:#4b5563; --ref-soft:#eef1f6;
-  --warn:#b26a00; --danger:#b93939; --ok:#0c9b78;
+  --navy:#20242c; --navy-2:#3a4152;
+  --ink:#1f2328; --muted:#6b7280; --line:#e5e7eb; --line-strong:#cbd2dd;
+  --brand:#6512ad; --brand-2:#8b5cf6; --brand-soft:#ede9fe;
+  --grad:linear-gradient(135deg,#6512ad,#8b5cf6);
+  --policy:#0f9d6e; --policy-soft:#e3f5ee;
+  --case:#9a6700; --case-soft:#fdf3dc;
+  --ref:#4b5563; --ref-soft:#f0f1f4;
+  --warn:#9a6700; --danger:#e5484d; --ok:#0f9d6e;
+  --shadow-1:0 1px 3px rgba(24,20,40,.04),0 8px 30px rgba(24,20,40,.08);
+  --shadow-2:0 3px 9px rgba(101,18,173,.22),0 14px 36px rgba(24,20,40,.14);
+  --primary-bright:#8b5cf6; --tint:#f3edfc; --tint-2:#faf7ff; --tint-bd:#e9dff9;
+  --tint-strong:#e6d9f9; --tint-bd-strong:#d3bef0; --body-c:#3b4152; --card-bd:#e8e6f0;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  color:var(--ink);background:#f4f7fb;line-height:1.75;font-size:14.5px}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
+  color:var(--ink);background:#f4f5f7;line-height:1.75;font-size:14.5px}
 a{color:var(--brand)}
-.topbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:10px 22px;background:var(--navy);color:#fff;font-size:13px}
-.topbar .tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.topbar .tags{display:flex;align-items:center;gap:6px;flex:none}
-.topbar .tags span{padding:2px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;font-size:11.5px}
-.layout{display:grid;grid-template-columns:minmax(0,760px) minmax(340px,420px);gap:26px;
-  max-width:1240px;margin:0 auto;padding:26px 18px 60px}
-/* 左栏 */
-.report{min-width:0}
-.r-head{padding:22px 26px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;text-align:center}
-.r-badge{display:inline-flex;align-items:center;gap:14px;margin:0 0 6px;color:var(--navy);
-  font-size:16px;font-weight:800;letter-spacing:7px;text-indent:7px;line-height:1.5}
-.r-badge::before,.r-badge::after{content:"";width:64px;border-top:1px solid var(--line-strong)}
-.r-head h1{margin:0 0 8px;font-size:22px;color:var(--navy);line-height:1.5}
-.r-head .sub{color:var(--muted);font-size:12.5px}
+
+/* ===== 顶栏 ===== */
+.topbar{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:9px 22px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.tb-left{display:flex;align-items:center;gap:10px;min-width:0}
+.tb-stamp{flex:none;font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:4px;text-indent:4px}
+.tb-stamp::before,.tb-stamp::after{content:"";display:inline-block;width:22px;border-top:1px solid var(--line-strong);
+  vertical-align:middle;margin:0 6px}
+.tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:13px}
+.tb-right{display:flex;align-items:center;gap:8px;flex:none}
+.view-switch{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+.view-switch button{border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:700;
+  padding:5px 14px;cursor:pointer}
+.view-switch button.on{background:var(--grad);color:#fff}
+.tb-tools{display:flex;gap:6px}
+.tb-tools button{border:1px solid var(--line);border-radius:8px;background:#fff;color:#3b3550;
+  font-size:12.5px;font-weight:700;padding:5px 11px;cursor:pointer}
+.tb-tools button:hover{border-color:var(--brand-2);color:var(--brand)}
+.tb-tools button[aria-pressed="true"]{background:var(--grad);border-color:var(--brand);color:#fff}
+.print-menu{position:relative;display:inline-flex}
+.print-drop{position:absolute;top:calc(100% + 6px);right:0;z-index:70;display:flex;flex-direction:column;gap:4px;
+  min-width:190px;padding:6px;background:#fff;border:1px solid var(--tint-bd);border-radius:10px;
+  box-shadow:var(--shadow-2);text-align:left}
+.print-drop[hidden]{display:none}
+.print-drop button{border:0;background:none;border-radius:7px;color:var(--ink);font-size:12.5px;font-weight:600;
+  padding:8px 12px;cursor:pointer;text-align:left;font-family:inherit;white-space:nowrap}
+.print-drop button:hover{background:var(--tint);color:var(--brand)}
+.progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:transparent}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6512ad,#8b5cf6)}
+
+/* ===== Hero ===== */
+.hero{position:relative;background:linear-gradient(180deg,#fbfaff 0%,#f7f4fd 100%);
+  color:var(--ink);padding:32px 22px 58px;text-align:center;border-bottom:1px solid var(--line)}
+.r-badge{display:inline-flex;align-items:center;gap:14px;margin:0 0 8px;
+  background:var(--grad);color:#fff;border-radius:999px;padding:4px 22px;
+  font-size:15px;font-weight:800;letter-spacing:7px;text-indent:7px;line-height:1.6;
+  box-shadow:0 2px 8px rgba(101,18,173,.22)}
+.hero h1{margin:0 0 10px;font-size:24px;line-height:1.5;max-width:860px;margin-left:auto;margin-right:auto;color:var(--ink)}
+.hero .meta{color:var(--muted);font-size:13px;letter-spacing:.5px}
+.hero-switch{margin-top:16px;display:flex;justify-content:center}
+.hero-switch .view-switch{border-color:#d9c9f4;background:#fff;box-shadow:0 1px 3px rgba(24,20,40,.04)}
+.hero-switch .view-switch button{color:#70678a;padding:6px 22px;font-size:13px}
+.hero-switch .view-switch button.on{background:var(--grad);color:#fff}
+
+/* ===== 容器与视图 ===== */
+.container{max-width:1080px;margin:0 auto;padding:0 18px}
+.app[data-view="library"] #view-report{display:none}
+#view-library{display:none}
+.app[data-view="library"] #view-library{display:block}
+
+/* ===== 过程回顾条 ===== */
+.process{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-1);
+  padding:15px 20px 13px;margin:-36px auto 16px;position:relative}
+.p-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.p-head b{font-size:14.5px;color:var(--navy);letter-spacing:1px}
+.p-head span{font-size:11.5px;color:var(--muted)}
+.p-steps{list-style:none;display:flex;align-items:stretch;gap:8px;margin:0;padding:0;flex-wrap:wrap}
+.p-step{display:flex;gap:9px;align-items:center;min-width:0;flex:1 1 150px;
+  border:1px solid var(--line);border-radius:10px;padding:8px 11px;background:#fafbfc}
+.p-no{flex:none;width:24px;height:24px;border-radius:50%;background:var(--grad);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.p-txt{min-width:0}
+.p-txt b{display:block;font-size:12.8px;color:var(--navy);line-height:1.5}
+.p-txt i{display:block;font-style:normal;font-size:11px;color:var(--muted);line-height:1.5;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-step.done{border-color:#bfe8da;background:#f2faf7}
+.p-step.done .p-no{background:var(--ok)}
+.p-step.bad{border-color:#f6c9cb;background:#fffafa}
+.p-step.bad .p-no{background:var(--danger)}
+.p-step.expandable{cursor:pointer}
+.p-step.expandable:hover{border-color:var(--brand)}
+.p-arrow{align-self:center;color:#b9c6d9;font-size:16px;font-weight:700;flex:none}
+.p-detail{display:none;margin-top:10px;border-top:1px dashed var(--line-strong);padding-top:9px}
+.p-detail.show{display:block}
+.pd-row{display:flex;justify-content:space-between;gap:14px;padding:3px 2px;font-size:12.3px;flex-wrap:wrap}
+.pd-row b{color:var(--navy);font-weight:700;min-width:0}
+.pd-row span{color:var(--muted)}
+
+/* ===== 核验报告视图 ===== */
+#view-report{padding-bottom:26px}
 .warn-box{margin:0 0 16px;padding:13px 16px;border:1.5px solid var(--danger);border-radius:10px;
   background:#fdf3f3;color:#8f2626;font-size:13.5px;line-height:1.7}
-.verify{margin:0 0 16px;background:#fff;border:1px solid #bfe5d6;border-radius:12px;padding:16px 20px}
-.verify.fail{border-color:#f2c4c4;background:#fffafa}
+.verify{margin:0 0 16px;background:#fff;border:1px solid #bfe8da;border-left:4px solid var(--ok);
+  border-radius:14px;padding:16px 20px;box-shadow:var(--shadow-1)}
+.verify.fail{border-color:#f6c9cb;border-left-color:var(--danger);background:#fffafa}
 .v-head{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;color:var(--ok)}
 .verify.fail .v-head{color:var(--danger)}
 .v-shield{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;
@@ -46,7 +120,7 @@ a{color:var(--brand)}
 .v-stamp.bad{border-color:var(--danger);color:var(--danger)}
 .v-reasons{margin-top:6px;font-size:12.5px;color:var(--danger)}
 .v-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-top:10px}
-.vi{display:flex;gap:7px;align-items:baseline;font-size:12.5px;color:#35445c;line-height:1.7;min-width:0}
+.vi{display:flex;gap:7px;align-items:baseline;font-size:12.5px;color:#3b3550;line-height:1.7;min-width:0}
 .vi .s{font-weight:800;flex:none}
 .vi .s.ok{color:var(--ok)}
 .vi .s.warn{color:var(--warn)}
@@ -55,158 +129,222 @@ a{color:var(--brand)}
 .vi .s.none{color:var(--muted)}
 .vi .d{color:var(--muted);min-width:0}
 .v-note{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--muted);line-height:1.7}
-/* 正文章节卡 */
-.doc-sec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:16px}
-.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px;
-  padding-bottom:10px;border-bottom:1px solid var(--line)}
-.sec-no{display:inline-flex;width:26px;height:26px;border-radius:7px;background:var(--brand);color:#fff;
-  align-items:center;justify-content:center;font-size:13.5px;font-weight:700;flex:none}
-.sec-head h3{margin:0;font-size:16.5px;color:var(--navy);line-height:1.5}
-.sec-badge{margin-left:auto;font-size:11.5px;color:var(--ok);background:var(--policy-soft);
-  border-radius:6px;padding:2px 9px;font-weight:700;flex:none}
-.sec-badge.bad{color:var(--danger);background:#fdecea}
-.doc-sub{margin:16px 0 8px;color:var(--navy);font-size:14.5px;font-weight:700}
-h5.doc-sub{font-size:13.5px}
-.doc-block,.doc-item{margin:0 0 12px}
-.doc-block p,.doc-item p{margin:0;font-size:14px;line-height:1.9}
-.doc-item{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px}
-.doc-item.numbered{grid-template-columns:28px minmax(0,1fr)}
-.doc-bullet{padding-top:1px;color:#111827;font-size:15px;line-height:1.85}
+
+/* 正文（原型复刻）：章节 / 段落 / 角标 / 句后溯源卡 */
+.doc-paper{background:#fff;border-radius:14px;box-shadow:var(--shadow-1);padding:26px 34px 22px;margin:0 0 16px}
+.chapter{margin:40px 0 0}
+.chapter:first-child{margin-top:6px}
+.ch-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;scroll-margin-top:86px}
+.ch-head h2{font-size:19.5px;font-weight:700;color:var(--ink);letter-spacing:.2px;line-height:1.4;flex:1;min-width:0}
+.ch-head::after{content:"";flex-basis:110px;height:1px;background:linear-gradient(90deg,#e9dff9,transparent);order:3;flex-grow:0;flex-shrink:0}
+.ch-head .sec-badge{order:4;flex:none;font-size:11.5px;color:var(--ok);background:var(--policy-soft);border-radius:6px;padding:2px 9px;font-weight:700}
+.ch-head .sec-badge.bad{color:var(--danger);background:#fdecec}
+@media(min-width:1000px){.ch-head::after{flex-basis:200px}}
+.lead{font-size:15.5px;line-height:1.95;color:var(--body-c);margin:14px 0;padding:0 2px;word-break:break-word}
+.para{font-size:15.5px;line-height:1.95;color:var(--body-c);margin:14px 0;padding:0 2px;word-break:break-word}
+.para b.kw,.lead b.kw{font-weight:600;color:var(--ink)}
 .doc-divider{border:0;border-top:1px solid var(--line);margin:18px 0}
-code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
+code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#3f3d52;
   font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 .tbl-wrap{max-width:100%;overflow-x:auto;margin:8px 0}
 .data-tbl{width:100%;border-collapse:collapse;border:1px solid var(--line);font-size:13px}
 .data-tbl th,.data-tbl td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.65}
-.data-tbl th{background:#f2f5fb;font-weight:700;color:#374151}
+.data-tbl th{background:#f5f6f8;font-weight:700;color:#3f3d52}
+
 /* 角标 */
-.cite{margin:0 1px;padding:0 5px;border:0;border-radius:4px;background:var(--brand-soft);color:var(--brand);
-  font-weight:800;font-size:10.5px;cursor:pointer;vertical-align:super;font-family:monospace}
-.cite:hover,.cite:focus-visible{background:var(--brand);color:#fff;outline:none}
-.cite.unresolved{background:#fdecea;color:var(--danger)}
-/* 段落级证据 chips */
-.ev-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
-.ev-chip{max-width:100%}
-.ev-chip summary{display:inline-flex;align-items:center;max-width:100%;border-radius:999px;padding:3px 10px;
-  color:#4b5563;background:#f3f4f6;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  list-style:none;font-size:11.5px}
+.cite{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:18px;padding:0 5px;margin:0 2px 2px 3px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--brand);background:var(--tint);border:1px solid var(--tint-bd);border-radius:5px;cursor:pointer;vertical-align:super;line-height:1;transition:.14s;position:relative;top:-1px;user-select:none;font-family:inherit}
+.cite:hover{background:var(--brand);border-color:var(--brand);color:#fff}
+.cite.flash{background:var(--primary-bright);border-color:var(--primary-bright);color:#fff}
+.cite.unresolved{color:var(--danger);border-color:#f6c9cb;background:#fdf7f7}
+
+/* 段落级证据 chips（引文卡） */
+/* 行内引文 jb（原型复刻）：角标后小胶囊，点击展开块级卡（溯源原文+引文摘录） */
+.jb{display:inline-block;vertical-align:top;max-width:100%;margin:2px 4px 2px 0;position:relative}
+.jb.active{display:block;margin:12px 0 2px;max-width:none}
+.jb-name{display:inline-flex;align-items:center;gap:6px;max-width:380px;min-height:26px;padding:4px 13px;border-radius:13px;border:1px solid var(--tint-bd);background:var(--tint);color:#540e8f;font-family:inherit;font-size:12px;font-weight:600;line-height:18px;cursor:pointer;transition:.16s;white-space:nowrap}
+.jb-name:hover{background:#fff;border-color:var(--brand)}
+.jb-name .jb-id{flex:none;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;color:#fff;background:linear-gradient(135deg,#6512ad,#8b5cf6);box-shadow:0 1px 3px rgba(101,18,173,.28)}
+.jb-name .jb-txt{overflow:hidden;text-overflow:ellipsis}
+.jb-name svg{flex:none;transition:transform .2s}
+.jb.active .jb-name{max-width:100%;white-space:normal;line-height:20px;color:var(--ink);background:#fff;font-size:13.5px;font-weight:700;text-align:left}
+.jb.active .jb-name svg{transform:rotate(180deg)}
+.jb-src{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:4px 13px;border-radius:13px;background:linear-gradient(135deg,#6512ad,#8b5cf6);color:#fff;font-size:11px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(101,18,173,.22);transition:.15s;flex-shrink:0}
+.jb-src:hover{filter:brightness(1.1)}
+.jb-src span{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jb-body{display:none}
+.jb.active .jb-body{position:relative;display:block;margin-top:13px;background:#fff;border:1px solid var(--card-bd);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow-1)}
+.jb-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.jb-label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--brand);letter-spacing:.5px}
+.jb-label svg{flex:none}
+.jb-site{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#70678a;background:#f6f4fa;
+  border:1px solid var(--line);border-radius:999px;padding:3.5px 10px;max-width:100%;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;margin:0 0 2px}
+.jb-site .dot{width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,#6512ad,#8b5cf6);flex-shrink:0}
+.jb-quote{display:flex;gap:9px;align-items:flex-start;margin-top:9px;padding:10px 12px;background:#faf9fd;border:1px solid var(--line);border-radius:9px;text-decoration:none;transition:.15s;cursor:pointer}
+.jb-quote{cursor:pointer}
+.jb-quote:hover{border-color:var(--brand);background:#f7f4fc}
+.jb-no{flex:none;width:17px;height:17px;margin-top:4px;border-radius:4px;background:var(--tint);border:1px solid var(--tint-bd);color:var(--brand);font-size:10px;font-weight:700;font-style:normal;display:flex;align-items:center;justify-content:center}
+.jb-quote span{font-size:12.5px;line-height:1.95;color:#4b4658;word-break:break-word;text-align:justify}
+.jb-quote .sc-excerpt{flex:1;min-width:0;display:block}
+a.jb-quote{text-decoration:none}
+.jb.flash{animation:cardFlash 1.6s ease}
+.ev-title{font-weight:700;font-size:13.5px;margin-bottom:4px;color:var(--ink)}
+.ev-meta{color:var(--muted);font-size:12px;margin-bottom:6px}
+.ev-chip summary{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-height:26px;padding:4px 13px;
+  border-radius:13px;color:#fff;background:var(--grad);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  list-style:none;font-size:11px;font-weight:600;box-shadow:0 2px 8px rgba(101,18,173,.22);transition:.15s}
+.ev-chip summary:hover{filter:brightness(1.12)}
 .ev-chip summary::-webkit-details-marker{display:none}
-.ev-chip summary::after{content:"核验";margin-left:7px;color:#9ca3af;font-size:10.5px}
-.ev-chip[open] summary::after{content:"收起"}
-.ev-chip summary b{color:var(--brand);margin-right:5px}
-.ev-panel{margin:7px 0 6px;padding:12px 14px;border:1px solid var(--line);border-radius:9px;background:#fbfcfe;
-  box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.ev-chip summary b{color:#fff;margin-right:2px;font-weight:700}
+
 .ev-title{font-weight:700;font-size:13.5px;margin-bottom:4px;color:var(--navy)}
 .ev-meta{color:var(--muted);font-size:12px;margin-bottom:6px}
-.ev-panel p{margin:0 0 8px;color:#374151;font-size:12.8px;line-height:1.7}
+.ev-panel p{margin:0 0 8px;color:#3f3d52;font-size:12.8px;line-height:1.7}
 .sc-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .sc-links span{display:inline-flex}
 .sc-links a{display:inline-flex;align-items:center;min-height:24px;padding:3px 9px;border-radius:6px;
   background:var(--brand-soft);color:var(--brand);font-weight:700;text-decoration:none;font-size:12px}
-/* 右栏 核验材料 */
-.sources{position:sticky;top:56px;align-self:start;max-height:calc(100vh - 76px);overflow:auto;
-  background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
-.sources h3{margin:0 0 3px;font-size:15px;color:var(--navy)}
-.src-tip{font-size:11.5px;color:var(--muted);margin-bottom:10px}
-.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.filters button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
-  padding:3px 11px;font-size:12px;cursor:pointer}
-.filters button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
-.sc-unused{font-size:10.5px;font-weight:800;color:var(--muted);background:#eef1f6;border-radius:4px;
-  padding:1px 7px;flex:none}
-.src-search{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;margin-bottom:12px}
-.scard{border:1px solid var(--line);border-left-width:3px;border-radius:10px;padding:11px 13px;margin-bottom:10px;
-  background:#fff;transition:box-shadow .25s}
+
+/* ===== 材料专库视图 ===== */
+#view-library{padding:26px 0 30px}
+.lib-head{max-width:860px;margin:0 auto 16px;text-align:center}
+.lib-title{margin-bottom:14px}
+.lib-title b{font-size:17px;color:var(--navy);letter-spacing:2px}
+.lib-title span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.lib-searchWrap{position:relative;max-width:620px;margin:0 auto}
+.lib-searchIcon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#a6adbd;font-size:16px;font-weight:700}
+.lib-search{width:100%;padding:11px 16px 11px 38px;border:1.5px solid var(--line-strong);border-radius:999px;
+  font-size:14px;background:#fff;box-shadow:var(--shadow-1);outline:none}
+.lib-search:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(139,92,246,.18)}
+.hot-terms{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:12px;align-items:center}
+.hot-label{font-size:12px;color:var(--muted)}
+.hot-term{border:0;border-radius:999px;background:var(--brand-soft);color:var(--brand);
+  font-size:12.3px;font-weight:700;padding:3px 13px;cursor:pointer}
+.hot-term:hover{background:var(--grad);color:#fff}
+.lib-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px}
+.lib-tabs button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
+  padding:4px 13px;font-size:12.3px;cursor:pointer}
+.lib-tabs button.on{background:var(--grad);border-color:var(--brand);color:#fff;font-weight:700}
+.lib-list{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:14px}
+.lib-empty{max-width:860px;margin:30px auto;text-align:center;color:var(--muted);font-size:13.5px}
+.lib-empty.hide{display:none}
+.lib-foot{text-align:center;color:var(--muted);font-size:11.5px;padding:18px 0 0;line-height:1.8}
+
+/* ===== 材料卡 ===== */
+.scard{border:1px solid var(--line);border-left-width:3px;border-radius:12px;padding:14px 18px;
+  background:#fff;box-shadow:var(--shadow-1);transition:box-shadow .25s}
+.scard:hover{box-shadow:var(--shadow-2)}
 .scard.pol{border-left-color:var(--policy)}
-.scard.dat{border-left-color:var(--brand)}
+.scard.dat{border-left-color:var(--brand-2)}
 .scard.cas{border-left-color:var(--case)}
 .scard.ref,.scard.mat{border-left-color:var(--ref)}
-.scard.hl{box-shadow:0 0 0 3px var(--brand)}
+.scard.hl{box-shadow:0 0 0 3px rgba(139,92,246,.35),var(--shadow-2)}
 .scard.hide{display:none}
-.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:4px}
-.sc-id{font-family:monospace;font-weight:800;font-size:11px;color:var(--brand);background:var(--brand-soft);
-  border-radius:4px;padding:1px 7px}
+.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.sc-id{font-family:monospace;font-weight:800;font-size:11px;color:#fff;background:var(--grad);
+  border-radius:5px;padding:1px 8px}
 .sc-type{font-size:11px;font-weight:700;border-radius:4px;padding:1px 8px;background:var(--ref-soft);color:var(--ref)}
 .scard.pol .sc-type{background:var(--policy-soft);color:var(--policy)}
 .scard.dat .sc-type{background:var(--brand-soft);color:var(--brand)}
 .scard.cas .sc-type{background:var(--case-soft);color:var(--case)}
 .sc-vk{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}
 .sc-vk.warn{color:var(--warn)}
-.sc-conf{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e8c98a;
+.sc-unused{font-size:10.5px;font-weight:800;color:var(--muted);background:#efedf4;border-radius:4px;
+  padding:1px 7px;flex:none}
+.sc-conf{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e6cf8f;
   border-radius:4px;padding:0 7px;flex:none}
-.sc-extag{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line-strong);font-size:11px;color:#0b6e4f;font-weight:700}
-.sc-chain{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600;line-height:1.6;cursor:help}
-.scard h4{margin:0 0 4px;font-size:13px;color:var(--navy);line-height:1.55}
+.scard h4{margin:0 0 5px;font-size:14.5px;color:var(--ink);line-height:1.55}
 .sc-meta{font-size:11.5px;color:var(--muted)}
-.sc-section{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600}
+/* 标题链面包屑（模型生成的结构化位置，核验核心抓手）与多段分块 */
+.crumb{font-size:11.5px;color:var(--brand);margin:10px 0 4px;font-weight:600;line-height:1.6;
+  padding:3px 9px;background:var(--tint);border-radius:7px;display:inline-block;max-width:100%;
+  overflow-wrap:break-word}
+.crumb i{font-style:normal;color:#c9b3ec;margin:0 2px;font-weight:400}
+.seg-block{margin-top:8px}
+.seg-block:first-child{margin-top:2px}
+.seg-block .sc-excerpt{margin-top:5px}
 .sc-vnote{margin-top:5px;font-size:11.3px;color:var(--ok);line-height:1.6}
-.sc-excerpt{margin:7px 0;padding:9px 10px;border-radius:7px;background:#f8fafc;color:#42566f;font-size:12px;line-height:1.7;
-  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
-.scard.open .sc-excerpt{display:block;-webkit-line-clamp:unset}
-.sc-more{display:none;margin:-3px 2px 4px;text-align:right;font-size:11px;color:var(--brand);font-weight:700;cursor:pointer;user-select:none}
-.scard.clampable .sc-more{display:block}
-.scard.clampable .sc-more::before{content:"展开全文 ▾"}
-.scard.clampable.open .sc-more::before{content:"收起 ▴"}
+.sc-excerpt{margin:8px 0 0;padding:10px 12px;border:1px solid #eceaf2;border-radius:9px;
+  background:#faf9fd;color:#4a4260;font-size:12.3px;line-height:1.75}
 .sc-excerpt.rich{overflow-x:auto}
 .sc-excerpt.rich table{width:max-content;min-width:100%;border-collapse:collapse;background:#fff;font-size:12px}
 .sc-excerpt.rich td,.sc-excerpt.rich th{min-width:92px;max-width:220px;padding:7px 8px;border:1px solid var(--line);
   vertical-align:top;word-break:break-word}
-.sc-excerpt.rich thead td,.sc-excerpt.rich th{background:#f3f4f6;color:#374151;font-weight:700}
+.sc-excerpt.rich thead td,.sc-excerpt.rich th{background:#f3f4f6;color:#3f3d52;font-weight:700}
 .scard .sc-links a{font-size:12px}
 .scard .sc-links{margin-top:4px}
 .no-link{font-size:11.5px;color:var(--muted)}
-.uncited-group{margin-top:12px;border-top:1px dashed var(--line-strong);padding-top:10px}
-.ug-title{font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.6}
-.uncited-group .uncited-list{margin-top:10px}
-.empty{color:var(--muted)}
+.sc-links a.snap{background:#faf5ff;border-color:#d9c9f4;color:#5b21b6}
+.dead-link{font-size:11.5px;color:var(--warn)}
+
+/* ===== 章节目录（spy，长报告） ===== */
+.toc{position:fixed;left:calc((100vw - 1080px)/2 - 168px);top:120px;width:140px;max-height:60vh;overflow:auto;
+  display:flex;flex-direction:column;gap:2px;font-size:12px}
+.toc a{color:var(--muted);text-decoration:none;padding:4px 10px;border-left:2px solid var(--line);
+  line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toc a.on{color:var(--brand);border-left-color:var(--brand);font-weight:700}
+@media (max-width:1460px){.toc{display:none}}
+
 .foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
-@media (max-width:1020px){
-  .layout{grid-template-columns:1fr}
-  .sources{position:static;max-height:none}
-}
-/* —— 移动端专项适配（手机阅读核验报告） —— */
-.mobile-nav{display:none}
-.back-doc{display:none}
-/* 移动端材料底部弹层：点角标就地弹出材料卡，不跳转打断阅读 */
+
+/* ===== 只看正文（纯净阅读态） ===== */
+body.reading .process,body.reading .verify,body.reading .jb,body.reading .sec-badge,
+body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!important}
+
+/* ===== 打印附录 ===== */
+.print-appendix{display:none}
+
+/* ===== 移动端 ===== */
 .sheet-mask{display:none}
 .sheet{display:none}
 @media (max-width:680px){
   body{font-size:14px;line-height:1.8}
-  .layout{grid-template-columns:1fr;padding:12px 10px 40px;gap:14px}
-  .topbar{padding:8px 12px;font-size:12px;gap:4px;flex-wrap:wrap}
-  .topbar .tags span{font-size:10.5px;padding:1px 8px;margin-left:4px}
+  .topbar{padding:7px 10px;gap:6px}
+  .tb-stamp{font-size:11px;letter-spacing:2px;text-indent:2px}
+  .tb-stamp::before,.tb-stamp::after{width:12px;margin:0 4px}
+  .tb-title{display:none}
+  .topbar .view-switch{display:none}
+  .tb-tools button{font-size:11.5px;padding:4px 8px}
+  .hero{padding:24px 14px 50px}
+  .ch-head{gap:8px;margin-bottom:14px;flex-wrap:nowrap}
+  .ch-head h2{font-size:17px;line-height:1.45}
+  .ch-head::after{display:none}
+  .ch-head .sec-badge{font-size:10.5px;padding:2px 7px;white-space:nowrap}
+  .jb-name{max-width:calc(100vw - 72px)}
   .r-badge{font-size:13.5px;letter-spacing:6px;text-indent:6px;gap:10px}
-  .r-badge::before,.r-badge::after{width:40px}
-  .r-head{padding:16px 14px;border-radius:10px}
-  .r-head h1{font-size:18px}
-  .r-head .sub{font-size:11.5px;line-height:1.6}
-  .verify{padding:13px 14px;border-radius:10px}
+  .hero h1{font-size:18.5px}
+  .hero .meta{font-size:11.5px;line-height:1.7}
+  .hero-switch .view-switch button{padding:6px 16px;font-size:12.5px}
+  .process{margin-top:-30px;padding:12px 12px 11px}
+  .p-step{flex:1 1 100%}
+  .p-arrow{display:none}
+  .verify{padding:13px 14px}
   .v-head{font-size:14px}
   .v-grid{grid-template-columns:1fr;gap:2px 0}
   .vi{flex-wrap:wrap;gap:4px 8px}
   .vi .d{min-width:0}
   .warn-box{font-size:12.5px;padding:11px 12px}
-  .doc-sec{padding:14px;border-radius:10px}
-  .sec-no{width:22px;height:22px;font-size:12px;border-radius:6px}
+  .doc-paper{padding:16px 14px 10px;border-radius:10px}
   .sec-head{gap:7px;padding-bottom:8px;margin-bottom:8px}
   .sec-head h3{font-size:15px}
   .sec-badge{margin-left:0;font-size:11px}
-  .doc-block p,.doc-item p{font-size:13.5px;line-height:1.95}
+  .doc-block p,.doc-item p{font-size:15px;line-height:1.95}
   .doc-sub{font-size:14px;margin:12px 0 6px}
   .data-tbl{font-size:12px}
   .data-tbl th,.data-tbl td{padding:6px 7px;line-height:1.55}
   .cite{font-size:11px;padding:0 4px}
   .ev-chip summary{font-size:11px}
-  .sources{padding:12px;border-radius:10px}
+  #view-library{padding:18px 0 24px}
+  .lib-search{padding:10px 14px 10px 34px;font-size:13.5px}
+  .lib-tabs{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .lib-tabs::-webkit-scrollbar{display:none}
+  .lib-tabs button{flex:none}
+  .lib-list{grid-template-columns:1fr;gap:10px}
   .scard{padding:10px 11px}
-  .sc-extag{font-size:10.5px}
-  .sc-chain{font-size:11px}
+  .crumb{font-size:11px}
   .sc-excerpt{font-size:11.5px}
-  .mobile-nav{display:block;margin:0 0 14px;padding:11px 14px;border:1.5px solid var(--brand);
-    border-radius:10px;background:var(--brand-soft);color:var(--brand);font-weight:800;
-    font-size:13.5px;text-decoration:none;text-align:center}
-  .back-doc{display:inline-block;margin:0 0 8px;font-size:12px;color:var(--brand);
-    font-weight:700;text-decoration:none}
+  /* 移动端材料底部弹层：点角标就地弹出材料卡，不跳转打断阅读 */
   .sheet-mask{display:block;position:fixed;inset:0;background:rgba(11,31,58,.45);z-index:99;opacity:0;
     pointer-events:none;transition:opacity .2s}
   .sheet-mask.show{opacity:1;pointer-events:auto}
@@ -218,7 +356,7 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .sheet-grab{width:38px;height:4px;border-radius:2px;background:#c9d4e2;margin:2px auto 8px}
   .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
   .sheet-head b{font-size:13.5px;color:var(--navy)}
-  .sheet-close{border:1px solid var(--line);background:#f5f8fc;border-radius:8px;color:#3b4a61;
+  .sheet-close{border:1px solid var(--line);background:#f5f3fa;border-radius:8px;color:#3b4a61;
     font-size:12.5px;font-weight:700;padding:5px 14px;cursor:pointer}
   .sheet .scard{box-shadow:none;margin-bottom:0}
   .sheet .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
@@ -227,102 +365,439 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .cmp-tag{font-size:11px;font-weight:800;padding:3px 10px}
   .cmp-side{padding:9px 12px;font-size:12.8px;line-height:1.7}
   .cmp-side p{margin:0}
-  .cmp-ai{background:#fbfcfe;color:#374151}
+  .cmp-ai{background:#fbfaff;color:#3f3d52}
   .cmp-ai .cmp-tag{background:#eef1f6;color:var(--ref)}
   .cmp-src{background:#f4faf7;color:#2f4a3e;border-top:1px dashed var(--line-strong)}
   .cmp-src .cmp-tag{background:var(--policy-soft);color:#0b6e4f}
   .cmp-src .sc-excerpt{display:block;-webkit-line-clamp:unset;background:#fff;cursor:auto;font-size:12px;padding:8px 10px;margin:0}
 }
+
+/* ===== 打印归档 ===== */
 @media print{
-  .topbar,.filters,.src-search{display:none!important}
-  .layout{grid-template-columns:1fr;max-width:none;padding:0;gap:14px}
+  .topbar,.process .p-detail,.hero-switch,.tb-tools,.view-switch,.lib-head,.toc,.sheet,.sheet-mask,
+  .progress{display:none!important}
+  #view-library{display:none!important}
+  #view-report{display:block!important}
+  .app[data-view="library"] #view-report{display:block!important}
+  .hero{background:none;border:0;color:var(--ink);padding:10px 0 4px}
+  .hero .meta{color:var(--muted)}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .process{box-shadow:none;margin:6px 0 12px}
+  .verify{border-color:#bbb;box-shadow:none;break-inside:avoid}
+  .doc-paper{box-shadow:none;border-radius:0;padding:0}
   body{background:#fff;font-size:12.5px}
-  .sources{position:static;max-height:none;border:0;padding:0;overflow:visible}
-  .r-head,.verify,.doc-sec{border-color:#bbb;box-shadow:none;break-inside:avoid}
   .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
-  .uncited-group[open] .uncited-list,.uncited-group{break-inside:avoid}
   .scard{break-inside:avoid}
-  .cite{background:#eee;color:#333}
+  .cite{background:none!important;color:#333!important;text-decoration:none!important}
+  .cite::before{content:"["}.cite::after{content:"]"}
+  .jb{display:inline!important}
+  .jb .jb-name{border:0;background:none;padding:0;color:#333;font-weight:600}
+  .jb .jb-name .jb-id{color:#333;background:none;border:1px solid #999;border-radius:3px}
+  .jb .jb-body{display:none!important}
+  .jb.active{break-inside:avoid}
+  .jb.active .jb-body{display:block!important}
+  .jb.active .jb-body .jb-quote{break-inside:avoid}
+  body.reading .verify,body.reading .process,body.reading .ev-row,body.reading .sec-badge,
+  body.reading .cite{display:none!important}
+  .print-appendix{display:block;break-before:page}
+  body.print-body-only .verify,body.print-body-only .process,body.print-body-only .print-appendix,
+  body.print-body-only .jb,body.print-body-only .foot{display:none!important}
+  .print-appendix h3{font-size:15px;color:var(--navy);border-bottom:1px solid #999;padding-bottom:6px;margin:0 0 12px}
+  .print-appendix .scard{margin-bottom:10px}
 }
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <div class="tb-title">深圳市人工智能赋能政务服务应用情况调研报告 · 溯源核验报告</div>
-  <div class="tags">
-    <span>生成于 2026-09-10 11:23</span>
-    <span>素材来源：深知可信搜索</span>
+  <div class="tb-left">
+    <span class="tb-stamp">溯源核验报告</span>
+    <span class="tb-title">关于北京市养老产业发展情况的调研报告</span>
   </div>
+  <div class="tb-right">
+    <div class="view-switch" role="tablist" aria-label="视图切换">
+      <button class="on" data-view="report" type="button">核验报告</button>
+      <button data-view="library" type="button">材料专库</button>
+    </div>
+    <div class="tb-tools">
+      <button id="btn-reading" type="button" aria-pressed="false" title="隐藏核验元素，纯阅读正文">只看正文</button>
+      <button id="btn-copy" type="button" title="复制正文纯文本">复制全文</button>
+      <span class="print-menu">
+        <button id="btn-print" type="button" aria-haspopup="true" title="浏览器打印／另存为 PDF">打印归档 ▾</button>
+        <span class="print-drop" id="print-drop" hidden>
+          <button id="print-body" type="button">只打印正文</button>
+          <button id="print-full" type="button">完整归档（含核验材料）</button>
+        </span>
+      </span>
+    </div>
+  </div>
+  <div class="progress" aria-hidden="true"><i></i></div>
 </header>
 
-<div class="layout">
-  <main class="report" aria-label="核验报告正文">
-    <div class="r-head" id="doc-top">
-      <div class="r-badge">溯源核验报告</div>
-      <h1>深圳市人工智能赋能政务服务应用情况调研报告</h1>
-      <div class="sub">素材：政策依据 3 · 数据支撑 2 · 参考案例 1 ｜ 共 6 条 ｜ 点击正文角标 [1] 定位材料原文</div>
+<div class="hero">
+  <div class="r-badge">溯源核验报告</div>
+  <h1>关于北京市养老产业发展情况的调研报告</h1>
+  <div class="meta">深知检索 4 次 · 召回材料 22 条 · 正文引用 25 处 · 生成于 2026-09-16 15:29 ｜ 素材来源：深知可信搜索</div>
+  <div class="hero-switch">
+    <div class="view-switch" role="tablist" aria-label="视图切换">
+      <button class="on" data-view="report" type="button">核验报告</button>
+      <button data-view="library" type="button">材料专库（22）</button>
     </div>
+  </div>
+</div>
+
+<div class="app container" data-view="report">
+  
+    <section class="process" aria-label="生成过程回顾">
+      <div class="p-head"><b>过程回顾</b><span>数字来自本次任务的真实记录</span></div>
+      <ol class="p-steps">
+        <li class="p-step expandable" id="p-step-search" role="button" tabindex="0" title="展开各路检索明细">
+          <span class="p-no">1</span>
+          <div class="p-txt"><b>深知检索 4 次</b><i>共 4 路检索 · 北京·政策法规…</i></div>
+        </li>
+        <li class="p-arrow" aria-hidden="true">›</li>
+        <li class="p-step">
+          <span class="p-no">2</span>
+          <div class="p-txt"><b>材料入库 22 条</b><i>正文采用 14 · 召回未采用 8</i></div>
+        </li>
+        <li class="p-arrow" aria-hidden="true">›</li>
+        <li class="p-step">
+          <span class="p-no">3</span>
+          <div class="p-txt"><b>逐条比对原文</b><i>依据溯源 14/14 · 摘录可比对</i></div>
+        </li>
+        <li class="p-arrow" aria-hidden="true">›</li>
+        <li class="p-step done">
+          <span class="p-no">✓</span>
+          <div class="p-txt"><b>核验完成</b><i>结论：正文依据逐条对过原文</i></div>
+        </li>
+      </ol>
+      <div class="p-detail" id="p-detail"><div class="pd-row"><b>北京·政策法规</b><span>召回 9 条 · 正文采用 6 条</span></div><div class="pd-row"><b>北京·模式创新</b><span>召回 4 条 · 正文采用 3 条</span></div><div class="pd-row"><b>全国·产业数据</b><span>召回 6 条 · 正文采用 3 条</span></div><div class="pd-row"><b>北京·要素保障</b><span>召回 3 条 · 正文采用 2 条</span></div></div>
+    </section>
+
+  <main class="view" id="view-report" aria-label="核验报告正文">
     
     
     <div class="verify ok">
       <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据逐条对过原文<span class="v-stamp">已核验</span></div>
       
       <div class="v-grid">
-        <div class="vi"><span class="s ok">✓ 依据溯源 4/4</span><span class="d">每条素材可回看原文</span></div><div class="vi"><span class="s ok">✓ 引用对应 4/4</span><span class="d">正文每处 [n] 都能找到对应材料</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2024-01～2026-01</span></div><div class="vi"><span class="s ok">✓ 材料构成</span><span class="d">政策依据 3 · 数据支撑 2 · 参考案例 1</span></div><div class="vi"><span class="s ok">✓ 交付前检查 5/5</span><span class="d">事实有据、结构完整、无占位残留、无 AI 味、格式合规</span></div><div class="vi"><span class="s man">◐ 现行效力</span><span class="d">3 份政策文件建议按官方发布确认是否现行有效</span></div>
+        <div class="vi"><span class="s ok">✓ 依据溯源 14/14</span><span class="d">每条素材摘录可比对，原文或存档快照可回看</span></div><div class="vi"><span class="s ok">✓ 引用对应 25/25</span><span class="d">正文每处 [n] 都能找到对应材料</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2025-03～2026-09</span></div><div class="vi"><span class="s ok">✓ 材料构成</span><span class="d">政策依据 7 · 数据支撑 4 · 参考案例 3</span></div><div class="vi"><span class="s ok" title="正文数字与结论逐条对应素材摘录，未使用检索结果以外的数据；调研报告四段式（基本情况、做法成效、存在问题、对策建议）完整；全文无&quot;待补&quot;等占位残留；已按公文语体行文，调研报告口吻；符合调研报告文种格式">✓ 交付前检查 5/5</span><span class="d">事实有据、结构完整、无占位残留、无 AI 味、格式合规 · 悬停查看说明</span></div><div class="vi"><span class="s man">◐ 现行效力</span><span class="d">7 份政策文件建议按官方发布确认是否现行有效</span></div>
       </div>
-      <div class="v-note">核验方式：先用深知可信搜索找权威来源，再把正文每处依据和原文逐条比对（都能点开原文回看），最后做了交付前五项检查。政策是否现行有效，以官方发布为准。<br>· 已完成两份法规文件名称、发布主体、施行日期和正文对应位置核验。<br>· 已完成政务服务成效数据的多来源交叉口径核对。</div>
+      <div class="v-note">核验方式：先用深知可信搜索找权威来源，再把正文每处依据和原文逐条比对（都能点开原文回看），最后做了交付前五项检查。政策是否现行有效，以官方发布为准。</div>
     </div>
-    <a class="mobile-nav" href="#sources-panel">查看核验材料（6 条 · 点击角标可定位原文）↓</a>
-    <section class="doc-sec"><div class="sec-body"><div class="doc-block"><p>按照工作安排，现将深圳市人工智能赋能政务服务应用情况调研报告如下。</p></div></div></section>
-<section class="doc-sec"><div class="sec-head"><span class="sec-no">一</span><h3>政策制度体系</h3><span class="sec-badge ">本章引用 2 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>深圳市率先以地方立法推动人工智能产业发展。《深圳经济特区人工智能产业促进条例》明确市、区人民政府及其有关部门应当在政务服务中应用人工智能技术，推动智能审批、智能咨询等场景落地<button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>；配套出台的智慧城市与数字政府建设意见进一步部署深化人工智能政务服务应用<button class="cite" data-cite="2" type="button" title="核验依据 [2]">[2]</button>，形成了立法保障加专项推进的政策体系。</p><div class="ev-row">
-            <details class="ev-chip" data-cite="1">
-              <summary><b>[1]</b>《深圳经济特区人工智能产业促进条例》</summary>
-              <div class="ev-panel">
-                <div class="ev-title">《深圳经济特区人工智能产业促进条例》</div>
-                <div class="ev-meta">深圳市人大常委会 | 2024年</div>
-                <p>第八条 市、区人民政府及其有关部门应当在政务服务中应用人工智能技术，推动智能审批、智能咨询等场景落地，提升政务服务效率和群众办事体验。</p>
-                <div class="sc-links"><span><a href="https://www.szrd.gov.cn/legislation/example1.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
-              </div>
-            </details>
-            
-            <details class="ev-chip" data-cite="2">
-              <summary><b>[2]</b>《关于加快深圳市智慧城市和数字政府建设的若干意见》</summary>
-              <div class="ev-panel">
-                <div class="ev-title">《关于加快深圳市智慧城市和数字政府建设的若干意见》</div>
-                <div class="ev-meta">深圳市人民政府 | 2025年</div>
-                <p>三、重点任务 &gt; （九）深化人工智能政务服务应用</p>
-                <div class="sc-links"><span><a href="https://www.sz.gov.cn/cn/xxgk/zfxxgj/example2.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
-              </div>
-            </details>
-            </div></div></div></section>
-<section class="doc-sec"><div class="sec-head"><span class="sec-no">二</span><h3>主要做法与成效</h3><span class="sec-badge ">本章引用 2 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>（一）智能审批与智能咨询规模化落地。依托全市一体化政务服务平台，智能审批、智能咨询等应用场景持续拓展，政务服务智能办件量、智能客服应答率稳步提升<button class="cite" data-cite="3" type="button" title="核验依据 [3]">[3]</button>。</p><div class="ev-row">
-            <details class="ev-chip" data-cite="3">
-              <summary><b>[3]</b>深圳市政务服务数据管理局年度工作数据</summary>
-              <div class="ev-panel">
-                <div class="ev-title">深圳市政务服务数据管理局年度工作数据</div>
-                <div class="ev-meta">深圳市政务服务和数据管理局 | 2026年</div>
-                <p>支撑全市政务服务智能办件量、智能客服应答率等成效数据。</p>
-                <div class="sc-links"><span><a href="https://www.sz.gov.cn/cn/xxgk/zfxxgj/example3.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
-              </div>
-            </details>
-            </div></div><div class="doc-block"><p>（二）打造政务智能问答标杆。依托大模型能力建设&quot;深小i&quot;智能问答服务，覆盖社保、医保、公积金等高频事项，为企业和群众提供 7×24 小时政策咨询<button class="cite" data-cite="4" type="button" title="核验依据 [4]">[4]</button>。</p><div class="ev-row">
-            <details class="ev-chip" data-cite="4">
-              <summary><b>[4]</b>“深小i”智能问答服务应用案例</summary>
-              <div class="ev-panel">
-                <div class="ev-title">“深小i”智能问答服务应用案例</div>
-                <div class="ev-meta">深圳市政务服务和数据管理局公开报道 | 2026年</div>
-                <p>（三）打造政务智能问答助手。依托大模型能力建设“深小i”智能问答服务，覆盖社保、医保、公积金等高频事项，为企业和群众提供 7×24 小时政策咨询。</p>
-                <div class="sc-links"><span><a href="https://www.sz.gov.cn/cn/xxgk/zfxxgj/example4.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
-              </div>
-            </details>
-            </div></div></div></section>
-<section class="doc-sec"><div class="sec-head"><span class="sec-no">三</span><h3>经验启示</h3></div><div class="sec-body"><div class="doc-block"><p>坚持立法先行、场景牵引、数据支撑三位一体推进，是深圳人工智能赋能政务服务取得成效的关键；智能问答等高频民生场景先行，有效带动了整体应用水平提升。</p></div><div class="doc-block"><p>调研组</p></div><div class="doc-block"><p>2026年9月10日</p></div></div></section>
+    <div class="doc-paper">
+    <section class="chapter" id="sec-1"><header class="ch-head"><h2>一、基本情况</h2><span class="sec-badge ">本章引用 6 处 · 已核验</span></header>
+<p class="lead">从全国看，截至2025年末我国60岁及以上人口达3.2亿人，预计到2035年这一群体数量将超4亿人。<span class="jb" data-cite="9"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">9</i><span class="jb-txt">发展银发经济积极应对人口老龄化</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.qstheory.cn/20260610/cf169e3278854c288e8a2c7c39246bce/c.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>求是网门户网站 · 2026年06月10日</span><span class="crumb">发展银发经济积极应对人口老龄化</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">9</i><span class="sc-excerpt">规模化、多元化需求持续释放。银发经济市场涉及人口多、扩张速度快、结构持续迭代升级，蕴含巨大需求潜力。从规模看，截至2025年末，我国60岁及以上人口达3.2亿人，预计到2035年这一群体数量将超4亿人，到本世纪中叶将突破5亿人。老年人口越来越成为我国超大规模市场的重要消费群体。从结构看，我国城乡老年人生活状况抽样调查结果显示，新进入老年阶段的人口有更长的预期寿命、更多的财富积累、更高的受教育程度、更强的健康意识以及更丰富的生活方式。未来，老年人健康、文娱、照护等方面的消费意愿和能力都会持续增强，带动消费需求的迭代升级。加之银发经济所提供的一些新产品和服务全龄适用，具备开拓国际市场的潜力，需求空间将进一步拓展。
+  产品与服务供给持续扩容提质。我国已初步建成覆盖城乡的养老服务“一张网”，截至2025年底，累计建成49.5万张家庭养老床位和近8万个老年助餐点，为224万户特殊困难老年人家庭进行适老化改造。2025年上半年，全国老年人残疾人养护服务业、适老类家庭服务业、适老类社会看护与帮助服务业销售收入同比分别增长40.9%、14.1%、8.8%，适老类健身器材制造、康复辅具制造、营养保健食品制造销售收入同比分别增长14.7%、12.1%、6.9%，智慧养老技术服务、老年智能与可穿戴装备制造销售收入同比分别增长33.7%、32.6%，均呈现快速增长态势。同时，满足银发旅游、康养旅居、老年教育等需求的各类软硬件基础设施持续完善，相关产品服务和人才供给快速增加。未来，随着市场需求的进一步释放，供给也将持续优化升级，供给提质又催生新的消费，形成需求牵引供给、供给创造需求的更高水平动态平衡。
+  结合实际把握关键着力点
+  银发经济蕴藏巨大发展潜力，但也面临不少现实挑战。必须立足老年群体实际需求，把握好几个关键点，推动老龄事业和老龄产业协同发展。</span></span></span></span>银发经济规模目前约7万亿元，有机构预测到2035年将达30万亿元左右，正成长为国民经济的重要支柱产业。<span class="jb" data-cite="7"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">7</i><span class="jb-txt">经济发展和社会发展相辅相成协调并进</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.dswxyjy.org.cn/n1/2026/0309/c423712-40677819.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>中共中央党史和文献研究院门户网站 · 2026年03月09日</span><span class="crumb">经济发展和社会发展相辅相成协调并进</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">7</i><span class="sc-excerpt">对智慧养老的需求催生了养老机器人的发展。2025年前三季度，我国服务机器人产量1350万套，其中不少就应用在了养老领域。
+银发经济是一片蓝海。目前，我国银发经济规模在7万亿元左右，有机构预测，到2035年，银发经济规模将达30万亿元左右。银发经济正在成长为国民经济的重要支柱产业。
+幼有所育、学有所教、劳有所得、病有所医、老有所养、住有所居、弱有所扶……14亿多人民对美好生活的向往，为扩大内需、促进消费提供了无限可能，也为推动产业转型升级、塑造发展新动能开辟了广阔空间。</span></span></span></span>北京市老龄化程度居全国前列，截至2024年底全市60岁及以上常住人口为514万人，其中80岁及以上的&quot;老老人&quot;和失能失智老年人为81.5万人。<span class="jb" data-cite="5"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">5</i><span class="jb-txt">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/ywdt/gzdt/202507/t20250714_4147878.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京市人民政府门户网站 · 2025年07月14日</span><span class="crumb">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家门口</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">5</i><span class="sc-excerpt">截至2024年年底，北京市60岁及以上常住人口为514万人，其中80岁及以上的“老老人”和失能失智老年人为81.5万人。针对“老老人”数量持续攀升，且绝大部分选择居家养老的现状，北京市民政局开展创新居家社区养老服务模式试点工作，探索以社会化、市场化方式破解超大城市养老难题。
+　　为满足失能老年人居家照护需求，北京市推动建设区域养老服务中心，推动家庭养老床位建设，为失能老年人居家照护提供专业支持。在海淀区柳浪社区养老驿站，居家照护员来到失能老人家中，提供床上擦浴、肌力训练、认知训练等专业服务，让家庭照护者得到“喘息”。
+　　据介绍，家庭养老床位是通过居家适老化改造、信息化管理、专业化服务等方式，让老年人在家享受连续、稳定、专业的养老服务，相当于把养老机构的床位搬进了家里。截至2025年5月，全市累计建设并实际运营家庭养老床位约2.9万张，为失能老年人家庭解决了后顾之忧。
+　　“去年，我们已在全市试点建设了105家区域养老服务中心，惠及188万老年人，其中‘老老人’26.8万人。”北京市养老服务事务中心副主任职嘉男介绍，截至2025年5月底，全市区域养老服务中心链接运营驿站325家、链接养老服务商781家，为辖区内老年人提供助餐、托养、居家养老、医养结合等养老服务，取得了良好的社会效果。
+　　“下一步，我们将继续在老龄化程度高、‘老老人’密集区域建设50家养老服务中心，推动完善区、街道（乡镇）、社区（村）三级居家社区养老服务网络，让居家养老服务更加触手可及。”职嘉男表示。（王琪鹏）</span></span></span></span></p>
+<p class="para">国家层面，&quot;十五五&quot;规划纲要用专门章节部署积极应对人口老龄化，提出健全养老事业和产业协同发展政策机制；<span class="jb" data-cite="10"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">10</i><span class="jb-txt">中华人民共和国国民经济和社会发展第十五个五年规划纲要</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.forestry.gov.cn/lyj/1/szxx/20260314/663252.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2026年03月13日</span><span class="crumb">中华人民共和国国民经济和社会发展第十五个五年规划纲要 <i>›</i> 第四十章积极应对人口老龄化</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">10</i><span class="sc-excerpt">第四十章 积极应对人口老龄化
+深入实施积极应对人口老龄化国家战略，健全养老事业和产业协同发展政策机制，促进老有所养、老有所为、老有所乐。
+第一节　完善城乡养老服务网络
+统筹规划养老服务设施布局，优化基本养老服务供给，推动养老服务扩容提质增效。深化养老服务改革发展，有序推进养老机构分类改革。发展社区嵌入式养老服务，培育专业化、品牌化、连锁化社区养老服务机构。发展家庭养老床位，推进居家适老化改造。发展互助性养老服务。健全失能失智老年人照护体系，增加养老机构护理型床位供给，积极推进医养结合。推行长期护理保险，健全统一的老年人能力评估制度。推进养老服务人员队伍职业化建设，提升养老服务综合监管质效。加强高龄独居老人和空巢老人关爱帮扶。
+第二节　营造丰富多彩的老年生活
+把积极老龄观、健康老龄化融入经济社会发展全过程，深入开展人口老龄化国情教育，营造孝老敬老社会环境。大力发展银发经济，丰富适老化产品和老年服务供给，培育银发经济龙头企业和知名品牌，探索建立银发产品认证制度，完善银发经济统计。积极开发老年人力资源，稳妥实施渐进式延迟法定退休年龄，优化就业、社保等方面年龄限制政策，拓展适合老年人的多样化工作岗位，深入开展“银龄行动”。扩大老年教育资源供给，发展老年大学，满足老年人精神文化需求。强化老年人优待和权益保障。加强公共设施适老化改造，持续开展“智慧助老”行动，推动涉老高频事项便捷办理和服务场景简便易用，发展综合为老服务。
+第十二篇 加大保障和改善民生力度 扎实推进全体人民共同富裕
+坚持在高质量发展中保障和改善民生，坚持尽力而为、量力而行，健全基本公共服务体系，实施更加公平普惠、精准有力的社会政策，加强普惠性、基础性、兜底性民生建设，解决好人民群众急难愁盼问题，畅通社会流动渠道，提高人民生活品质。</span></span></span></span>《扩大消费&quot;十五五&quot;规划》对扩大养老消费、推动银发经济高质量发展作出安排。<span class="jb" data-cite="11"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">11</i><span class="jb-txt">《扩大消费“十五五”规划》明确&lt;br/&gt; 扩大养老消费 推动...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.mca.gov.cn/n152/n166/c1662004999980011969/content.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>民政部门户网站 · 2026年07月17日</span><span class="crumb">《扩大消费“十五五”规划》明确&lt;br/&gt; 扩大养老消费 推动银发经济高质量发展 <i>›</i> 《扩大消费“十五五”规划》明确</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">11</i><span class="sc-excerpt">扩大养老消费 推动银发经济高质量发展
+时间：2026-07-17
+【字体： 】
+打印
+本报讯 （记者王甦萌）日前，国务院批复同意《扩大消费“十五五”规划》（以下简称《规划》）。《规划》对扩大养老消费、促进健康消费等方面作出部署。
+《规划》提出，要扩大养老消费。加快健全县乡村三级养老服务网络，优化居家为基础、社区为依托、机构为专业支撑、医养相结合的养老服务供给格局。支持鼓励社会力量参与扩大普惠养老服务供给。强化科技赋能，推动养老服务领域数智化升级。
+在发展银发经济方面，《规划》明确，一是要扩大银发产品有效供给。面向老年人品质生活需要，加强适老化日用产品、老年休闲陪护产品、功能性老年服饰、康复辅助器具等的研发设计生产，开发应用养老服务机器人、多功能护理床、健康监测设备等急需产品，鼓励研发适合老年人咀嚼吞咽和营养要求的保健食品、特殊医学用途配方食品。二是要拓展高品质银发消费服务模式。扩大老年助餐、照护服务、银发旅游、康养旅居、老年教育、养老金融等多元化服务供给。三是要培育银发经济经营主体和品牌。推动有条件的地方培育银发产业集群，加快银发经济规模化、标准化、集群化、品牌化发展。培育银发经济龙头企业和知名品牌。
+《规划》提到，要促进健康消费。深入实施促进健康消费专项行动。持续强化零售药店专业服务、健康促进等功能，建设一批“健康驿站”。加快建设康复医院、护理院，支持有条件的医疗卫生机构开展医养结合服务。大力发展健康体检、健康咨询、健康管理等新型服务业态。持续完善中医药健康服务体系。
+扫一扫在手机端打开当前页</span></span></span></span>北京市于2026年7月1日起施行《北京市养老服务条例》，设立支持保障和产业促进专章，明确推动养老金融发展、支持金融机构开发涉老金融产品。<span class="jb" data-cite="1"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">1</i><span class="jb-txt">北京市养老服务条例</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="http://www.bjwomen.gov.cn/fnw_2nd_web/static/articles/catalog_ff8080818e5bf6330192d25417ae5120/article_400df1849c8aade901a064ceb6f844c3/400df1849c8aade901a064ceb6f844c3.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京妇女网门户网站 · 2026年07月01日</span><span class="crumb">北京市养老服务条例 <i>›</i> 第六章　支持保障和产业促进第五十九条</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">1</i><span class="sc-excerpt">第五十九条　本市推动养老金融发展，支持在京金融机构开发涉老金融产品，提供养老财务规划、资金管理、风险保障等服务，开发适合居家、社区、机构等多样化护理需求的护理保险等产品。
+　　鼓励金融机构向养老机构、养老用品生产企业、养老科技企业提供投融资支持，降低养老服务经营主体融资成本。</span></span></span></span></p>
+</section>
+<section class="chapter" id="sec-2"><header class="ch-head"><h2>二、主要做法与成效</h2><span class="sec-badge ">本章引用 9 处 · 已核验</span></header>
+<p class="para"><b class="kw">（一）政策体系持续完善</b></p>
+<p class="para">市一级形成&quot;条例＋任务清单＋专项政策&quot;框架。《2026年市政府工作报告重点任务清单》明确在&quot;老老人&quot;数量较多区域新建20个街道（乡镇）区域养老服务中心，加快推进建立全市统一的长期护理保险。<span class="jb" data-cite="2"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">2</i><span class="jb-txt">北京市人民政府关于印发《2026年市政府工作报告重点任务清单...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202602/t20260211_4508605.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>京政发〔2026〕1号 · 2026年02月10日</span><span class="crumb">北京市人民政府关于印发《2026年市政府工作报告重点任务清单》的通知 <i>›</i> 完善多层次社会保障223</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">2</i><span class="sc-excerpt">223.加强“老老人”服务保障，实施好养老服务相关法律法规，不断丰富居家社区养老服务，整合各类养老服务资源，在“老老人”数量较多的区域新建20个街道（乡镇）区域养老服务中心，进一步加强运营监测评估，提升区域养老服务中心统筹资源和居家养老专业服务能力，优化提升已有养老服务设施使用效能。
+　　主责单位：市民政局
+　　224.加快推进建立全市统一的长期护理保险制度。优化家庭养老床位服务，新增5000张家庭养老床位。优化养老助餐服务，引导社会餐饮企业参与养老助餐服务。激发养老事业和养老产业发展活力，更好满足老年人多层次多样化养老需求。
+　　主责单位：市民政局，市商务局，市医保局
+　　225.出台普惠型床位认定办法，支持建设失智照护专业型养老机构或在养老机构内设置失智照护专区，开展10家养老机构智慧化场景建设试点，探索为老年人提供健康、照护等智慧化养老服务。
+　　主责单位：市民政局</span></span></span></span>市民政局等部门印发《关于加快发展&quot;家政+养老&quot;服务模式的指导意见》，依托区域养老服务中心、社区养老服务驿站、养老助餐点等设施开展家政服务进社区试点。<span class="jb" data-cite="3"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">3</i><span class="jb-txt">北京市民政局等关于印发《关于加快发展“家政+养老”服务模式的...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202601/t20260109_4414954.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>京民发〔2025〕75号 · 2025年12月31日</span><span class="crumb">北京市民政局等关于印发《关于加快发展“家政+养老”服务模式的指导意见》的通知 <i>›</i> 二、 重点任务 <i>›</i> （二） 试点推进“家政+养老”空间</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">3</i><span class="sc-excerpt">（二）试点推进“家政+养老”空间。依托街道（乡镇）区域养老服务中心、社区养老服务驿站、养老助餐点等养老服务设施，为家政企业提供服务场所，开展家政服务进社区活动，以空间为纽带，促进养老与家政服务相互助力，丰富养老服务设施的服务供给。试点拓展社区养老服务驿站“喝口水”“歇会脚”等服务功能，助力解决养老及家政服务人员临时休息问题。</span></span></span></span>《养老机构护理型床位设置指引》对护理型床位的区域设置和设施设备要求作出规范。<span class="jb" data-cite="13"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">13</i><span class="jb-txt">北京市民政局关于印发《养老机构护理型床位设置指引》的通知</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202510/t20251017_4229238.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>京民发〔2025〕51号 · 2025年09月02日</span><span class="crumb">北京市民政局关于印发《养老机构护理型床位设置指引》的通知 <i>›</i> 三、 建筑设施设备要求 <i>›</i> （一） 区域要求</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">13</i><span class="sc-excerpt">（一）区域要求
+　　在确保养老机构建筑设施符合防火、防汛、抗灾等条件的前提下，护理型床位宜相对集中设置，一般设在建筑的低楼层，便于及时转移疏散。</span></span><span class="crumb">北京市民政局关于印发《养老机构护理型床位设置指引》的通知 <i>›</i> 三、 建筑设施设备要求 <i>›</i> （三） 设施设备要求</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">13</i><span class="sc-excerpt">（三）设施设备要求
+　　1.居室、卫生间、沐浴间、公共活动用房安装呼叫装置且触摸方便。在视线可及位置安装呼叫显示屏。
+　　2.配置中心供氧系统或制氧、供氧设施设备。
+　　3.二层及以上应配备电梯，有条件的应配置医用电梯。
+　　4.主要出入口及老年人公共活动区域配备监控设备。
+　　5.配备协助失能老年人移动、就餐、洗浴、如厕以及康复训练等基本生活和服务所需辅助器具和设施设备。
+　　6.敷设线路，满足信息化管理及视频传输等需求。</span></span></span></span></p>
+<p class="para"><b class="kw">（二）服务模式创新突破</b></p>
+<p class="para">开展创新居家社区养老服务模式试点，依托市场主体构建&quot;一清单、一平台、一张网&quot;服务体系，布局建设100个街道（乡镇）区域养老服务中心，截至2024年9月已完成验收60家。<span class="jb" data-cite="5"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">5</i><span class="jb-txt">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/ywdt/gzdt/202507/t20250714_4147878.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京市人民政府门户网站 · 2025年07月14日</span><span class="crumb">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家门口</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">5</i><span class="sc-excerpt">截至2024年年底，北京市60岁及以上常住人口为514万人，其中80岁及以上的“老老人”和失能失智老年人为81.5万人。针对“老老人”数量持续攀升，且绝大部分选择居家养老的现状，北京市民政局开展创新居家社区养老服务模式试点工作，探索以社会化、市场化方式破解超大城市养老难题。
+　　为满足失能老年人居家照护需求，北京市推动建设区域养老服务中心，推动家庭养老床位建设，为失能老年人居家照护提供专业支持。在海淀区柳浪社区养老驿站，居家照护员来到失能老人家中，提供床上擦浴、肌力训练、认知训练等专业服务，让家庭照护者得到“喘息”。
+　　据介绍，家庭养老床位是通过居家适老化改造、信息化管理、专业化服务等方式，让老年人在家享受连续、稳定、专业的养老服务，相当于把养老机构的床位搬进了家里。截至2025年5月，全市累计建设并实际运营家庭养老床位约2.9万张，为失能老年人家庭解决了后顾之忧。
+　　“去年，我们已在全市试点建设了105家区域养老服务中心，惠及188万老年人，其中‘老老人’26.8万人。”北京市养老服务事务中心副主任职嘉男介绍，截至2025年5月底，全市区域养老服务中心链接运营驿站325家、链接养老服务商781家，为辖区内老年人提供助餐、托养、居家养老、医养结合等养老服务，取得了良好的社会效果。
+　　“下一步，我们将继续在老龄化程度高、‘老老人’密集区域建设50家养老服务中心，推动完善区、街道（乡镇）、社区（村）三级居家社区养老服务网络，让居家养老服务更加触手可及。”职嘉男表示。（王琪鹏）</span></span></span></span>自2024年起支持建设多功能、高品质居家适老化改造公共样板间，24个样板间向市民开放体验。<span class="jb" data-cite="6"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">6</i><span class="jb-txt">24个样板间今年开放，北京居家适老化改造“看得见、可体验”</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://fgw.beijing.gov.cn/gzdt/fgzs/mtbdx/bzwlxw/202606/t20260618_4706803.htm" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京市发展和改革委员会门户网站 · 2026年06月17日</span><span class="crumb">24个样板间今年开放，北京居家适老化改造“看得见、可体验”</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">6</i><span class="sc-excerpt">居家养老怎么才能既安全又体面？住房怎样才能“老有所适”？在北京市通州区马驹桥镇刚投用的适老化改造样板间里，隐形扶手、防滑地面、可升降厨柜、智能语音控制系统、毫米波雷达监测……这些看似不起眼的细节，正改变着老年人的居家日常。
+像这样的样板间，在北京不止一间。记者从北京市发改委获悉，自2024年开始，北京支持建设多功能、高品质居家适老化改造公共样板间，去年3月，首批9个样板间建成投运，今年又有24个样板间陆续完工并向公众开放。
+两批33个样板间遍布全市多个区域，这也意味着，这些“看得见、摸得着、可体验”的适老设备与家居场景，正推动着居家适老化改造从一个概念真正走向千家万户。
+通州区马驹桥镇一间刚投用的适老化改造样板间。新京报记者 田杰雄 摄
+超70平方米样板间开放，轮椅能进卫生间
+6月17日，作为全市第二批样板间之一的通州区马驹桥镇适老化改造样板间正式投运。在颐乐居养老驿站里，超70平方米的样板间包含“一室一厅一厨一卫”，完整展现了标准化、人性化、智慧化的居家适老场景。
+在现场，针对老人起居的空间细节随处可见。卫生间一改传统的推拉门，采用特殊的“二折门”设计，这使得轮椅经过时可平滑推进；浴室内的镜子调整了倾斜角度，方便坐姿直视；淋浴装备稍加调整，就能让老人坐着享受到环绕式的喷淋清洁。在起居室和卧室里，沙发和床能随老人需求电动调节，窗帘与厨柜的开合抬升，“动动嘴”就能实现。厨房台面也能整体升降，适配坐姿和站立两种需求。
+住在附近的郭阿姨听说驿站有了样板间，也特地和老姐妹一起来看看。一进门，她就走到卫生间研究起淋浴设备，她看了看扶手的位置，也坐下来试了试座椅的稳定性。“我今年70岁了，平时洗澡都是闺女帮我洗，总想着要是有个自己能坐着洗、又安全的法子就好了。”她说着，又摸了摸喷淋口的出水角度说：“这个角度合适，不用人扶也能用。”</span></span></span></span>市经济和信息化局、市民政局组织开展智能养老机器人结对攻关与场景应用试点，覆盖居家失能照护、移位助行等场景。<span class="jb" data-cite="4"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">4</i><span class="jb-txt">北京市经济和信息化局 北京市民政局关于开展智能养老机器人结对...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span></span><span class="jb-site"><span class="dot"></span>2025年06月12日</span><span class="crumb">北京市经济和信息化局 北京市民政局关于开展智能养老机器人结对攻关与场景应用试点工作的通知</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">4</i><span class="sc-excerpt">附件1 智能养老服务机器人结对攻关与场景应用 试点项目场景参考 一、居家场景 （一）居家失能照护 1.移位助行 ● 根据失能老年人身体情况，利用移乘转运机器人帮助失能老年人在卧室、客厅、卫生间等场所转运和室内助行。 ● 针对老年人室外助行需求，利用室外助行机器人，帮助老年人进行户外移动，提供代步、行走支撑与防跌倒保护等功能，适应复杂环境，如台阶、坡道等，并与居住小区无障碍设施联动。 ● 利用机器人装置辅助老年人上、下楼梯。 2.二便护理及如厕 ● ● 利用智能床边坐便机器人辅助失能老年人进行床边或卫生间如厕。 3.辅助洗浴 ● 利用助浴专用护理机器人装备，帮助老年人在床上或洗浴间擦浴/洗浴，实现局部或全身助浴清洁。 4.翻身及体位变换辅助 ● 选择合适的翻身频次、体位、方式，帮助卧床老年人实现机器人仿人翻身作业护理，减少压疮发生、促进血液循环。 ● 根据失能老年人身体状况，利用机器人辅助实现老年人躺、坐、站、屈腿、上肢伸展等身体体位变换。 5.辅助喂食 ● 对不能自行进食/水的护理对象，利用机器人实现喂饭服务。 6.护理协作 ● 利用外骨骼等可穿戴机器人装备，穿戴于护理人员肢体躯体，在翻身、转运、康复训练等高强度或高风险场景中实现对人员的助力功能。 （二）居家失智照护 7.早期筛查 ● 运用无感监测技术与人工智能算法，基于失智老年人视觉注意力、语言能力、生活轨迹分析、红外眼动追踪、声纹情感计算等特征进行多模态认知评估，实现认知能力的筛查与预警。 8.个性化照护 ● 完成护理分级，实现起居护理与营养管理、防走失与防跌倒、心理干预与情绪疏导等功能。 （三）情感陪护 9.日常交流及陪伴 ● 智能交流陪伴服务机器人，具备方言识别、个性化聊天、读书看报、回忆场景构建、与子女视频通话等交互陪伴形式，舒缓老年人情绪、排遣孤独感，满足老年人的心理需求。 ● 基于仿生触觉及语音反馈宠物机器人，耐心倾听老年人的诉说，模拟宠物智能触摸交互响应，促进陪伴机器人与老年人之间的体感交互与心理交互。</span></span></span></span></p>
+<p class="para"><b class="kw">（三）要素保障不断加强</b></p>
+<p class="para">自然资源部等三部门印发《关于深化自然资源要素保障 支持养老服务改革发展的若干措施》，要求新建城区、居住（小）区、新建住宅项目按照规划标准同步配套养老服务设施，建成后不得擅自改变用途<span class="jb" data-cite="12"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">12</i><span class="jb-txt">自然资源部 民政部 国家卫生健康委印发《关于深化自然资源要素...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.gov.cn/zhengce/zhengceku/202601/content_7056416.htm" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>自然资发〔2025〕216号 · 2025年12月12日</span><span class="crumb">自然资源部 民政部 国家卫生健康委印发《关于深化自然资源要素保障 支持养老服务改革发展的若干措施》的通知 <i>›</i> 强化规划引领，保障养老用地空间需求</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">12</i><span class="sc-excerpt">一、强化规划引领，保障养老用地空间需求
+（一）地方自然资源主管部门要支持配合同级民政部门，依据国土空间总体规划编制养老服务设施布局专项规划，核心内容按法定程序衔接纳入国土空间详细规划、汇入同级国土空间规划“一张图”，避免重复规划、资源浪费。
+（二）以社区生活圈为单元，结合《社区生活圈规划技术指南》，明确养老服务设施空间布局。鼓励“住宅+养老”“商服+养老”“医疗+养老”土地混合开发和空间复合利用，允许非独立占地养老服务设施与其他建筑兼容建设，减少单独占地成本。新建城区、居住（小）区、新建住宅项目要按照规划标准要求同步配套养老服务设施。对新建项目涉及规划配套养老服务设施的，市、县自然资源主管部门审查项目规划设计方案时应当商同级民政部门同意。
+（三）对老龄化程度高于全国平均值的地区，可结合实际适当提高养老服务设施用地比例或增加养老服务设施空间安排，优化规划标准，优先利用存量空间布局养老项目。</span></span></span></span>。<span class="jb" data-cite="14"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">14</i><span class="jb-txt">新建住宅须同步配套养老服务设施</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/ywdt/zybwdt/202601/t20260129_4474417.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京市人民政府门户网站 · 2026年01月29日</span><span class="crumb">新建住宅须同步配套养老服务设施</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">14</i><span class="sc-excerpt">昨天获悉，《关于深化自然资源要素保障支持养老服务改革发展的若干措施》由自然资源部、民政部、国家卫生健康委员会共同印发。《若干措施》明确要求，新建城区、居住（小）区、新建住宅项目要按照规划标准要求同步配套养老服务设施，建成后不得擅自改变用途或缩小建设规模。
+　　数据显示，截至2024年底，全国60岁及以上老年人口达3.1亿，占总人口的22%，养老服务供需适配与质量提升成为民生保障重中之重。此次三部门联合出台的18条政策举措，锚定减轻市场主体负担、释放养老服务供给潜力的核心目标，打出一套政策“组合拳”。
+　　聚焦“成本能降尽降”，《若干措施》明确提出，允许非独立占地养老设施与其他建筑兼容建设，从根本上削减单独占地成本；在供地层面，对非营利性养老机构用地应保尽保、依法划拨，免除土地出让金；对营利性养老用地全面推行长期租赁、先租后让等灵活模式，土地出让金可分两年缴清，同时支持地方在不低于协议出让最低价的前提下，合理确定经营性养老用地出让底价，缓解企业初期资金压力。
+　　聚焦“存量能用尽用”，《若干措施》打破城乡存量资源盘活壁垒，让“沉睡”空间变身养老服务“主阵地”。其中，在城镇区域，明确老旧小区周边边角地、夹心地等零星用地可改造增设养老及医养结合设施，存量空间转型后五年内可按原用途使用且不增收土地价款；在农村区域，优先利用闲置集体建设用地建设养老设施，符合条件的集体经营性建设用地可通过出让、出租等方式用于养老项目建设，既避免占用耕地，又降低农村养老项目用地门槛。
+　　如何防止养老服务设施用地被挪作他用？《若干措施》明确，若擅自改变养老服务设施用地用途，将由自然资源、民政等部门联合查处，责令限期整改；拒不整改的，依法收回土地使用权，追缴已享受的土地优惠价款，并将相关主体纳入失信名单，限制其参与后续养老服务项目和土地交易活动。（陈雪柠）</span></span></span></span>条例同时鼓励金融机构向养老机构、养老用品生产企业、养老科技企业提供投融资支持，降低养老服务经营主体融资成本。<span class="jb" data-cite="1"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">1</i><span class="jb-txt">北京市养老服务条例</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="http://www.bjwomen.gov.cn/fnw_2nd_web/static/articles/catalog_ff8080818e5bf6330192d25417ae5120/article_400df1849c8aade901a064ceb6f844c3/400df1849c8aade901a064ceb6f844c3.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京妇女网门户网站 · 2026年07月01日</span><span class="crumb">北京市养老服务条例 <i>›</i> 第六章　支持保障和产业促进第五十九条</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">1</i><span class="sc-excerpt">第五十九条　本市推动养老金融发展，支持在京金融机构开发涉老金融产品，提供养老财务规划、资金管理、风险保障等服务，开发适合居家、社区、机构等多样化护理需求的护理保险等产品。
+　　鼓励金融机构向养老机构、养老用品生产企业、养老科技企业提供投融资支持，降低养老服务经营主体融资成本。</span></span></span></span></p>
+</section>
+<section class="chapter" id="sec-3"><header class="ch-head"><h2>三、存在的问题</h2><span class="sec-badge ">本章引用 4 处 · 已核验</span></header>
+<p class="para">一是&quot;老老人&quot;照护压力持续加大，失能失智老年人居家照护供给仍显不足。<span class="jb" data-cite="5"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">5</i><span class="jb-txt">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/ywdt/gzdt/202507/t20250714_4147878.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京市人民政府门户网站 · 2025年07月14日</span><span class="crumb">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家门口</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">5</i><span class="sc-excerpt">截至2024年年底，北京市60岁及以上常住人口为514万人，其中80岁及以上的“老老人”和失能失智老年人为81.5万人。针对“老老人”数量持续攀升，且绝大部分选择居家养老的现状，北京市民政局开展创新居家社区养老服务模式试点工作，探索以社会化、市场化方式破解超大城市养老难题。
+　　为满足失能老年人居家照护需求，北京市推动建设区域养老服务中心，推动家庭养老床位建设，为失能老年人居家照护提供专业支持。在海淀区柳浪社区养老驿站，居家照护员来到失能老人家中，提供床上擦浴、肌力训练、认知训练等专业服务，让家庭照护者得到“喘息”。
+　　据介绍，家庭养老床位是通过居家适老化改造、信息化管理、专业化服务等方式，让老年人在家享受连续、稳定、专业的养老服务，相当于把养老机构的床位搬进了家里。截至2025年5月，全市累计建设并实际运营家庭养老床位约2.9万张，为失能老年人家庭解决了后顾之忧。
+　　“去年，我们已在全市试点建设了105家区域养老服务中心，惠及188万老年人，其中‘老老人’26.8万人。”北京市养老服务事务中心副主任职嘉男介绍，截至2025年5月底，全市区域养老服务中心链接运营驿站325家、链接养老服务商781家，为辖区内老年人提供助餐、托养、居家养老、医养结合等养老服务，取得了良好的社会效果。
+　　“下一步，我们将继续在老龄化程度高、‘老老人’密集区域建设50家养老服务中心，推动完善区、街道（乡镇）、社区（村）三级居家社区养老服务网络，让居家养老服务更加触手可及。”职嘉男表示。（王琪鹏）</span></span></span></span>二是护理型床位结构性供给不足，设置指引落地见效尚需时间。<span class="jb" data-cite="13"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">13</i><span class="jb-txt">北京市民政局关于印发《养老机构护理型床位设置指引》的通知</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202510/t20251017_4229238.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>京民发〔2025〕51号 · 2025年09月02日</span><span class="crumb">北京市民政局关于印发《养老机构护理型床位设置指引》的通知 <i>›</i> 三、 建筑设施设备要求 <i>›</i> （一） 区域要求</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">13</i><span class="sc-excerpt">（一）区域要求
+　　在确保养老机构建筑设施符合防火、防汛、抗灾等条件的前提下，护理型床位宜相对集中设置，一般设在建筑的低楼层，便于及时转移疏散。</span></span><span class="crumb">北京市民政局关于印发《养老机构护理型床位设置指引》的通知 <i>›</i> 三、 建筑设施设备要求 <i>›</i> （三） 设施设备要求</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">13</i><span class="sc-excerpt">（三）设施设备要求
+　　1.居室、卫生间、沐浴间、公共活动用房安装呼叫装置且触摸方便。在视线可及位置安装呼叫显示屏。
+　　2.配置中心供氧系统或制氧、供氧设施设备。
+　　3.二层及以上应配备电梯，有条件的应配置医用电梯。
+　　4.主要出入口及老年人公共活动区域配备监控设备。
+　　5.配备协助失能老年人移动、就餐、洗浴、如厕以及康复训练等基本生活和服务所需辅助器具和设施设备。
+　　6.敷设线路，满足信息化管理及视频传输等需求。</span></span></span></span>三是养老设施空间约束明显，新建项目配套要求落实中仍有堵点。<span class="jb" data-cite="14"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">14</i><span class="jb-txt">新建住宅须同步配套养老服务设施</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/ywdt/zybwdt/202601/t20260129_4474417.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京市人民政府门户网站 · 2026年01月29日</span><span class="crumb">新建住宅须同步配套养老服务设施</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">14</i><span class="sc-excerpt">昨天获悉，《关于深化自然资源要素保障支持养老服务改革发展的若干措施》由自然资源部、民政部、国家卫生健康委员会共同印发。《若干措施》明确要求，新建城区、居住（小）区、新建住宅项目要按照规划标准要求同步配套养老服务设施，建成后不得擅自改变用途或缩小建设规模。
+　　数据显示，截至2024年底，全国60岁及以上老年人口达3.1亿，占总人口的22%，养老服务供需适配与质量提升成为民生保障重中之重。此次三部门联合出台的18条政策举措，锚定减轻市场主体负担、释放养老服务供给潜力的核心目标，打出一套政策“组合拳”。
+　　聚焦“成本能降尽降”，《若干措施》明确提出，允许非独立占地养老设施与其他建筑兼容建设，从根本上削减单独占地成本；在供地层面，对非营利性养老机构用地应保尽保、依法划拨，免除土地出让金；对营利性养老用地全面推行长期租赁、先租后让等灵活模式，土地出让金可分两年缴清，同时支持地方在不低于协议出让最低价的前提下，合理确定经营性养老用地出让底价，缓解企业初期资金压力。
+　　聚焦“存量能用尽用”，《若干措施》打破城乡存量资源盘活壁垒，让“沉睡”空间变身养老服务“主阵地”。其中，在城镇区域，明确老旧小区周边边角地、夹心地等零星用地可改造增设养老及医养结合设施，存量空间转型后五年内可按原用途使用且不增收土地价款；在农村区域，优先利用闲置集体建设用地建设养老设施，符合条件的集体经营性建设用地可通过出让、出租等方式用于养老项目建设，既避免占用耕地，又降低农村养老项目用地门槛。
+　　如何防止养老服务设施用地被挪作他用？《若干措施》明确，若擅自改变养老服务设施用地用途，将由自然资源、民政等部门联合查处，责令限期整改；拒不整改的，依法收回土地使用权，追缴已享受的土地优惠价款，并将相关主体纳入失信名单，限制其参与后续养老服务项目和土地交易活动。（陈雪柠）</span></span></span></span>四是银发消费潜力释放不充分，养老消费相关业态培育仍处起步阶段。<span class="jb" data-cite="11"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">11</i><span class="jb-txt">《扩大消费“十五五”规划》明确&lt;br/&gt; 扩大养老消费 推动...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.mca.gov.cn/n152/n166/c1662004999980011969/content.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>民政部门户网站 · 2026年07月17日</span><span class="crumb">《扩大消费“十五五”规划》明确&lt;br/&gt; 扩大养老消费 推动银发经济高质量发展 <i>›</i> 《扩大消费“十五五”规划》明确</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">11</i><span class="sc-excerpt">扩大养老消费 推动银发经济高质量发展
+时间：2026-07-17
+【字体： 】
+打印
+本报讯 （记者王甦萌）日前，国务院批复同意《扩大消费“十五五”规划》（以下简称《规划》）。《规划》对扩大养老消费、促进健康消费等方面作出部署。
+《规划》提出，要扩大养老消费。加快健全县乡村三级养老服务网络，优化居家为基础、社区为依托、机构为专业支撑、医养相结合的养老服务供给格局。支持鼓励社会力量参与扩大普惠养老服务供给。强化科技赋能，推动养老服务领域数智化升级。
+在发展银发经济方面，《规划》明确，一是要扩大银发产品有效供给。面向老年人品质生活需要，加强适老化日用产品、老年休闲陪护产品、功能性老年服饰、康复辅助器具等的研发设计生产，开发应用养老服务机器人、多功能护理床、健康监测设备等急需产品，鼓励研发适合老年人咀嚼吞咽和营养要求的保健食品、特殊医学用途配方食品。二是要拓展高品质银发消费服务模式。扩大老年助餐、照护服务、银发旅游、康养旅居、老年教育、养老金融等多元化服务供给。三是要培育银发经济经营主体和品牌。推动有条件的地方培育银发产业集群，加快银发经济规模化、标准化、集群化、品牌化发展。培育银发经济龙头企业和知名品牌。
+《规划》提到，要促进健康消费。深入实施促进健康消费专项行动。持续强化零售药店专业服务、健康促进等功能，建设一批“健康驿站”。加快建设康复医院、护理院，支持有条件的医疗卫生机构开展医养结合服务。大力发展健康体检、健康咨询、健康管理等新型服务业态。持续完善中医药健康服务体系。
+扫一扫在手机端打开当前页</span></span></span></span></p>
+</section>
+<section class="chapter" id="sec-4"><header class="ch-head"><h2>四、对策建议</h2><span class="sec-badge ">本章引用 6 处 · 已核验</span></header>
+<p class="para">一是加快区域养老服务中心建设，统筹&quot;老老人&quot;服务保障与全市统一的长期护理保险制度建设。<span class="jb" data-cite="2"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">2</i><span class="jb-txt">北京市人民政府关于印发《2026年市政府工作报告重点任务清单...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202602/t20260211_4508605.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>京政发〔2026〕1号 · 2026年02月10日</span><span class="crumb">北京市人民政府关于印发《2026年市政府工作报告重点任务清单》的通知 <i>›</i> 完善多层次社会保障223</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">2</i><span class="sc-excerpt">223.加强“老老人”服务保障，实施好养老服务相关法律法规，不断丰富居家社区养老服务，整合各类养老服务资源，在“老老人”数量较多的区域新建20个街道（乡镇）区域养老服务中心，进一步加强运营监测评估，提升区域养老服务中心统筹资源和居家养老专业服务能力，优化提升已有养老服务设施使用效能。
+　　主责单位：市民政局
+　　224.加快推进建立全市统一的长期护理保险制度。优化家庭养老床位服务，新增5000张家庭养老床位。优化养老助餐服务，引导社会餐饮企业参与养老助餐服务。激发养老事业和养老产业发展活力，更好满足老年人多层次多样化养老需求。
+　　主责单位：市民政局，市商务局，市医保局
+　　225.出台普惠型床位认定办法，支持建设失智照护专业型养老机构或在养老机构内设置失智照护专区，开展10家养老机构智慧化场景建设试点，探索为老年人提供健康、照护等智慧化养老服务。
+　　主责单位：市民政局</span></span></span></span>二是深化居家社区养老服务模式试点，扩大家庭养老床位和居家适老化改造覆盖面<span class="jb" data-cite="5"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">5</i><span class="jb-txt">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.beijing.gov.cn/ywdt/gzdt/202507/t20250714_4147878.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京市人民政府门户网站 · 2025年07月14日</span><span class="crumb">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家门口</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">5</i><span class="sc-excerpt">截至2024年年底，北京市60岁及以上常住人口为514万人，其中80岁及以上的“老老人”和失能失智老年人为81.5万人。针对“老老人”数量持续攀升，且绝大部分选择居家养老的现状，北京市民政局开展创新居家社区养老服务模式试点工作，探索以社会化、市场化方式破解超大城市养老难题。
+　　为满足失能老年人居家照护需求，北京市推动建设区域养老服务中心，推动家庭养老床位建设，为失能老年人居家照护提供专业支持。在海淀区柳浪社区养老驿站，居家照护员来到失能老人家中，提供床上擦浴、肌力训练、认知训练等专业服务，让家庭照护者得到“喘息”。
+　　据介绍，家庭养老床位是通过居家适老化改造、信息化管理、专业化服务等方式，让老年人在家享受连续、稳定、专业的养老服务，相当于把养老机构的床位搬进了家里。截至2025年5月，全市累计建设并实际运营家庭养老床位约2.9万张，为失能老年人家庭解决了后顾之忧。
+　　“去年，我们已在全市试点建设了105家区域养老服务中心，惠及188万老年人，其中‘老老人’26.8万人。”北京市养老服务事务中心副主任职嘉男介绍，截至2025年5月底，全市区域养老服务中心链接运营驿站325家、链接养老服务商781家，为辖区内老年人提供助餐、托养、居家养老、医养结合等养老服务，取得了良好的社会效果。
+　　“下一步，我们将继续在老龄化程度高、‘老老人’密集区域建设50家养老服务中心，推动完善区、街道（乡镇）、社区（村）三级居家社区养老服务网络，让居家养老服务更加触手可及。”职嘉男表示。（王琪鹏）</span></span></span></span>。<span class="jb" data-cite="6"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">6</i><span class="jb-txt">24个样板间今年开放，北京居家适老化改造“看得见、可体验”</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://fgw.beijing.gov.cn/gzdt/fgzs/mtbdx/bzwlxw/202606/t20260618_4706803.htm" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京市发展和改革委员会门户网站 · 2026年06月17日</span><span class="crumb">24个样板间今年开放，北京居家适老化改造“看得见、可体验”</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">6</i><span class="sc-excerpt">居家养老怎么才能既安全又体面？住房怎样才能“老有所适”？在北京市通州区马驹桥镇刚投用的适老化改造样板间里，隐形扶手、防滑地面、可升降厨柜、智能语音控制系统、毫米波雷达监测……这些看似不起眼的细节，正改变着老年人的居家日常。
+像这样的样板间，在北京不止一间。记者从北京市发改委获悉，自2024年开始，北京支持建设多功能、高品质居家适老化改造公共样板间，去年3月，首批9个样板间建成投运，今年又有24个样板间陆续完工并向公众开放。
+两批33个样板间遍布全市多个区域，这也意味着，这些“看得见、摸得着、可体验”的适老设备与家居场景，正推动着居家适老化改造从一个概念真正走向千家万户。
+通州区马驹桥镇一间刚投用的适老化改造样板间。新京报记者 田杰雄 摄
+超70平方米样板间开放，轮椅能进卫生间
+6月17日，作为全市第二批样板间之一的通州区马驹桥镇适老化改造样板间正式投运。在颐乐居养老驿站里，超70平方米的样板间包含“一室一厅一厨一卫”，完整展现了标准化、人性化、智慧化的居家适老场景。
+在现场，针对老人起居的空间细节随处可见。卫生间一改传统的推拉门，采用特殊的“二折门”设计，这使得轮椅经过时可平滑推进；浴室内的镜子调整了倾斜角度，方便坐姿直视；淋浴装备稍加调整，就能让老人坐着享受到环绕式的喷淋清洁。在起居室和卧室里，沙发和床能随老人需求电动调节，窗帘与厨柜的开合抬升，“动动嘴”就能实现。厨房台面也能整体升降，适配坐姿和站立两种需求。
+住在附近的郭阿姨听说驿站有了样板间，也特地和老姐妹一起来看看。一进门，她就走到卫生间研究起淋浴设备，她看了看扶手的位置，也坐下来试了试座椅的稳定性。“我今年70岁了，平时洗澡都是闺女帮我洗，总想着要是有个自己能坐着洗、又安全的法子就好了。”她说着，又摸了摸喷淋口的出水角度说：“这个角度合适，不用人扶也能用。”</span></span></span></span>三是加大智能养老产品推广应用，依托结对攻关试点促进养老科技产业发展。<span class="jb" data-cite="4"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">4</i><span class="jb-txt">北京市经济和信息化局 北京市民政局关于开展智能养老机器人结对...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span></span><span class="jb-site"><span class="dot"></span>2025年06月12日</span><span class="crumb">北京市经济和信息化局 北京市民政局关于开展智能养老机器人结对攻关与场景应用试点工作的通知</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">4</i><span class="sc-excerpt">附件1 智能养老服务机器人结对攻关与场景应用 试点项目场景参考 一、居家场景 （一）居家失能照护 1.移位助行 ● 根据失能老年人身体情况，利用移乘转运机器人帮助失能老年人在卧室、客厅、卫生间等场所转运和室内助行。 ● 针对老年人室外助行需求，利用室外助行机器人，帮助老年人进行户外移动，提供代步、行走支撑与防跌倒保护等功能，适应复杂环境，如台阶、坡道等，并与居住小区无障碍设施联动。 ● 利用机器人装置辅助老年人上、下楼梯。 2.二便护理及如厕 ● ● 利用智能床边坐便机器人辅助失能老年人进行床边或卫生间如厕。 3.辅助洗浴 ● 利用助浴专用护理机器人装备，帮助老年人在床上或洗浴间擦浴/洗浴，实现局部或全身助浴清洁。 4.翻身及体位变换辅助 ● 选择合适的翻身频次、体位、方式，帮助卧床老年人实现机器人仿人翻身作业护理，减少压疮发生、促进血液循环。 ● 根据失能老年人身体状况，利用机器人辅助实现老年人躺、坐、站、屈腿、上肢伸展等身体体位变换。 5.辅助喂食 ● 对不能自行进食/水的护理对象，利用机器人实现喂饭服务。 6.护理协作 ● 利用外骨骼等可穿戴机器人装备，穿戴于护理人员肢体躯体，在翻身、转运、康复训练等高强度或高风险场景中实现对人员的助力功能。 （二）居家失智照护 7.早期筛查 ● 运用无感监测技术与人工智能算法，基于失智老年人视觉注意力、语言能力、生活轨迹分析、红外眼动追踪、声纹情感计算等特征进行多模态认知评估，实现认知能力的筛查与预警。 8.个性化照护 ● 完成护理分级，实现起居护理与营养管理、防走失与防跌倒、心理干预与情绪疏导等功能。 （三）情感陪护 9.日常交流及陪伴 ● 智能交流陪伴服务机器人，具备方言识别、个性化聊天、读书看报、回忆场景构建、与子女视频通话等交互陪伴形式，舒缓老年人情绪、排遣孤独感，满足老年人的心理需求。 ● 基于仿生触觉及语音反馈宠物机器人，耐心倾听老年人的诉说，模拟宠物智能触摸交互响应，促进陪伴机器人与老年人之间的体感交互与心理交互。</span></span></span></span>四是强化用地和金融要素保障，落实新建住宅同步配套养老设施要求，拓宽养老产业融资渠道<span class="jb" data-cite="12"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">12</i><span class="jb-txt">自然资源部 民政部 国家卫生健康委印发《关于深化自然资源要素...</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.gov.cn/zhengce/zhengceku/202601/content_7056416.htm" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>自然资发〔2025〕216号 · 2025年12月12日</span><span class="crumb">自然资源部 民政部 国家卫生健康委印发《关于深化自然资源要素保障 支持养老服务改革发展的若干措施》的通知 <i>›</i> 强化规划引领，保障养老用地空间需求</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">12</i><span class="sc-excerpt">一、强化规划引领，保障养老用地空间需求
+（一）地方自然资源主管部门要支持配合同级民政部门，依据国土空间总体规划编制养老服务设施布局专项规划，核心内容按法定程序衔接纳入国土空间详细规划、汇入同级国土空间规划“一张图”，避免重复规划、资源浪费。
+（二）以社区生活圈为单元，结合《社区生活圈规划技术指南》，明确养老服务设施空间布局。鼓励“住宅+养老”“商服+养老”“医疗+养老”土地混合开发和空间复合利用，允许非独立占地养老服务设施与其他建筑兼容建设，减少单独占地成本。新建城区、居住（小）区、新建住宅项目要按照规划标准要求同步配套养老服务设施。对新建项目涉及规划配套养老服务设施的，市、县自然资源主管部门审查项目规划设计方案时应当商同级民政部门同意。
+（三）对老龄化程度高于全国平均值的地区，可结合实际适当提高养老服务设施用地比例或增加养老服务设施空间安排，优化规划标准，优先利用存量空间布局养老项目。</span></span></span></span>。<span class="jb" data-cite="1"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">1</i><span class="jb-txt">北京市养老服务条例</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="http://www.bjwomen.gov.cn/fnw_2nd_web/static/articles/catalog_ff8080818e5bf6330192d25417ae5120/article_400df1849c8aade901a064ceb6f844c3/400df1849c8aade901a064ceb6f844c3.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>北京妇女网门户网站 · 2026年07月01日</span><span class="crumb">北京市养老服务条例 <i>›</i> 第六章　支持保障和产业促进第五十九条</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">1</i><span class="sc-excerpt">第五十九条　本市推动养老金融发展，支持在京金融机构开发涉老金融产品，提供养老财务规划、资金管理、风险保障等服务，开发适合居家、社区、机构等多样化护理需求的护理保险等产品。
+　　鼓励金融机构向养老机构、养老用品生产企业、养老科技企业提供投融资支持，降低养老服务经营主体融资成本。</span></span></span></span></p>
+</section>
+    </div>
     <div class="foot">深知公文写作 · 溯源核验报告 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
   </main>
-  <aside class="sources" id="sources-panel" aria-label="核验材料面板"><a class="back-doc" href="#doc-top">↑ 返回核验报告单</a><h3>核验材料（已引用 4 条 · 全部已核验）</h3><div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div><div class="filters" role="group" aria-label="按检索分组筛选"><button class="on" data-cond="" type="button">全部</button><button data-cond="深圳AI政策依据" type="button">深圳AI政策依据（3）</button><button data-cond="深圳政务应用数据" type="button">深圳政务应用数据（3）</button><button data-cond="__unused__" type="button">未引用（2）</button></div><input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源"><div class="src-list"><article class="scard pol" id="src-1" data-type="policy" data-cite-id="1" data-search="深圳AI政策依据"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="已完成法规名称、发布主体、施行日期和正文引用位置的溯源核验。">✓ 已核验</span></div><h4>《深圳经济特区人工智能产业促进条例》</h4><div class="sc-meta">深圳市人大常委会 | 2024年</div><div class="sc-chain" title="原文中的位置：《深圳经济特区人工智能产业促进条例》 › 第二章 应用促进 › 第八条 政务服务应用">标题：第二章 应用促进 › 第八条 政务服务应用</div><div class="sc-section">支撑：一（二）深圳地方政策体系</div><div class="sc-vnote">已完成法规名称、发布主体、施行日期和正文引用位置的溯源核验。</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">第八条 市、区人民政府及其有关部门应当在政务服务中应用人工智能技术，推动智能审批、智能咨询等场景落地，提升政务服务效率和群众办事体验。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://www.szrd.gov.cn/legislation/example1.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard pol" id="src-2" data-type="policy" data-cite-id="2" data-search="深圳AI政策依据"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="已完成文件名称、文号与重点条款的溯源核验。">✓ 已核验</span></div><h4>《关于加快深圳市智慧城市和数字政府建设的若干意见》</h4><div class="sc-meta">深圳市人民政府 | 2025年</div><div class="sc-chain" title="原文中的位置：《关于加快深圳市智慧城市和数字政府建设的若干意见》 › 三、重点任务 › （九）深化人工智能政务服务应用">标题：三、重点任务 › （九）深化人工智能政务服务应用</div><div class="sc-section">支撑：一（三）数字政府部署</div><div class="sc-vnote">已完成文件名称、文号与重点条款的溯源核验。</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">三、重点任务 &gt; （九）深化人工智能政务服务应用</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://www.sz.gov.cn/cn/xxgk/zfxxgj/example2.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard dat" id="src-3" data-type="data" data-cite-id="3" data-search="深圳政务应用数据"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="已完成数据口径、发布主体和发布时间的溯源核验。">✓ 已核验</span></div><h4>深圳市政务服务数据管理局年度工作数据</h4><div class="sc-meta">深圳市政务服务和数据管理局 | 2026年</div><div class="sc-section">支撑：三（一）应用成效数据</div><div class="sc-vnote">已完成数据口径、发布主体和发布时间的溯源核验。</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">支撑全市政务服务智能办件量、智能客服应答率等成效数据。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://www.sz.gov.cn/cn/xxgk/zfxxgj/example3.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard cas" id="src-4" data-type="case" data-cite-id="4" data-search="深圳政务应用数据"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">参考案例</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="已完成案例事实与服务数据的溯源核验。">✓ 已核验</span></div><h4>“深小i”智能问答服务应用案例</h4><div class="sc-meta">深圳市政务服务和数据管理局公开报道 | 2026年</div><div class="sc-chain" title="原文中的位置：“深小i”智能问答服务应用案例 › 二、主要做法 › （三）打造政务智能问答助手">标题：二、主要做法 › （三）打造政务智能问答助手</div><div class="sc-section">支撑：三（二）典型案例</div><div class="sc-vnote">已完成案例事实与服务数据的溯源核验。</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">（三）打造政务智能问答助手。依托大模型能力建设“深小i”智能问答服务，覆盖社保、医保、公积金等高频事项，为企业和群众提供 7×24 小时政策咨询。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://www.sz.gov.cn/cn/xxgk/zfxxgj/example4.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><div class="uncited-group"><div class="ug-title">未引用素材（2 条 · 接口召回但正文未采用，供比对参考）</div><div class="uncited-list"><article class="scard pol" id="src-5" data-type="policy" data-cite-id="5" data-search="深圳AI政策依据" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">政策依据</span><span class="sc-vk" style="color:var(--muted)">可查看原文</span></div><h4>《深圳市促进人工智能产业高质量发展的若干措施》</h4><div class="sc-meta">深圳市工业和信息化局 | 2025年</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">接口返回中未识别到可展示的摘录。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://www.sz.gov.cn/cn/xxgk/zfxxgj/example5.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article><article class="scard dat" id="src-6" data-type="data" data-cite-id="6" data-search="深圳政务应用数据" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">数据支撑</span><span class="sc-vk" style="color:var(--muted)">可查看原文</span></div><h4>广东省数字经济发展统计公报（深圳部分）</h4><div class="sc-meta">广东省统计局 | 2025年</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">接口返回中未识别到可展示的摘录。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://stats.gd.gov.cn/example6.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article></div></div></div></aside>
+
+  
+    <section class="view" id="view-library" aria-label="材料专库">
+      <div class="lib-head">
+        <div class="lib-title"><b>材料专库</b>
+          <span>共 22 条 · 已引用 14 · 全部已核验</span>
+        </div>
+        <div class="lib-searchWrap">
+          <span class="lib-searchIcon" aria-hidden="true">⌕</span>
+          <input class="lib-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索材料">
+        </div>
+        <div class="hot-terms" aria-label="热门搜索词"><span class="hot-label">大家都在搜</span><button class="hot-term" type="button">养老</button><button class="hot-term" type="button">北京</button><button class="hot-term" type="button">老服务</button><button class="hot-term" type="button">养老服务</button><button class="hot-term" type="button">经济</button><button class="hot-term" type="button">北京市</button><button class="hot-term" type="button">银发</button><button class="hot-term" type="button">银发经济</button></div>
+        <div class="lib-tabs" role="tablist" aria-label="按检索分组筛选"><button class="on" data-cond="" type="button">全部（22）</button><button data-cond="北京·政策法规" type="button">北京·政策法规（9）</button><button data-cond="北京·模式创新" type="button">北京·模式创新（4）</button><button data-cond="全国·产业数据" type="button">全国·产业数据（6）</button><button data-cond="北京·要素保障" type="button">北京·要素保障（3）</button><button data-cond="__unused__" type="button">未引用（8）</button></div>
+      </div>
+      <div class="lib-list" id="lib-list"><article class="scard pol" id="src-1" data-type="policy" data-cite-id="1" data-search="北京·政策法规"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="条例支持保障和产业促进专章内容取自条文原文">✓ 已核验</span></div><h4>北京市养老服务条例</h4><div class="sc-meta">北京妇女网门户网站 | 2026年07月01日</div><div class="sc-vnote">条例支持保障和产业促进专章内容取自条文原文</div><div class="seg-block"><span class="crumb">北京市养老服务条例 <i>›</i> 第六章　支持保障和产业促进第五十九条</span><div class="sc-excerpt plain">第五十九条　本市推动养老金融发展，支持在京金融机构开发涉老金融产品，提供养老财务规划、资金管理、风险保障等服务，开发适合居家、社区、机构等多样化护理需求的护理保险等产品。
+　　鼓励金融机构向养老机构、养老用品生产企业、养老科技企业提供投融资支持，降低养老服务经营主体融资成本。</div></div><div class="sc-links"><span><a href="http://www.bjwomen.gov.cn/fnw_2nd_web/static/articles/catalog_ff8080818e5bf6330192d25417ae5120/article_400df1849c8aade901a064ceb6f844c3/400df1849c8aade901a064ceb6f844c3.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/1c/3a/1c3ad7fe2601039b620d4d7fa6def279.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard pol" id="src-2" data-type="policy" data-cite-id="2" data-search="北京·政策法规"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="任务清单第223条内容取自原文">✓ 已核验</span></div><h4>北京市人民政府关于印发《2026年市政府工作报告重点任务清单》的通知</h4><div class="sc-meta">京政发〔2026〕1号 | 2026年02月10日</div><div class="sc-vnote">任务清单第223条内容取自原文</div><div class="seg-block"><span class="crumb">北京市人民政府关于印发《2026年市政府工作报告重点任务清单》的通知 <i>›</i> 完善多层次社会保障223</span><div class="sc-excerpt plain">223.加强“老老人”服务保障，实施好养老服务相关法律法规，不断丰富居家社区养老服务，整合各类养老服务资源，在“老老人”数量较多的区域新建20个街道（乡镇）区域养老服务中心，进一步加强运营监测评估，提升区域养老服务中心统筹资源和居家养老专业服务能力，优化提升已有养老服务设施使用效能。
+　　主责单位：市民政局
+　　224.加快推进建立全市统一的长期护理保险制度。优化家庭养老床位服务，新增5000张家庭养老床位。优化养老助餐服务，引导社会餐饮企业参与养老助餐服务。激发养老事业和养老产业发展活力，更好满足老年人多层次多样化养老需求。
+　　主责单位：市民政局，市商务局，市医保局
+　　225.出台普惠型床位认定办法，支持建设失智照护专业型养老机构或在养老机构内设置失智照护专区，开展10家养老机构智慧化场景建设试点，探索为老年人提供健康、照护等智慧化养老服务。
+　　主责单位：市民政局</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202602/t20260211_4508605.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard pol" id="src-3" data-type="policy" data-cite-id="3" data-search="北京·政策法规"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="指导意见试点任务条款取自原文">✓ 已核验</span></div><h4>北京市民政局等关于印发《关于加快发展“家政+养老”服务模式的指导意见》的通知</h4><div class="sc-meta">京民发〔2025〕75号 | 2025年12月31日</div><div class="sc-vnote">指导意见试点任务条款取自原文</div><div class="seg-block"><span class="crumb">北京市民政局等关于印发《关于加快发展“家政+养老”服务模式的指导意见》的通知 <i>›</i> 二、 重点任务 <i>›</i> （二） 试点推进“家政+养老”空间</span><div class="sc-excerpt plain">（二）试点推进“家政+养老”空间。依托街道（乡镇）区域养老服务中心、社区养老服务驿站、养老助餐点等养老服务设施，为家政企业提供服务场所，开展家政服务进社区活动，以空间为纽带，促进养老与家政服务相互助力，丰富养老服务设施的服务供给。试点拓展社区养老服务驿站“喝口水”“歇会脚”等服务功能，助力解决养老及家政服务人员临时休息问题。</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202601/t20260109_4414954.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard cas" id="src-4" data-type="case" data-cite-id="4" data-search="北京·模式创新"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">参考案例</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="试点场景内容取自通知原文">✓ 已核验</span></div><h4>北京市经济和信息化局 北京市民政局关于开展智能养老机器人结对攻关与场景应用试点工作的通知</h4><div class="sc-meta">2025年06月12日</div><div class="sc-vnote">试点场景内容取自通知原文</div><div class="seg-block"><span class="crumb">北京市经济和信息化局 北京市民政局关于开展智能养老机器人结对攻关与场景应用试点工作的通知</span><div class="sc-excerpt plain">附件1 智能养老服务机器人结对攻关与场景应用 试点项目场景参考 一、居家场景 （一）居家失能照护 1.移位助行 ● 根据失能老年人身体情况，利用移乘转运机器人帮助失能老年人在卧室、客厅、卫生间等场所转运和室内助行。 ● 针对老年人室外助行需求，利用室外助行机器人，帮助老年人进行户外移动，提供代步、行走支撑与防跌倒保护等功能，适应复杂环境，如台阶、坡道等，并与居住小区无障碍设施联动。 ● 利用机器人装置辅助老年人上、下楼梯。 2.二便护理及如厕 ● ● 利用智能床边坐便机器人辅助失能老年人进行床边或卫生间如厕。 3.辅助洗浴 ● 利用助浴专用护理机器人装备，帮助老年人在床上或洗浴间擦浴/洗浴，实现局部或全身助浴清洁。 4.翻身及体位变换辅助 ● 选择合适的翻身频次、体位、方式，帮助卧床老年人实现机器人仿人翻身作业护理，减少压疮发生、促进血液循环。 ● 根据失能老年人身体状况，利用机器人辅助实现老年人躺、坐、站、屈腿、上肢伸展等身体体位变换。 5.辅助喂食 ● 对不能自行进食/水的护理对象，利用机器人实现喂饭服务。 6.护理协作 ● 利用外骨骼等可穿戴机器人装备，穿戴于护理人员肢体躯体，在翻身、转运、康复训练等高强度或高风险场景中实现对人员的助力功能。 （二）居家失智照护 7.早期筛查 ● 运用无感监测技术与人工智能算法，基于失智老年人视觉注意力、语言能力、生活轨迹分析、红外眼动追踪、声纹情感计算等特征进行多模态认知评估，实现认知能力的筛查与预警。 8.个性化照护 ● 完成护理分级，实现起居护理与营养管理、防走失与防跌倒、心理干预与情绪疏导等功能。 （三）情感陪护 9.日常交流及陪伴 ● 智能交流陪伴服务机器人，具备方言识别、个性化聊天、读书看报、回忆场景构建、与子女视频通话等交互陪伴形式，舒缓老年人情绪、排遣孤独感，满足老年人的心理需求。 ● 基于仿生触觉及语音反馈宠物机器人，耐心倾听老年人的诉说，模拟宠物智能触摸交互响应，促进陪伴机器人与老年人之间的体感交互与心理交互。</div></div></article><article class="scard dat" id="src-5" data-type="data" data-cite-id="5" data-search="北京·模式创新"><div class="sc-head"><span class="sc-id">[5]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="北京老龄人口与试点进展数据取自报道原文">✓ 已核验</span></div><h4>依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家门口</h4><div class="sc-meta">北京市人民政府门户网站 | 2025年07月14日</div><div class="sc-vnote">北京老龄人口与试点进展数据取自报道原文</div><div class="seg-block"><span class="crumb">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家门口</span><div class="sc-excerpt plain">截至2024年年底，北京市60岁及以上常住人口为514万人，其中80岁及以上的“老老人”和失能失智老年人为81.5万人。针对“老老人”数量持续攀升，且绝大部分选择居家养老的现状，北京市民政局开展创新居家社区养老服务模式试点工作，探索以社会化、市场化方式破解超大城市养老难题。
+　　为满足失能老年人居家照护需求，北京市推动建设区域养老服务中心，推动家庭养老床位建设，为失能老年人居家照护提供专业支持。在海淀区柳浪社区养老驿站，居家照护员来到失能老人家中，提供床上擦浴、肌力训练、认知训练等专业服务，让家庭照护者得到“喘息”。
+　　据介绍，家庭养老床位是通过居家适老化改造、信息化管理、专业化服务等方式，让老年人在家享受连续、稳定、专业的养老服务，相当于把养老机构的床位搬进了家里。截至2025年5月，全市累计建设并实际运营家庭养老床位约2.9万张，为失能老年人家庭解决了后顾之忧。
+　　“去年，我们已在全市试点建设了105家区域养老服务中心，惠及188万老年人，其中‘老老人’26.8万人。”北京市养老服务事务中心副主任职嘉男介绍，截至2025年5月底，全市区域养老服务中心链接运营驿站325家、链接养老服务商781家，为辖区内老年人提供助餐、托养、居家养老、医养结合等养老服务，取得了良好的社会效果。
+　　“下一步，我们将继续在老龄化程度高、‘老老人’密集区域建设50家养老服务中心，推动完善区、街道（乡镇）、社区（村）三级居家社区养老服务网络，让居家养老服务更加触手可及。”职嘉男表示。（王琪鹏）</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/ywdt/gzdt/202507/t20250714_4147878.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard cas" id="src-6" data-type="case" data-cite-id="6" data-search="北京·模式创新"><div class="sc-head"><span class="sc-id">[6]</span><span class="sc-type">参考案例</span><span class="sc-vk ok" title="适老化样板间数据取自报道原文">✓ 已核验</span></div><h4>24个样板间今年开放，北京居家适老化改造“看得见、可体验”</h4><div class="sc-meta">北京市发展和改革委员会门户网站 | 2026年06月17日</div><div class="sc-vnote">适老化样板间数据取自报道原文</div><div class="seg-block"><span class="crumb">24个样板间今年开放，北京居家适老化改造“看得见、可体验”</span><div class="sc-excerpt plain">居家养老怎么才能既安全又体面？住房怎样才能“老有所适”？在北京市通州区马驹桥镇刚投用的适老化改造样板间里，隐形扶手、防滑地面、可升降厨柜、智能语音控制系统、毫米波雷达监测……这些看似不起眼的细节，正改变着老年人的居家日常。
+像这样的样板间，在北京不止一间。记者从北京市发改委获悉，自2024年开始，北京支持建设多功能、高品质居家适老化改造公共样板间，去年3月，首批9个样板间建成投运，今年又有24个样板间陆续完工并向公众开放。
+两批33个样板间遍布全市多个区域，这也意味着，这些“看得见、摸得着、可体验”的适老设备与家居场景，正推动着居家适老化改造从一个概念真正走向千家万户。
+通州区马驹桥镇一间刚投用的适老化改造样板间。新京报记者 田杰雄 摄
+超70平方米样板间开放，轮椅能进卫生间
+6月17日，作为全市第二批样板间之一的通州区马驹桥镇适老化改造样板间正式投运。在颐乐居养老驿站里，超70平方米的样板间包含“一室一厅一厨一卫”，完整展现了标准化、人性化、智慧化的居家适老场景。
+在现场，针对老人起居的空间细节随处可见。卫生间一改传统的推拉门，采用特殊的“二折门”设计，这使得轮椅经过时可平滑推进；浴室内的镜子调整了倾斜角度，方便坐姿直视；淋浴装备稍加调整，就能让老人坐着享受到环绕式的喷淋清洁。在起居室和卧室里，沙发和床能随老人需求电动调节，窗帘与厨柜的开合抬升，“动动嘴”就能实现。厨房台面也能整体升降，适配坐姿和站立两种需求。
+住在附近的郭阿姨听说驿站有了样板间，也特地和老姐妹一起来看看。一进门，她就走到卫生间研究起淋浴设备，她看了看扶手的位置，也坐下来试了试座椅的稳定性。“我今年70岁了，平时洗澡都是闺女帮我洗，总想着要是有个自己能坐着洗、又安全的法子就好了。”她说着，又摸了摸喷淋口的出水角度说：“这个角度合适，不用人扶也能用。”</div></div><div class="sc-links"><span><a href="https://fgw.beijing.gov.cn/gzdt/fgzs/mtbdx/bzwlxw/202606/t20260618_4706803.htm" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/5f/1a/5f1af1ffed45ca47b1d0133b7e06dd4b.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard dat" id="src-7" data-type="data" data-cite-id="7" data-search="全国·产业数据"><div class="sc-head"><span class="sc-id">[7]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="银发经济规模数据取自原文">✓ 已核验</span></div><h4>经济发展和社会发展相辅相成协调并进</h4><div class="sc-meta">中共中央党史和文献研究院门户网站 | 2026年03月09日</div><div class="sc-vnote">银发经济规模数据取自原文</div><div class="seg-block"><span class="crumb">经济发展和社会发展相辅相成协调并进</span><div class="sc-excerpt plain">对智慧养老的需求催生了养老机器人的发展。2025年前三季度，我国服务机器人产量1350万套，其中不少就应用在了养老领域。
+银发经济是一片蓝海。目前，我国银发经济规模在7万亿元左右，有机构预测，到2035年，银发经济规模将达30万亿元左右。银发经济正在成长为国民经济的重要支柱产业。
+幼有所育、学有所教、劳有所得、病有所医、老有所养、住有所居、弱有所扶……14亿多人民对美好生活的向往，为扩大内需、促进消费提供了无限可能，也为推动产业转型升级、塑造发展新动能开辟了广阔空间。</div></div><div class="sc-links"><span><a href="https://www.dswxyjy.org.cn/n1/2026/0309/c423712-40677819.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/46/59/46591ab0cd7b6f18671d3bd3c42f9c8a.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard dat" id="src-8" data-type="data" data-cite-id="8" data-search="全国·产业数据"><div class="sc-head"><span class="sc-id">[8]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="老龄人口与银发经济规模取自原文">✓ 已核验</span></div><h4>养老服务从“补缺”迈向“普惠”</h4><div class="sc-meta">求是网门户网站 | 2026年05月23日</div><div class="sc-vnote">老龄人口与银发经济规模取自原文</div><div class="seg-block"><span class="crumb">养老服务从“补缺”迈向“普惠”</span><div class="sc-excerpt plain">来源：经济日报 作者：唐文浩 2026-05-23 10:38:43
+  当前，我国60岁及以上人口超过3.23亿人，银发经济规模接近10万亿元。我国养老服务正加快从“补缺”向“普惠”转型。持续提升普惠养老服务的有效供给，充分释放老年群体消费潜力，带动相关产业发展，可以为银发经济培育壮大与高质量发展注入持久动力。
+  普惠养老的推进，为扩大内需开辟了新空间，有效激发银发消费的巨大潜力。这种拉动作用主要通过3条路径落地。
+  一是以消费补贴撬动市场活力。目前实施的中度以上失能老年人养老服务消费补贴项目政策，通过“钱随人走”的方式，直接提升老年人消费能力，同时倒逼服务机构提质调价，带动康复辅具、专业照护等相关消费市场扩容。
+  二是以基础保障释放潜在消费需求。今年，城乡居民基础养老金月最低标准提高20元，惠及1.8亿多老年人，增强了老年人的消费能力和信心。
+  三是以新场景催生消费新增量。覆盖3亿人的长期护理保险制度，为失能老年人照护服务提供了稳定支付来源，不仅培育了康复护理、辅具租赁等细分市场，也推动基本养老向品质享老的需求升级，让老年人潜在消费需求转化为现实消费。
+  作为兼具民生属性与劳动密集型特征的产业，养老服务是吸纳就业的重要蓄水池。从就业规模看，全国已建成近8万个老年助餐点、49.5万张家庭养老床位，这背后都对应着就业机会。从就业结构来看，普惠养老将推动养老领域就业形态持续升级。人社部推出的大龄劳动者技能培训项目，推动补贴性培训覆盖1000万人次以上，其中康养服务是重点培训方向，这让养老服务岗位不再是简单的“临时工”，而是成为有技能提升通道、有职业发展前景的专业岗位。普惠养老为“妈妈岗”、大龄劳动者提供了门槛适中、工时灵活的就业选择，让就业帮扶的温度与产业发展活力充分结合。
+  接下来，要通过普惠养老提质扩面，持续激发银发经济乘数效应，推动其向专业化、多元化和规模化发展。</div></div><div class="sc-links"><span><a href="https://www.qstheory.cn/20260523/5a3735c0b6c44685820292b785397aa2/c.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard dat" id="src-9" data-type="data" data-cite-id="9" data-search="全国·产业数据"><div class="sc-head"><span class="sc-id">[9]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="老龄人口预测数据取自原文">✓ 已核验</span></div><h4>发展银发经济积极应对人口老龄化</h4><div class="sc-meta">求是网门户网站 | 2026年06月10日</div><div class="sc-vnote">老龄人口预测数据取自原文</div><div class="seg-block"><span class="crumb">发展银发经济积极应对人口老龄化</span><div class="sc-excerpt plain">规模化、多元化需求持续释放。银发经济市场涉及人口多、扩张速度快、结构持续迭代升级，蕴含巨大需求潜力。从规模看，截至2025年末，我国60岁及以上人口达3.2亿人，预计到2035年这一群体数量将超4亿人，到本世纪中叶将突破5亿人。老年人口越来越成为我国超大规模市场的重要消费群体。从结构看，我国城乡老年人生活状况抽样调查结果显示，新进入老年阶段的人口有更长的预期寿命、更多的财富积累、更高的受教育程度、更强的健康意识以及更丰富的生活方式。未来，老年人健康、文娱、照护等方面的消费意愿和能力都会持续增强，带动消费需求的迭代升级。加之银发经济所提供的一些新产品和服务全龄适用，具备开拓国际市场的潜力，需求空间将进一步拓展。
+  产品与服务供给持续扩容提质。我国已初步建成覆盖城乡的养老服务“一张网”，截至2025年底，累计建成49.5万张家庭养老床位和近8万个老年助餐点，为224万户特殊困难老年人家庭进行适老化改造。2025年上半年，全国老年人残疾人养护服务业、适老类家庭服务业、适老类社会看护与帮助服务业销售收入同比分别增长40.9%、14.1%、8.8%，适老类健身器材制造、康复辅具制造、营养保健食品制造销售收入同比分别增长14.7%、12.1%、6.9%，智慧养老技术服务、老年智能与可穿戴装备制造销售收入同比分别增长33.7%、32.6%，均呈现快速增长态势。同时，满足银发旅游、康养旅居、老年教育等需求的各类软硬件基础设施持续完善，相关产品服务和人才供给快速增加。未来，随着市场需求的进一步释放，供给也将持续优化升级，供给提质又催生新的消费，形成需求牵引供给、供给创造需求的更高水平动态平衡。
+  结合实际把握关键着力点
+  银发经济蕴藏巨大发展潜力，但也面临不少现实挑战。必须立足老年群体实际需求，把握好几个关键点，推动老龄事业和老龄产业协同发展。</div></div><div class="sc-links"><span><a href="https://www.qstheory.cn/20260610/cf169e3278854c288e8a2c7c39246bce/c.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/7b/4f/7b4f9fba6532f07b536d075b85c85b26.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard pol" id="src-10" data-type="policy" data-cite-id="10" data-search="北京·政策法规"><div class="sc-head"><span class="sc-id">[10]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="规划纲要积极应对人口老龄化章节取自原文">✓ 已核验</span></div><h4>中华人民共和国国民经济和社会发展第十五个五年规划纲要</h4><div class="sc-meta">2026年03月13日</div><div class="sc-vnote">规划纲要积极应对人口老龄化章节取自原文</div><div class="seg-block"><span class="crumb">中华人民共和国国民经济和社会发展第十五个五年规划纲要 <i>›</i> 第四十章积极应对人口老龄化</span><div class="sc-excerpt plain">第四十章 积极应对人口老龄化
+深入实施积极应对人口老龄化国家战略，健全养老事业和产业协同发展政策机制，促进老有所养、老有所为、老有所乐。
+第一节　完善城乡养老服务网络
+统筹规划养老服务设施布局，优化基本养老服务供给，推动养老服务扩容提质增效。深化养老服务改革发展，有序推进养老机构分类改革。发展社区嵌入式养老服务，培育专业化、品牌化、连锁化社区养老服务机构。发展家庭养老床位，推进居家适老化改造。发展互助性养老服务。健全失能失智老年人照护体系，增加养老机构护理型床位供给，积极推进医养结合。推行长期护理保险，健全统一的老年人能力评估制度。推进养老服务人员队伍职业化建设，提升养老服务综合监管质效。加强高龄独居老人和空巢老人关爱帮扶。
+第二节　营造丰富多彩的老年生活
+把积极老龄观、健康老龄化融入经济社会发展全过程，深入开展人口老龄化国情教育，营造孝老敬老社会环境。大力发展银发经济，丰富适老化产品和老年服务供给，培育银发经济龙头企业和知名品牌，探索建立银发产品认证制度，完善银发经济统计。积极开发老年人力资源，稳妥实施渐进式延迟法定退休年龄，优化就业、社保等方面年龄限制政策，拓展适合老年人的多样化工作岗位，深入开展“银龄行动”。扩大老年教育资源供给，发展老年大学，满足老年人精神文化需求。强化老年人优待和权益保障。加强公共设施适老化改造，持续开展“智慧助老”行动，推动涉老高频事项便捷办理和服务场景简便易用，发展综合为老服务。
+第十二篇 加大保障和改善民生力度 扎实推进全体人民共同富裕
+坚持在高质量发展中保障和改善民生，坚持尽力而为、量力而行，健全基本公共服务体系，实施更加公平普惠、精准有力的社会政策，加强普惠性、基础性、兜底性民生建设，解决好人民群众急难愁盼问题，畅通社会流动渠道，提高人民生活品质。</div></div><div class="sc-links"><span><a href="https://www.forestry.gov.cn/lyj/1/szxx/20260314/663252.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard pol" id="src-11" data-type="policy" data-cite-id="11" data-search="北京·政策法规"><div class="sc-head"><span class="sc-id">[11]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="扩大养老消费部署取自报道原文">✓ 已核验</span></div><h4>《扩大消费“十五五”规划》明确&lt;br/&gt; 扩大养老消费 推动银发经济高质量发展</h4><div class="sc-meta">民政部门户网站 | 2026年07月17日</div><div class="sc-vnote">扩大养老消费部署取自报道原文</div><div class="seg-block"><span class="crumb">《扩大消费“十五五”规划》明确&lt;br/&gt; 扩大养老消费 推动银发经济高质量发展 <i>›</i> 《扩大消费“十五五”规划》明确</span><div class="sc-excerpt plain">扩大养老消费 推动银发经济高质量发展
+时间：2026-07-17
+【字体： 】
+打印
+本报讯 （记者王甦萌）日前，国务院批复同意《扩大消费“十五五”规划》（以下简称《规划》）。《规划》对扩大养老消费、促进健康消费等方面作出部署。
+《规划》提出，要扩大养老消费。加快健全县乡村三级养老服务网络，优化居家为基础、社区为依托、机构为专业支撑、医养相结合的养老服务供给格局。支持鼓励社会力量参与扩大普惠养老服务供给。强化科技赋能，推动养老服务领域数智化升级。
+在发展银发经济方面，《规划》明确，一是要扩大银发产品有效供给。面向老年人品质生活需要，加强适老化日用产品、老年休闲陪护产品、功能性老年服饰、康复辅助器具等的研发设计生产，开发应用养老服务机器人、多功能护理床、健康监测设备等急需产品，鼓励研发适合老年人咀嚼吞咽和营养要求的保健食品、特殊医学用途配方食品。二是要拓展高品质银发消费服务模式。扩大老年助餐、照护服务、银发旅游、康养旅居、老年教育、养老金融等多元化服务供给。三是要培育银发经济经营主体和品牌。推动有条件的地方培育银发产业集群，加快银发经济规模化、标准化、集群化、品牌化发展。培育银发经济龙头企业和知名品牌。
+《规划》提到，要促进健康消费。深入实施促进健康消费专项行动。持续强化零售药店专业服务、健康促进等功能，建设一批“健康驿站”。加快建设康复医院、护理院，支持有条件的医疗卫生机构开展医养结合服务。大力发展健康体检、健康咨询、健康管理等新型服务业态。持续完善中医药健康服务体系。
+扫一扫在手机端打开当前页</div></div><div class="sc-links"><span><a href="https://www.mca.gov.cn/n152/n166/c1662004999980011969/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/33/62/336294287606eba0c7f22056440c1c1f.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard pol" id="src-12" data-type="policy" data-cite-id="12" data-search="北京·要素保障"><div class="sc-head"><span class="sc-id">[12]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="若干措施用地保障条款取自原文">✓ 已核验</span></div><h4>自然资源部 民政部 国家卫生健康委印发《关于深化自然资源要素保障 支持养老服务改革发展的若干措施》的通知</h4><div class="sc-meta">自然资发〔2025〕216号 | 2025年12月12日</div><div class="sc-vnote">若干措施用地保障条款取自原文</div><div class="seg-block"><span class="crumb">自然资源部 民政部 国家卫生健康委印发《关于深化自然资源要素保障 支持养老服务改革发展的若干措施》的通知 <i>›</i> 强化规划引领，保障养老用地空间需求</span><div class="sc-excerpt plain">一、强化规划引领，保障养老用地空间需求
+（一）地方自然资源主管部门要支持配合同级民政部门，依据国土空间总体规划编制养老服务设施布局专项规划，核心内容按法定程序衔接纳入国土空间详细规划、汇入同级国土空间规划“一张图”，避免重复规划、资源浪费。
+（二）以社区生活圈为单元，结合《社区生活圈规划技术指南》，明确养老服务设施空间布局。鼓励“住宅+养老”“商服+养老”“医疗+养老”土地混合开发和空间复合利用，允许非独立占地养老服务设施与其他建筑兼容建设，减少单独占地成本。新建城区、居住（小）区、新建住宅项目要按照规划标准要求同步配套养老服务设施。对新建项目涉及规划配套养老服务设施的，市、县自然资源主管部门审查项目规划设计方案时应当商同级民政部门同意。
+（三）对老龄化程度高于全国平均值的地区，可结合实际适当提高养老服务设施用地比例或增加养老服务设施空间安排，优化规划标准，优先利用存量空间布局养老项目。</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/zhengceku/202601/content_7056416.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard pol" id="src-13" data-type="policy" data-cite-id="13" data-search="北京·政策法规"><div class="sc-head"><span class="sc-id">[13]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="设置指引建筑设施条款取自原文">✓ 已核验</span></div><h4>北京市民政局关于印发《养老机构护理型床位设置指引》的通知</h4><div class="sc-meta">京民发〔2025〕51号 | 2025年09月02日</div><div class="sc-vnote">设置指引建筑设施条款取自原文</div><div class="seg-block"><span class="crumb">北京市民政局关于印发《养老机构护理型床位设置指引》的通知 <i>›</i> 三、 建筑设施设备要求 <i>›</i> （一） 区域要求</span><div class="sc-excerpt plain">（一）区域要求
+　　在确保养老机构建筑设施符合防火、防汛、抗灾等条件的前提下，护理型床位宜相对集中设置，一般设在建筑的低楼层，便于及时转移疏散。</div></div><div class="seg-block"><span class="crumb">北京市民政局关于印发《养老机构护理型床位设置指引》的通知 <i>›</i> 三、 建筑设施设备要求 <i>›</i> （三） 设施设备要求</span><div class="sc-excerpt plain">（三）设施设备要求
+　　1.居室、卫生间、沐浴间、公共活动用房安装呼叫装置且触摸方便。在视线可及位置安装呼叫显示屏。
+　　2.配置中心供氧系统或制氧、供氧设施设备。
+　　3.二层及以上应配备电梯，有条件的应配置医用电梯。
+　　4.主要出入口及老年人公共活动区域配备监控设备。
+　　5.配备协助失能老年人移动、就餐、洗浴、如厕以及康复训练等基本生活和服务所需辅助器具和设施设备。
+　　6.敷设线路，满足信息化管理及视频传输等需求。</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202510/t20251017_4229238.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard cas" id="src-14" data-type="case" data-cite-id="14" data-search="北京·要素保障"><div class="sc-head"><span class="sc-id">[14]</span><span class="sc-type">参考案例</span><span class="sc-vk ok" title="配套要求报道取自原文">✓ 已核验</span></div><h4>新建住宅须同步配套养老服务设施</h4><div class="sc-meta">北京市人民政府门户网站 | 2026年01月29日</div><div class="sc-vnote">配套要求报道取自原文</div><div class="seg-block"><span class="crumb">新建住宅须同步配套养老服务设施</span><div class="sc-excerpt plain">昨天获悉，《关于深化自然资源要素保障支持养老服务改革发展的若干措施》由自然资源部、民政部、国家卫生健康委员会共同印发。《若干措施》明确要求，新建城区、居住（小）区、新建住宅项目要按照规划标准要求同步配套养老服务设施，建成后不得擅自改变用途或缩小建设规模。
+　　数据显示，截至2024年底，全国60岁及以上老年人口达3.1亿，占总人口的22%，养老服务供需适配与质量提升成为民生保障重中之重。此次三部门联合出台的18条政策举措，锚定减轻市场主体负担、释放养老服务供给潜力的核心目标，打出一套政策“组合拳”。
+　　聚焦“成本能降尽降”，《若干措施》明确提出，允许非独立占地养老设施与其他建筑兼容建设，从根本上削减单独占地成本；在供地层面，对非营利性养老机构用地应保尽保、依法划拨，免除土地出让金；对营利性养老用地全面推行长期租赁、先租后让等灵活模式，土地出让金可分两年缴清，同时支持地方在不低于协议出让最低价的前提下，合理确定经营性养老用地出让底价，缓解企业初期资金压力。
+　　聚焦“存量能用尽用”，《若干措施》打破城乡存量资源盘活壁垒，让“沉睡”空间变身养老服务“主阵地”。其中，在城镇区域，明确老旧小区周边边角地、夹心地等零星用地可改造增设养老及医养结合设施，存量空间转型后五年内可按原用途使用且不增收土地价款；在农村区域，优先利用闲置集体建设用地建设养老设施，符合条件的集体经营性建设用地可通过出让、出租等方式用于养老项目建设，既避免占用耕地，又降低农村养老项目用地门槛。
+　　如何防止养老服务设施用地被挪作他用？《若干措施》明确，若擅自改变养老服务设施用地用途，将由自然资源、民政等部门联合查处，责令限期整改；拒不整改的，依法收回土地使用权，追缴已享受的土地优惠价款，并将相关主体纳入失信名单，限制其参与后续养老服务项目和土地交易活动。（陈雪柠）</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/ywdt/zybwdt/202601/t20260129_4474417.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-15" data-type="material" data-cite-id="15" data-search="北京·模式创新" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>京沈牵手推动银发经济跨区域协同发展</h4><div class="sc-meta">北京市发展和改革委员会门户网站 | 2026年08月14日</div><div class="seg-block"><span class="crumb">京沈牵手推动银发经济跨区域协同发展</span><div class="sc-excerpt plain">此次活动是继今年5月北京银发首发团来沈体验、北京市老龄产业协会来沈调研、两地协会签署共建协议后的又一重要成果。下一步，双方将重点围绕沈阳市参加第十二届北京国际老龄产业博览会、推动“盛情康养”沈阳基本养老服务综合平台与北京“冬南夏北”旅居养老机构服务平台对接、深化人才培养及互认旅居康养基地等方面开展务实合作，共同探索银发经济跨区域协同发展的新路径。</div></div><div class="sc-links"><span><a href="https://fgw.beijing.gov.cn/fzggzl/zyhz/gzdt/jshz/xggz/202608/t20260818_4827070.htm" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/36/72/3672d527b4c683e9872ca26b1dbbd75e.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard mat" id="src-16" data-type="material" data-cite-id="16" data-search="北京·政策法规" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>助力银发经济 拓展为老服务——市政协成立银发经济委员工作室并召开座谈会</h4><div class="sc-meta">中共北京市委老干部局门户网站 | 2026年08月03日</div><div class="seg-block"><span class="crumb">助力银发经济 拓展为老服务——市政协成立银发经济委员工作室并召开座谈会</span><div class="sc-excerpt plain">语音播放
+　　7月30日下午，市政协银发经济委员工作室成立暨“助力银发经济 拓展为老服务”座谈会召开。市政协副主席崔述强、郭延红出席并讲话。
+　　会上，委员工作室召集人、市委组织部副部长、市委老干部局局长张彤军介绍委员工作室组建有关情况，李志起、林宝、余立新委员和4名界别群众代表围绕首都银发经济发展作交流发言。大家认为，当前我市发展银发经济的人口基数?坚实、消费能力强劲、科创资源丰富、服务网络成熟，但专项政策缺失、供需结构错配、业态融合层次偏低、科技赋能不足等仍制约我市银发经济发展。建议，加强顶层规划统筹，出台北京市银发经济中长期规划；依托专业人才优势，推动产品应用落地；完善养老服务人员培训认证体系，结合北京国际消费中心城市建设，打造北京新的经济增长极。
+　　郭延红说，银发经济是民生事业、朝阳产业、幸福工程，为更好发展好我市银发经济，委员工作室要运用好自身人才优势，围绕我市银发经济发展的堵点难点做好建言资政。要加强对产业发展研究，推动供需错配问题解决，促进银发经济实现标准化、商业化、便利化和安全化，助力优化涉老领域营商环境；发挥委员工作室平台作用，深入联系银发经济的界别群众和市场主体，通过市政协渠道进行报送相关意见建议，协助党委政府不断优化银发产业布局、推动产业发展。</div></div><div class="sc-links"><span><a href="https://www.bjlgbj.gov.cn/gzdt/sjdt/202608/t20260806_58067.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/26/7c/267c08ee9b7f9d0934b346d0d6293ed0.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard mat" id="src-17" data-type="material" data-cite-id="17" data-search="北京·政策法规" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk warn">待补链接</span></div><h4>中国人民银行北京市分行等12部门关于印发《金融支持北京市提振和扩大消费的实施方案》的通知</h4><div class="sc-meta">2025年11月17日</div><div class="seg-block"><span class="crumb">中国人民银行北京市分行等12部门关于印发《金融支持北京市提振和扩大消费的实施方案》的通知 <i>›</i> 三、 完善重点群体配套服务，释放消费需求 <i>›</i> （七） 优化银发群体消费服务模式</span><div class="sc-excerpt plain">（七）优化银发群体消费服务模式。鼓励辖内金融机构聚焦不同老龄群体消费金融需求，为不同阶段、不同特征的老龄群体提供全方位金融服务。指导辖内商业银行在全市部分连锁食堂餐饮商户开展老年助餐支付便利试点，鼓励和支持辖内商业银行发行和经营存量银发群体专属卡产品，有条件的可发行北京区域卡产品，便捷银发群体消费。</div></div><div class="seg-block"><span class="crumb">中国人民银行北京市分行等12部门关于印发《金融支持北京市提振和扩大消费的实施方案》的通知 <i>›</i> 五、 加强政策协同发力，培育消费沃土 <i>›</i> （十四） 完善保险体系服务保障作用</span><div class="sc-excerpt plain">（十四）完善保险体系的服务保障作用。鼓励辖内金融机构研发符合参加人养老需求、具有长期限特征且具有一定收益率的个人养老金专属产品，促进养老财富储备和稳健增值。加快推进商业保险年金产品创新。扩大商业健康保险覆盖面，提升服务保障水平。发展商业长期护理保险。推动商业健康保险加大创新药支持力度，满足人民群众多层次、个性化的健康保障需求。支持发展老年旅游保险，鼓励扩大旅游保险覆盖面。加快发展面向农民、城镇低收入者等群体的普惠保险，支持重点群体更多配置普惠保险，推广个体工商户综合保险。</div></div></article><article class="scard mat" id="src-18" data-type="material" data-cite-id="18" data-search="全国·产业数据" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>银发经济是风口，更是民生刚需</h4><div class="sc-meta">求是网门户网站 | 2026年08月11日</div><div class="seg-block"><span class="crumb">银发经济是风口，更是民生刚需</span><div class="sc-excerpt plain">来源：光明日报 作者：石娟 2026-08-11 09:57:44
+　　近期，《扩大消费“十五五”规划》提出强化科技赋能，推动养老服务领域数智化升级。发展银发经济，要立足我国人口结构转型的现实、精准把握老年群体消费结构的新趋势。
+　　近十年来，我国80岁及以上人口总量接近翻倍，尤其是农村高龄群体数量急剧攀升。伴随着老年人群的代际转换，“新老年人”成为老年群体主体，我国银发领域的新型消费正从“生存型”向“发展型”“享受型”全面跃升。人口结构深刻变化和消费需求结构升级，驱动银发经济规模稳步扩张。根据《银发经济蓝皮书——中国银发经济发展报告（2025）》，2025年中国银发经济规模突破9万亿元，2035年预计将跃升至30万亿元，产业发展空间广阔。
+　　锚定民生所向、现实之需，各地因地制宜、精准施策，走出各具特色的养老服务新路。贵州以“健康敲门行动”守住民生保障底线，面向省内失能老人提供上门健康与医养结合服务，将基本养老健康服务直接送达失能老人家庭；海南将旅居养老上升为省级战略产业，推出18条专项措施，开放旅居老人医保和长护险，打造“乐养海南”品牌；上海以居家社区与城市公共空间双向协同改造为抓手，以智能化手段补齐传统养老短板、全面提质15分钟养老服务圈。杭州积极探索智慧养老模式，将人工智能、大数据、物联网等数字技术应用于养老服务场景。</div></div><div class="sc-links"><span><a href="https://www.qstheory.cn/20260811/8d609636f24549a9afb1c0054052f380/c.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/e2/95/e295bbdf6fd9b7de8cacb4d0fc2e0130.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard mat" id="src-19" data-type="material" data-cite-id="19" data-search="全国·产业数据" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>博鳌亚洲论坛2026年年会老龄议题分论坛实录</h4><div class="sc-meta">民政部门户网站 | 2026年04月01日</div><div class="seg-block"><span class="crumb">博鳌亚洲论坛2026年年会老龄议题分论坛实录 <i>›</i> 消费理念理性务实，短期消费预期偏保守第四</span><div class="sc-excerpt plain">第四，筑牢养老服务质量和安全底线，推动行业规范发展。坚持把安全管理与质量管理深度融合，强化综合监管，建立适配中国国情的养老服务质量可持续改善机制，推进标准化、专业化、信息化建设，让老年人养老更安心、更舒心。
+安老怀少，扶老携幼。应对人口老龄化是各国面临的共同课题，让老年人安享幸福晚年，既是中国的民生大事，也是国际社会的共同追求。中国愿与各国加强交流互鉴，共同探索应对人口老龄化的有效路径。
+问：您长期深耕亚洲老龄化研究，结合澳大利亚及全球成熟银发市场的实践经验，当前亚洲银发经济的创新业态有哪些独特性？未来3—5年，亚洲银发业态迭代应聚焦哪些领域？
+澳大利亚新南威尔士大学人口老龄化研究中心教授菲利普·奥基夫：亚洲银发经济市场已成为仅次于美国、超越欧洲的全球第二大银发经济市场。尽管亚洲人口结构相对年轻，但当前市场规模已达1.2万亿至1.5万亿美元，无论从何种维度衡量，均稳居全球第二。
+多数亚洲国家老年群体人均消费水平仍偏低，市场蕴藏巨大潜力待释放。亚洲银发市场增速显著领先于美国、欧洲、澳大利亚等发达经济体，2020年市场规模已较欧洲高50%，预计到2030年将比欧洲高35%。亚洲居民收入快速增长，是支撑市场规模持续扩大、增速领跑全球的核心动力。
+亚洲银发市场呈现高度碎片化特征。受劳动力市场制度化不足、社会保障体系不完善等因素影响，老年群体若缺乏积蓄，往往需从事非正式工作或提高储蓄比例。在此背景下，亚洲发展中市场的城乡养老服务、正式与非正式养老市场差异明显，市场整体分散割裂。因此，推进劳动力市场改革与社保制度完善，是银发经济健康发展的关键。
+亚洲各国在政策引导与发展环境营造上表现突出，政府主动作为力度显著优于欧美地区。中国、新加坡、日本、韩国、泰国等多国密集出台扶持政策，为银发市场发展提供了有力支撑，形成鲜明的区域发展优势。</div></div><div class="sc-links"><span><a href="https://www.mca.gov.cn/n152/n166/c1662004999980009946/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/06/79/0679c2fc1ed7662824a7bc3f400b1c26.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard mat" id="src-20" data-type="material" data-cite-id="20" data-search="全国·产业数据" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>增进民生福祉   释放消费潜力</h4><div class="sc-meta">民政部门户网站 | 2025年03月24日</div><div class="seg-block"><span class="crumb">增进民生福祉   释放消费潜力</span><div class="sc-excerpt plain">2024年12月发布的《银发经济蓝皮书：中国银发经济发展报告（2024）》显示，目前我国银发经济规模在7万亿元左右，约占GDP的6%，到2035年，银发经济规模有望达到30万亿元，占GDP的10%。其中，养老服务业、老年用品消费、老年金融、健康、文旅等相关银发产业，将呈现爆发式增长态势。
+最近一段时间以来，许多地方对发展银发经济作出部署，进一步提振消费。江西省民政厅、省卫生健康委员会日前印发的《关于促进养老服务和老年健康消费的若干措施》提出，2025年将建设一批养老服务设施，发布一批银发旅游精品线路和目的地，举办一系列银发经济展销会，推出一批老年健康产品和服务，更好满足老年人养老服务和健康消费需求。近日，浙江省人民政府办公厅印发的《大力提振和扩大消费专项行动实施方案》明确，扩大电子产品、旅游、养老金融、老年教育、居家守护等领域适老产品供给，拓展老年旅游保险业务，推动消费设施适老化改造；推进养老服务“爱心卡”拓面，优化助餐、助洁、助急等服务，2025年计划为60周岁以上老年人累计办理“爱心卡”350万张以上。</div></div><div class="sc-links"><span><a href="https://www.mca.gov.cn/n152/n166/c1662004999980004189/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-21" data-type="material" data-cite-id="21" data-search="北京·政策法规" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>养老服务条例公开征求意见——老旧小区可通过租赁等形式补充养老设施</h4><div class="sc-meta">北京市人民政府门户网站 | 2025年07月03日</div><div class="seg-block"><span class="crumb">养老服务条例公开征求意见——老旧小区可通过租赁等形式补充养老设施</span><div class="sc-excerpt plain">本市将以居家养老为基础、社区养老为依托，为老年人提供普惠性服务和市场化服务相结合的居家社区养老服务。按照征求意见稿，街道乡镇区域养老服务中心整合链接社区养老服务机构、专业服务机构等，不仅可以为老年人提供日间照料、专业照护、康复护理、助餐、助浴、助洁、助行、助医、助急等上门服务，还可以提供短期替代照护、家庭适老化改造等支持性服务。
+　　为有需求老年人提供集中用餐的养老助餐点，也可以整合物业服务企业人员、志愿者、快递外卖等相关力量，为有助餐需求的高龄独居、失能失智老年人提供订餐、送餐服务对接。
+　　为了便于家庭对失能失智老年人进行照护，失能失智老年人家庭可以向常住地养老机构、社区养老服务机构申请养老床位，这些机构也可以提供照护技能培训、短期替代照护服务等支持。
+　　老年人将可就近体验和租赁康复辅具。养老机构应当有针对性提供集中照护、康复护理、精神慰藉等服务，为老年人家庭成员看望或者问候老年人提供便利，为老年人出行、就医、联系家庭成员等提供帮助。其中，政府投资举办的养老机构应当在满足特困人员集中供养需求的前提下，为经济困难的失能失智和高龄老年人、计划生育特殊家庭老年人及优待服务保障老年人提供托养服务。同时，鼓励品牌化、连锁化的完全市场型养老机构参与提供普惠性养老服务。
+　　养老机构内设“医疗点”将纳入医保
+　　养老机构内不仅将能够设医疗机构，还能转诊和医保报销。征求意见稿提出，支持有条件的养老机构设置诊所、医务室等内设医疗机构，或者引入医疗服务站点，为入住机构老年人提供医疗卫生服务。符合条件的养老机构内设医疗机构将纳入医疗联合体管理，推动实行双向转诊，简化转诊就医程序，促进医疗服务有序衔接。
+　　本市还支持康复机构、护理机构、安宁疗护机构为老年人提供康复护理和安宁疗护等服务；符合条件的养老机构内设医疗机构将纳入基本医疗保险支持范围，为老年人提供更加便利的医疗卫生服务。
+　　“旅居养老”将规范服务标准
+　　近年来流行的“旅居养老”也被写入征求意见稿中。本市鼓励行业组织和市场主体发展旅居养老服务，建立旅居养老机构服务平台，制定服务公约，规范服务标准，为老年人提供旅居养老服务。</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/ywdt/gzdt/202507/t20250703_4140460.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-22" data-type="material" data-cite-id="22" data-search="北京·要素保障" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>市场监管总局举行《养老机构基本规范》等2项养老服务强制性国家标准 专题新闻发布会</h4><div class="sc-meta">国务院新闻办公室门户网站 | 2026年09月04日</div><div class="seg-block"><span class="crumb">市场监管总局举行《养老机构基本规范》等2项养老服务强制性国家标准 专题新闻发布会</span><div class="sc-excerpt plain">标准编制的主要过程。标准立项后，民政部组织了29家专业单位，本着客观严谨、科学稳妥的原则推进标准编制工作。一是注重摸清调研，强化条款验证。起草组实地调研了东中西部10余省份、100多家养老机构，发放调查问卷13881份，通过选取不同地域、不同类型养老机构，建立数据模型等方式验证标准内容的科学性、可行性与实操性。二是广泛听取意见，凝聚各方共识。两项标准面向社会公开广泛征求意见，起草组同时通过调研走访、座谈等方式，大量听取养老机构的意见建议，征求了相关部门意见，积极研究充分采纳，不断优化完善条款。三是强化协同配合，加快发布进程。市场监管总局（国家标准委）大力支持两项标准的编制工作，开通绿色通道，加快审查报批流程。7月底，两项标准批准发布。
+标准主要内容。《养老机构基本规范》的主要内容包括：范围、规范性引用文件、术语和定义、选址与建筑、设施与设备、入院出院管理、基础服务、安全管理、运营管理、评价与改进等10个部分。
+在选址与建筑部分，明确了养老机构在选址、建筑等2方面18条硬性要求。重点对养老机构工程选址条件、楼高、用房设置、室内装修、安全疏散等提出明确要求。
+在设施与设备部分，明确了养老机构在设施、设备等2方面8条具体要求。重点对养老机构消防设施和消防器材、安全疏散辅助器材、电气线路敷设、无障碍设计等设施设备配置作出规定。
+在入院出院管理部分，明确了养老机构在评估、入院、出院等3方面8条要求。重点从老年人能力评估、制定照护计划、签订服务合同、新入住老年人适应情况、材料归档等方面，加强入院出院规范管理。
+在基础服务部分，明确了养老机构在生活照料服务、健康服务、膳食服务、清洁卫生和洗涤服务等4方面21条基本要求。重点对服务巡查频次、药品管理、膳食质量与安全、情绪疏导等作了细化规定。</div></div><div class="sc-links"><span><a href="http://www.scio.gov.cn/xwfb/bwxwfb/gbwfbh/gjscjgzj/202609/t20260907_1007126.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/a4/92/a492104476843367dfd77df67a66905e.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article></div>
+      <div class="lib-empty hide" id="lib-empty">没有符合当前筛选的材料。</div>
+      <div class="lib-foot">材料来源：深知可信搜索 · 每条摘录均取自原文原段</div>
+    </section>
+  <section class="print-appendix" aria-label="核验材料附录（打印归档）"><h3>核验材料（全 22 条）</h3><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="条例支持保障和产业促进专章内容取自条文原文">✓ 已核验</span></div><h4>北京市养老服务条例</h4><div class="sc-meta">北京妇女网门户网站 | 2026年07月01日</div><div class="sc-vnote">条例支持保障和产业促进专章内容取自条文原文</div><div class="seg-block"><span class="crumb">北京市养老服务条例 <i>›</i> 第六章　支持保障和产业促进第五十九条</span><div class="sc-excerpt plain">第五十九条　本市推动养老金融发展，支持在京金融机构开发涉老金融产品，提供养老财务规划、资金管理、风险保障等服务，开发适合居家、社区、机构等多样化护理需求的护理保险等产品。
+　　鼓励金融机构向养老机构、养老用品生产企业、养老科技企业提供投融资支持，降低养老服务经营主体融资成本。</div></div><div class="sc-links"><span><a href="http://www.bjwomen.gov.cn/fnw_2nd_web/static/articles/catalog_ff8080818e5bf6330192d25417ae5120/article_400df1849c8aade901a064ceb6f844c3/400df1849c8aade901a064ceb6f844c3.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/1c/3a/1c3ad7fe2601039b620d4d7fa6def279.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="任务清单第223条内容取自原文">✓ 已核验</span></div><h4>北京市人民政府关于印发《2026年市政府工作报告重点任务清单》的通知</h4><div class="sc-meta">京政发〔2026〕1号 | 2026年02月10日</div><div class="sc-vnote">任务清单第223条内容取自原文</div><div class="seg-block"><span class="crumb">北京市人民政府关于印发《2026年市政府工作报告重点任务清单》的通知 <i>›</i> 完善多层次社会保障223</span><div class="sc-excerpt plain">223.加强“老老人”服务保障，实施好养老服务相关法律法规，不断丰富居家社区养老服务，整合各类养老服务资源，在“老老人”数量较多的区域新建20个街道（乡镇）区域养老服务中心，进一步加强运营监测评估，提升区域养老服务中心统筹资源和居家养老专业服务能力，优化提升已有养老服务设施使用效能。
+　　主责单位：市民政局
+　　224.加快推进建立全市统一的长期护理保险制度。优化家庭养老床位服务，新增5000张家庭养老床位。优化养老助餐服务，引导社会餐饮企业参与养老助餐服务。激发养老事业和养老产业发展活力，更好满足老年人多层次多样化养老需求。
+　　主责单位：市民政局，市商务局，市医保局
+　　225.出台普惠型床位认定办法，支持建设失智照护专业型养老机构或在养老机构内设置失智照护专区，开展10家养老机构智慧化场景建设试点，探索为老年人提供健康、照护等智慧化养老服务。
+　　主责单位：市民政局</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202602/t20260211_4508605.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="指导意见试点任务条款取自原文">✓ 已核验</span></div><h4>北京市民政局等关于印发《关于加快发展“家政+养老”服务模式的指导意见》的通知</h4><div class="sc-meta">京民发〔2025〕75号 | 2025年12月31日</div><div class="sc-vnote">指导意见试点任务条款取自原文</div><div class="seg-block"><span class="crumb">北京市民政局等关于印发《关于加快发展“家政+养老”服务模式的指导意见》的通知 <i>›</i> 二、 重点任务 <i>›</i> （二） 试点推进“家政+养老”空间</span><div class="sc-excerpt plain">（二）试点推进“家政+养老”空间。依托街道（乡镇）区域养老服务中心、社区养老服务驿站、养老助餐点等养老服务设施，为家政企业提供服务场所，开展家政服务进社区活动，以空间为纽带，促进养老与家政服务相互助力，丰富养老服务设施的服务供给。试点拓展社区养老服务驿站“喝口水”“歇会脚”等服务功能，助力解决养老及家政服务人员临时休息问题。</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202601/t20260109_4414954.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only cas"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">参考案例</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="试点场景内容取自通知原文">✓ 已核验</span></div><h4>北京市经济和信息化局 北京市民政局关于开展智能养老机器人结对攻关与场景应用试点工作的通知</h4><div class="sc-meta">2025年06月12日</div><div class="sc-vnote">试点场景内容取自通知原文</div><div class="seg-block"><span class="crumb">北京市经济和信息化局 北京市民政局关于开展智能养老机器人结对攻关与场景应用试点工作的通知</span><div class="sc-excerpt plain">附件1 智能养老服务机器人结对攻关与场景应用 试点项目场景参考 一、居家场景 （一）居家失能照护 1.移位助行 ● 根据失能老年人身体情况，利用移乘转运机器人帮助失能老年人在卧室、客厅、卫生间等场所转运和室内助行。 ● 针对老年人室外助行需求，利用室外助行机器人，帮助老年人进行户外移动，提供代步、行走支撑与防跌倒保护等功能，适应复杂环境，如台阶、坡道等，并与居住小区无障碍设施联动。 ● 利用机器人装置辅助老年人上、下楼梯。 2.二便护理及如厕 ● ● 利用智能床边坐便机器人辅助失能老年人进行床边或卫生间如厕。 3.辅助洗浴 ● 利用助浴专用护理机器人装备，帮助老年人在床上或洗浴间擦浴/洗浴，实现局部或全身助浴清洁。 4.翻身及体位变换辅助 ● 选择合适的翻身频次、体位、方式，帮助卧床老年人实现机器人仿人翻身作业护理，减少压疮发生、促进血液循环。 ● 根据失能老年人身体状况，利用机器人辅助实现老年人躺、坐、站、屈腿、上肢伸展等身体体位变换。 5.辅助喂食 ● 对不能自行进食/水的护理对象，利用机器人实现喂饭服务。 6.护理协作 ● 利用外骨骼等可穿戴机器人装备，穿戴于护理人员肢体躯体，在翻身、转运、康复训练等高强度或高风险场景中实现对人员的助力功能。 （二）居家失智照护 7.早期筛查 ● 运用无感监测技术与人工智能算法，基于失智老年人视觉注意力、语言能力、生活轨迹分析、红外眼动追踪、声纹情感计算等特征进行多模态认知评估，实现认知能力的筛查与预警。 8.个性化照护 ● 完成护理分级，实现起居护理与营养管理、防走失与防跌倒、心理干预与情绪疏导等功能。 （三）情感陪护 9.日常交流及陪伴 ● 智能交流陪伴服务机器人，具备方言识别、个性化聊天、读书看报、回忆场景构建、与子女视频通话等交互陪伴形式，舒缓老年人情绪、排遣孤独感，满足老年人的心理需求。 ● 基于仿生触觉及语音反馈宠物机器人，耐心倾听老年人的诉说，模拟宠物智能触摸交互响应，促进陪伴机器人与老年人之间的体感交互与心理交互。</div></div></article><article class="scard print-only dat"><div class="sc-head"><span class="sc-id">[5]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="北京老龄人口与试点进展数据取自报道原文">✓ 已核验</span></div><h4>依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家门口</h4><div class="sc-meta">北京市人民政府门户网站 | 2025年07月14日</div><div class="sc-vnote">北京老龄人口与试点进展数据取自报道原文</div><div class="seg-block"><span class="crumb">依托市场主体 创新居家社区养老服务模式 养老服务送到老年人家门口</span><div class="sc-excerpt plain">截至2024年年底，北京市60岁及以上常住人口为514万人，其中80岁及以上的“老老人”和失能失智老年人为81.5万人。针对“老老人”数量持续攀升，且绝大部分选择居家养老的现状，北京市民政局开展创新居家社区养老服务模式试点工作，探索以社会化、市场化方式破解超大城市养老难题。
+　　为满足失能老年人居家照护需求，北京市推动建设区域养老服务中心，推动家庭养老床位建设，为失能老年人居家照护提供专业支持。在海淀区柳浪社区养老驿站，居家照护员来到失能老人家中，提供床上擦浴、肌力训练、认知训练等专业服务，让家庭照护者得到“喘息”。
+　　据介绍，家庭养老床位是通过居家适老化改造、信息化管理、专业化服务等方式，让老年人在家享受连续、稳定、专业的养老服务，相当于把养老机构的床位搬进了家里。截至2025年5月，全市累计建设并实际运营家庭养老床位约2.9万张，为失能老年人家庭解决了后顾之忧。
+　　“去年，我们已在全市试点建设了105家区域养老服务中心，惠及188万老年人，其中‘老老人’26.8万人。”北京市养老服务事务中心副主任职嘉男介绍，截至2025年5月底，全市区域养老服务中心链接运营驿站325家、链接养老服务商781家，为辖区内老年人提供助餐、托养、居家养老、医养结合等养老服务，取得了良好的社会效果。
+　　“下一步，我们将继续在老龄化程度高、‘老老人’密集区域建设50家养老服务中心，推动完善区、街道（乡镇）、社区（村）三级居家社区养老服务网络，让居家养老服务更加触手可及。”职嘉男表示。（王琪鹏）</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/ywdt/gzdt/202507/t20250714_4147878.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only cas"><div class="sc-head"><span class="sc-id">[6]</span><span class="sc-type">参考案例</span><span class="sc-vk ok" title="适老化样板间数据取自报道原文">✓ 已核验</span></div><h4>24个样板间今年开放，北京居家适老化改造“看得见、可体验”</h4><div class="sc-meta">北京市发展和改革委员会门户网站 | 2026年06月17日</div><div class="sc-vnote">适老化样板间数据取自报道原文</div><div class="seg-block"><span class="crumb">24个样板间今年开放，北京居家适老化改造“看得见、可体验”</span><div class="sc-excerpt plain">居家养老怎么才能既安全又体面？住房怎样才能“老有所适”？在北京市通州区马驹桥镇刚投用的适老化改造样板间里，隐形扶手、防滑地面、可升降厨柜、智能语音控制系统、毫米波雷达监测……这些看似不起眼的细节，正改变着老年人的居家日常。
+像这样的样板间，在北京不止一间。记者从北京市发改委获悉，自2024年开始，北京支持建设多功能、高品质居家适老化改造公共样板间，去年3月，首批9个样板间建成投运，今年又有24个样板间陆续完工并向公众开放。
+两批33个样板间遍布全市多个区域，这也意味着，这些“看得见、摸得着、可体验”的适老设备与家居场景，正推动着居家适老化改造从一个概念真正走向千家万户。
+通州区马驹桥镇一间刚投用的适老化改造样板间。新京报记者 田杰雄 摄
+超70平方米样板间开放，轮椅能进卫生间
+6月17日，作为全市第二批样板间之一的通州区马驹桥镇适老化改造样板间正式投运。在颐乐居养老驿站里，超70平方米的样板间包含“一室一厅一厨一卫”，完整展现了标准化、人性化、智慧化的居家适老场景。
+在现场，针对老人起居的空间细节随处可见。卫生间一改传统的推拉门，采用特殊的“二折门”设计，这使得轮椅经过时可平滑推进；浴室内的镜子调整了倾斜角度，方便坐姿直视；淋浴装备稍加调整，就能让老人坐着享受到环绕式的喷淋清洁。在起居室和卧室里，沙发和床能随老人需求电动调节，窗帘与厨柜的开合抬升，“动动嘴”就能实现。厨房台面也能整体升降，适配坐姿和站立两种需求。
+住在附近的郭阿姨听说驿站有了样板间，也特地和老姐妹一起来看看。一进门，她就走到卫生间研究起淋浴设备，她看了看扶手的位置，也坐下来试了试座椅的稳定性。“我今年70岁了，平时洗澡都是闺女帮我洗，总想着要是有个自己能坐着洗、又安全的法子就好了。”她说着，又摸了摸喷淋口的出水角度说：“这个角度合适，不用人扶也能用。”</div></div><div class="sc-links"><span><a href="https://fgw.beijing.gov.cn/gzdt/fgzs/mtbdx/bzwlxw/202606/t20260618_4706803.htm" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/5f/1a/5f1af1ffed45ca47b1d0133b7e06dd4b.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only dat"><div class="sc-head"><span class="sc-id">[7]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="银发经济规模数据取自原文">✓ 已核验</span></div><h4>经济发展和社会发展相辅相成协调并进</h4><div class="sc-meta">中共中央党史和文献研究院门户网站 | 2026年03月09日</div><div class="sc-vnote">银发经济规模数据取自原文</div><div class="seg-block"><span class="crumb">经济发展和社会发展相辅相成协调并进</span><div class="sc-excerpt plain">对智慧养老的需求催生了养老机器人的发展。2025年前三季度，我国服务机器人产量1350万套，其中不少就应用在了养老领域。
+银发经济是一片蓝海。目前，我国银发经济规模在7万亿元左右，有机构预测，到2035年，银发经济规模将达30万亿元左右。银发经济正在成长为国民经济的重要支柱产业。
+幼有所育、学有所教、劳有所得、病有所医、老有所养、住有所居、弱有所扶……14亿多人民对美好生活的向往，为扩大内需、促进消费提供了无限可能，也为推动产业转型升级、塑造发展新动能开辟了广阔空间。</div></div><div class="sc-links"><span><a href="https://www.dswxyjy.org.cn/n1/2026/0309/c423712-40677819.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/46/59/46591ab0cd7b6f18671d3bd3c42f9c8a.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only dat"><div class="sc-head"><span class="sc-id">[8]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="老龄人口与银发经济规模取自原文">✓ 已核验</span></div><h4>养老服务从“补缺”迈向“普惠”</h4><div class="sc-meta">求是网门户网站 | 2026年05月23日</div><div class="sc-vnote">老龄人口与银发经济规模取自原文</div><div class="seg-block"><span class="crumb">养老服务从“补缺”迈向“普惠”</span><div class="sc-excerpt plain">来源：经济日报 作者：唐文浩 2026-05-23 10:38:43
+  当前，我国60岁及以上人口超过3.23亿人，银发经济规模接近10万亿元。我国养老服务正加快从“补缺”向“普惠”转型。持续提升普惠养老服务的有效供给，充分释放老年群体消费潜力，带动相关产业发展，可以为银发经济培育壮大与高质量发展注入持久动力。
+  普惠养老的推进，为扩大内需开辟了新空间，有效激发银发消费的巨大潜力。这种拉动作用主要通过3条路径落地。
+  一是以消费补贴撬动市场活力。目前实施的中度以上失能老年人养老服务消费补贴项目政策，通过“钱随人走”的方式，直接提升老年人消费能力，同时倒逼服务机构提质调价，带动康复辅具、专业照护等相关消费市场扩容。
+  二是以基础保障释放潜在消费需求。今年，城乡居民基础养老金月最低标准提高20元，惠及1.8亿多老年人，增强了老年人的消费能力和信心。
+  三是以新场景催生消费新增量。覆盖3亿人的长期护理保险制度，为失能老年人照护服务提供了稳定支付来源，不仅培育了康复护理、辅具租赁等细分市场，也推动基本养老向品质享老的需求升级，让老年人潜在消费需求转化为现实消费。
+  作为兼具民生属性与劳动密集型特征的产业，养老服务是吸纳就业的重要蓄水池。从就业规模看，全国已建成近8万个老年助餐点、49.5万张家庭养老床位，这背后都对应着就业机会。从就业结构来看，普惠养老将推动养老领域就业形态持续升级。人社部推出的大龄劳动者技能培训项目，推动补贴性培训覆盖1000万人次以上，其中康养服务是重点培训方向，这让养老服务岗位不再是简单的“临时工”，而是成为有技能提升通道、有职业发展前景的专业岗位。普惠养老为“妈妈岗”、大龄劳动者提供了门槛适中、工时灵活的就业选择，让就业帮扶的温度与产业发展活力充分结合。
+  接下来，要通过普惠养老提质扩面，持续激发银发经济乘数效应，推动其向专业化、多元化和规模化发展。</div></div><div class="sc-links"><span><a href="https://www.qstheory.cn/20260523/5a3735c0b6c44685820292b785397aa2/c.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only dat"><div class="sc-head"><span class="sc-id">[9]</span><span class="sc-type">数据支撑</span><span class="sc-vk ok" title="老龄人口预测数据取自原文">✓ 已核验</span></div><h4>发展银发经济积极应对人口老龄化</h4><div class="sc-meta">求是网门户网站 | 2026年06月10日</div><div class="sc-vnote">老龄人口预测数据取自原文</div><div class="seg-block"><span class="crumb">发展银发经济积极应对人口老龄化</span><div class="sc-excerpt plain">规模化、多元化需求持续释放。银发经济市场涉及人口多、扩张速度快、结构持续迭代升级，蕴含巨大需求潜力。从规模看，截至2025年末，我国60岁及以上人口达3.2亿人，预计到2035年这一群体数量将超4亿人，到本世纪中叶将突破5亿人。老年人口越来越成为我国超大规模市场的重要消费群体。从结构看，我国城乡老年人生活状况抽样调查结果显示，新进入老年阶段的人口有更长的预期寿命、更多的财富积累、更高的受教育程度、更强的健康意识以及更丰富的生活方式。未来，老年人健康、文娱、照护等方面的消费意愿和能力都会持续增强，带动消费需求的迭代升级。加之银发经济所提供的一些新产品和服务全龄适用，具备开拓国际市场的潜力，需求空间将进一步拓展。
+  产品与服务供给持续扩容提质。我国已初步建成覆盖城乡的养老服务“一张网”，截至2025年底，累计建成49.5万张家庭养老床位和近8万个老年助餐点，为224万户特殊困难老年人家庭进行适老化改造。2025年上半年，全国老年人残疾人养护服务业、适老类家庭服务业、适老类社会看护与帮助服务业销售收入同比分别增长40.9%、14.1%、8.8%，适老类健身器材制造、康复辅具制造、营养保健食品制造销售收入同比分别增长14.7%、12.1%、6.9%，智慧养老技术服务、老年智能与可穿戴装备制造销售收入同比分别增长33.7%、32.6%，均呈现快速增长态势。同时，满足银发旅游、康养旅居、老年教育等需求的各类软硬件基础设施持续完善，相关产品服务和人才供给快速增加。未来，随着市场需求的进一步释放，供给也将持续优化升级，供给提质又催生新的消费，形成需求牵引供给、供给创造需求的更高水平动态平衡。
+  结合实际把握关键着力点
+  银发经济蕴藏巨大发展潜力，但也面临不少现实挑战。必须立足老年群体实际需求，把握好几个关键点，推动老龄事业和老龄产业协同发展。</div></div><div class="sc-links"><span><a href="https://www.qstheory.cn/20260610/cf169e3278854c288e8a2c7c39246bce/c.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/7b/4f/7b4f9fba6532f07b536d075b85c85b26.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[10]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="规划纲要积极应对人口老龄化章节取自原文">✓ 已核验</span></div><h4>中华人民共和国国民经济和社会发展第十五个五年规划纲要</h4><div class="sc-meta">2026年03月13日</div><div class="sc-vnote">规划纲要积极应对人口老龄化章节取自原文</div><div class="seg-block"><span class="crumb">中华人民共和国国民经济和社会发展第十五个五年规划纲要 <i>›</i> 第四十章积极应对人口老龄化</span><div class="sc-excerpt plain">第四十章 积极应对人口老龄化
+深入实施积极应对人口老龄化国家战略，健全养老事业和产业协同发展政策机制，促进老有所养、老有所为、老有所乐。
+第一节　完善城乡养老服务网络
+统筹规划养老服务设施布局，优化基本养老服务供给，推动养老服务扩容提质增效。深化养老服务改革发展，有序推进养老机构分类改革。发展社区嵌入式养老服务，培育专业化、品牌化、连锁化社区养老服务机构。发展家庭养老床位，推进居家适老化改造。发展互助性养老服务。健全失能失智老年人照护体系，增加养老机构护理型床位供给，积极推进医养结合。推行长期护理保险，健全统一的老年人能力评估制度。推进养老服务人员队伍职业化建设，提升养老服务综合监管质效。加强高龄独居老人和空巢老人关爱帮扶。
+第二节　营造丰富多彩的老年生活
+把积极老龄观、健康老龄化融入经济社会发展全过程，深入开展人口老龄化国情教育，营造孝老敬老社会环境。大力发展银发经济，丰富适老化产品和老年服务供给，培育银发经济龙头企业和知名品牌，探索建立银发产品认证制度，完善银发经济统计。积极开发老年人力资源，稳妥实施渐进式延迟法定退休年龄，优化就业、社保等方面年龄限制政策，拓展适合老年人的多样化工作岗位，深入开展“银龄行动”。扩大老年教育资源供给，发展老年大学，满足老年人精神文化需求。强化老年人优待和权益保障。加强公共设施适老化改造，持续开展“智慧助老”行动，推动涉老高频事项便捷办理和服务场景简便易用，发展综合为老服务。
+第十二篇 加大保障和改善民生力度 扎实推进全体人民共同富裕
+坚持在高质量发展中保障和改善民生，坚持尽力而为、量力而行，健全基本公共服务体系，实施更加公平普惠、精准有力的社会政策，加强普惠性、基础性、兜底性民生建设，解决好人民群众急难愁盼问题，畅通社会流动渠道，提高人民生活品质。</div></div><div class="sc-links"><span><a href="https://www.forestry.gov.cn/lyj/1/szxx/20260314/663252.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[11]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="扩大养老消费部署取自报道原文">✓ 已核验</span></div><h4>《扩大消费“十五五”规划》明确&lt;br/&gt; 扩大养老消费 推动银发经济高质量发展</h4><div class="sc-meta">民政部门户网站 | 2026年07月17日</div><div class="sc-vnote">扩大养老消费部署取自报道原文</div><div class="seg-block"><span class="crumb">《扩大消费“十五五”规划》明确&lt;br/&gt; 扩大养老消费 推动银发经济高质量发展 <i>›</i> 《扩大消费“十五五”规划》明确</span><div class="sc-excerpt plain">扩大养老消费 推动银发经济高质量发展
+时间：2026-07-17
+【字体： 】
+打印
+本报讯 （记者王甦萌）日前，国务院批复同意《扩大消费“十五五”规划》（以下简称《规划》）。《规划》对扩大养老消费、促进健康消费等方面作出部署。
+《规划》提出，要扩大养老消费。加快健全县乡村三级养老服务网络，优化居家为基础、社区为依托、机构为专业支撑、医养相结合的养老服务供给格局。支持鼓励社会力量参与扩大普惠养老服务供给。强化科技赋能，推动养老服务领域数智化升级。
+在发展银发经济方面，《规划》明确，一是要扩大银发产品有效供给。面向老年人品质生活需要，加强适老化日用产品、老年休闲陪护产品、功能性老年服饰、康复辅助器具等的研发设计生产，开发应用养老服务机器人、多功能护理床、健康监测设备等急需产品，鼓励研发适合老年人咀嚼吞咽和营养要求的保健食品、特殊医学用途配方食品。二是要拓展高品质银发消费服务模式。扩大老年助餐、照护服务、银发旅游、康养旅居、老年教育、养老金融等多元化服务供给。三是要培育银发经济经营主体和品牌。推动有条件的地方培育银发产业集群，加快银发经济规模化、标准化、集群化、品牌化发展。培育银发经济龙头企业和知名品牌。
+《规划》提到，要促进健康消费。深入实施促进健康消费专项行动。持续强化零售药店专业服务、健康促进等功能，建设一批“健康驿站”。加快建设康复医院、护理院，支持有条件的医疗卫生机构开展医养结合服务。大力发展健康体检、健康咨询、健康管理等新型服务业态。持续完善中医药健康服务体系。
+扫一扫在手机端打开当前页</div></div><div class="sc-links"><span><a href="https://www.mca.gov.cn/n152/n166/c1662004999980011969/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/33/62/336294287606eba0c7f22056440c1c1f.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[12]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="若干措施用地保障条款取自原文">✓ 已核验</span></div><h4>自然资源部 民政部 国家卫生健康委印发《关于深化自然资源要素保障 支持养老服务改革发展的若干措施》的通知</h4><div class="sc-meta">自然资发〔2025〕216号 | 2025年12月12日</div><div class="sc-vnote">若干措施用地保障条款取自原文</div><div class="seg-block"><span class="crumb">自然资源部 民政部 国家卫生健康委印发《关于深化自然资源要素保障 支持养老服务改革发展的若干措施》的通知 <i>›</i> 强化规划引领，保障养老用地空间需求</span><div class="sc-excerpt plain">一、强化规划引领，保障养老用地空间需求
+（一）地方自然资源主管部门要支持配合同级民政部门，依据国土空间总体规划编制养老服务设施布局专项规划，核心内容按法定程序衔接纳入国土空间详细规划、汇入同级国土空间规划“一张图”，避免重复规划、资源浪费。
+（二）以社区生活圈为单元，结合《社区生活圈规划技术指南》，明确养老服务设施空间布局。鼓励“住宅+养老”“商服+养老”“医疗+养老”土地混合开发和空间复合利用，允许非独立占地养老服务设施与其他建筑兼容建设，减少单独占地成本。新建城区、居住（小）区、新建住宅项目要按照规划标准要求同步配套养老服务设施。对新建项目涉及规划配套养老服务设施的，市、县自然资源主管部门审查项目规划设计方案时应当商同级民政部门同意。
+（三）对老龄化程度高于全国平均值的地区，可结合实际适当提高养老服务设施用地比例或增加养老服务设施空间安排，优化规划标准，优先利用存量空间布局养老项目。</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/zhengceku/202601/content_7056416.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[13]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="设置指引建筑设施条款取自原文">✓ 已核验</span></div><h4>北京市民政局关于印发《养老机构护理型床位设置指引》的通知</h4><div class="sc-meta">京民发〔2025〕51号 | 2025年09月02日</div><div class="sc-vnote">设置指引建筑设施条款取自原文</div><div class="seg-block"><span class="crumb">北京市民政局关于印发《养老机构护理型床位设置指引》的通知 <i>›</i> 三、 建筑设施设备要求 <i>›</i> （一） 区域要求</span><div class="sc-excerpt plain">（一）区域要求
+　　在确保养老机构建筑设施符合防火、防汛、抗灾等条件的前提下，护理型床位宜相对集中设置，一般设在建筑的低楼层，便于及时转移疏散。</div></div><div class="seg-block"><span class="crumb">北京市民政局关于印发《养老机构护理型床位设置指引》的通知 <i>›</i> 三、 建筑设施设备要求 <i>›</i> （三） 设施设备要求</span><div class="sc-excerpt plain">（三）设施设备要求
+　　1.居室、卫生间、沐浴间、公共活动用房安装呼叫装置且触摸方便。在视线可及位置安装呼叫显示屏。
+　　2.配置中心供氧系统或制氧、供氧设施设备。
+　　3.二层及以上应配备电梯，有条件的应配置医用电梯。
+　　4.主要出入口及老年人公共活动区域配备监控设备。
+　　5.配备协助失能老年人移动、就餐、洗浴、如厕以及康复训练等基本生活和服务所需辅助器具和设施设备。
+　　6.敷设线路，满足信息化管理及视频传输等需求。</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/zhengce/zhengcefagui/202510/t20251017_4229238.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only cas"><div class="sc-head"><span class="sc-id">[14]</span><span class="sc-type">参考案例</span><span class="sc-vk ok" title="配套要求报道取自原文">✓ 已核验</span></div><h4>新建住宅须同步配套养老服务设施</h4><div class="sc-meta">北京市人民政府门户网站 | 2026年01月29日</div><div class="sc-vnote">配套要求报道取自原文</div><div class="seg-block"><span class="crumb">新建住宅须同步配套养老服务设施</span><div class="sc-excerpt plain">昨天获悉，《关于深化自然资源要素保障支持养老服务改革发展的若干措施》由自然资源部、民政部、国家卫生健康委员会共同印发。《若干措施》明确要求，新建城区、居住（小）区、新建住宅项目要按照规划标准要求同步配套养老服务设施，建成后不得擅自改变用途或缩小建设规模。
+　　数据显示，截至2024年底，全国60岁及以上老年人口达3.1亿，占总人口的22%，养老服务供需适配与质量提升成为民生保障重中之重。此次三部门联合出台的18条政策举措，锚定减轻市场主体负担、释放养老服务供给潜力的核心目标，打出一套政策“组合拳”。
+　　聚焦“成本能降尽降”，《若干措施》明确提出，允许非独立占地养老设施与其他建筑兼容建设，从根本上削减单独占地成本；在供地层面，对非营利性养老机构用地应保尽保、依法划拨，免除土地出让金；对营利性养老用地全面推行长期租赁、先租后让等灵活模式，土地出让金可分两年缴清，同时支持地方在不低于协议出让最低价的前提下，合理确定经营性养老用地出让底价，缓解企业初期资金压力。
+　　聚焦“存量能用尽用”，《若干措施》打破城乡存量资源盘活壁垒，让“沉睡”空间变身养老服务“主阵地”。其中，在城镇区域，明确老旧小区周边边角地、夹心地等零星用地可改造增设养老及医养结合设施，存量空间转型后五年内可按原用途使用且不增收土地价款；在农村区域，优先利用闲置集体建设用地建设养老设施，符合条件的集体经营性建设用地可通过出让、出租等方式用于养老项目建设，既避免占用耕地，又降低农村养老项目用地门槛。
+　　如何防止养老服务设施用地被挪作他用？《若干措施》明确，若擅自改变养老服务设施用地用途，将由自然资源、民政等部门联合查处，责令限期整改；拒不整改的，依法收回土地使用权，追缴已享受的土地优惠价款，并将相关主体纳入失信名单，限制其参与后续养老服务项目和土地交易活动。（陈雪柠）</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/ywdt/zybwdt/202601/t20260129_4474417.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>京沈牵手推动银发经济跨区域协同发展</h4><div class="sc-meta">北京市发展和改革委员会门户网站 | 2026年08月14日</div><div class="seg-block"><span class="crumb">京沈牵手推动银发经济跨区域协同发展</span><div class="sc-excerpt plain">此次活动是继今年5月北京银发首发团来沈体验、北京市老龄产业协会来沈调研、两地协会签署共建协议后的又一重要成果。下一步，双方将重点围绕沈阳市参加第十二届北京国际老龄产业博览会、推动“盛情康养”沈阳基本养老服务综合平台与北京“冬南夏北”旅居养老机构服务平台对接、深化人才培养及互认旅居康养基地等方面开展务实合作，共同探索银发经济跨区域协同发展的新路径。</div></div><div class="sc-links"><span><a href="https://fgw.beijing.gov.cn/fzggzl/zyhz/gzdt/jshz/xggz/202608/t20260818_4827070.htm" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/36/72/3672d527b4c683e9872ca26b1dbbd75e.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>助力银发经济 拓展为老服务——市政协成立银发经济委员工作室并召开座谈会</h4><div class="sc-meta">中共北京市委老干部局门户网站 | 2026年08月03日</div><div class="seg-block"><span class="crumb">助力银发经济 拓展为老服务——市政协成立银发经济委员工作室并召开座谈会</span><div class="sc-excerpt plain">语音播放
+　　7月30日下午，市政协银发经济委员工作室成立暨“助力银发经济 拓展为老服务”座谈会召开。市政协副主席崔述强、郭延红出席并讲话。
+　　会上，委员工作室召集人、市委组织部副部长、市委老干部局局长张彤军介绍委员工作室组建有关情况，李志起、林宝、余立新委员和4名界别群众代表围绕首都银发经济发展作交流发言。大家认为，当前我市发展银发经济的人口基数?坚实、消费能力强劲、科创资源丰富、服务网络成熟，但专项政策缺失、供需结构错配、业态融合层次偏低、科技赋能不足等仍制约我市银发经济发展。建议，加强顶层规划统筹，出台北京市银发经济中长期规划；依托专业人才优势，推动产品应用落地；完善养老服务人员培训认证体系，结合北京国际消费中心城市建设，打造北京新的经济增长极。
+　　郭延红说，银发经济是民生事业、朝阳产业、幸福工程，为更好发展好我市银发经济，委员工作室要运用好自身人才优势，围绕我市银发经济发展的堵点难点做好建言资政。要加强对产业发展研究，推动供需错配问题解决，促进银发经济实现标准化、商业化、便利化和安全化，助力优化涉老领域营商环境；发挥委员工作室平台作用，深入联系银发经济的界别群众和市场主体，通过市政协渠道进行报送相关意见建议，协助党委政府不断优化银发产业布局、推动产业发展。</div></div><div class="sc-links"><span><a href="https://www.bjlgbj.gov.cn/gzdt/sjdt/202608/t20260806_58067.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/26/7c/267c08ee9b7f9d0934b346d0d6293ed0.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk warn">待补链接</span></div><h4>中国人民银行北京市分行等12部门关于印发《金融支持北京市提振和扩大消费的实施方案》的通知</h4><div class="sc-meta">2025年11月17日</div><div class="seg-block"><span class="crumb">中国人民银行北京市分行等12部门关于印发《金融支持北京市提振和扩大消费的实施方案》的通知 <i>›</i> 三、 完善重点群体配套服务，释放消费需求 <i>›</i> （七） 优化银发群体消费服务模式</span><div class="sc-excerpt plain">（七）优化银发群体消费服务模式。鼓励辖内金融机构聚焦不同老龄群体消费金融需求，为不同阶段、不同特征的老龄群体提供全方位金融服务。指导辖内商业银行在全市部分连锁食堂餐饮商户开展老年助餐支付便利试点，鼓励和支持辖内商业银行发行和经营存量银发群体专属卡产品，有条件的可发行北京区域卡产品，便捷银发群体消费。</div></div><div class="seg-block"><span class="crumb">中国人民银行北京市分行等12部门关于印发《金融支持北京市提振和扩大消费的实施方案》的通知 <i>›</i> 五、 加强政策协同发力，培育消费沃土 <i>›</i> （十四） 完善保险体系服务保障作用</span><div class="sc-excerpt plain">（十四）完善保险体系的服务保障作用。鼓励辖内金融机构研发符合参加人养老需求、具有长期限特征且具有一定收益率的个人养老金专属产品，促进养老财富储备和稳健增值。加快推进商业保险年金产品创新。扩大商业健康保险覆盖面，提升服务保障水平。发展商业长期护理保险。推动商业健康保险加大创新药支持力度，满足人民群众多层次、个性化的健康保障需求。支持发展老年旅游保险，鼓励扩大旅游保险覆盖面。加快发展面向农民、城镇低收入者等群体的普惠保险，支持重点群体更多配置普惠保险，推广个体工商户综合保险。</div></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>银发经济是风口，更是民生刚需</h4><div class="sc-meta">求是网门户网站 | 2026年08月11日</div><div class="seg-block"><span class="crumb">银发经济是风口，更是民生刚需</span><div class="sc-excerpt plain">来源：光明日报 作者：石娟 2026-08-11 09:57:44
+　　近期，《扩大消费“十五五”规划》提出强化科技赋能，推动养老服务领域数智化升级。发展银发经济，要立足我国人口结构转型的现实、精准把握老年群体消费结构的新趋势。
+　　近十年来，我国80岁及以上人口总量接近翻倍，尤其是农村高龄群体数量急剧攀升。伴随着老年人群的代际转换，“新老年人”成为老年群体主体，我国银发领域的新型消费正从“生存型”向“发展型”“享受型”全面跃升。人口结构深刻变化和消费需求结构升级，驱动银发经济规模稳步扩张。根据《银发经济蓝皮书——中国银发经济发展报告（2025）》，2025年中国银发经济规模突破9万亿元，2035年预计将跃升至30万亿元，产业发展空间广阔。
+　　锚定民生所向、现实之需，各地因地制宜、精准施策，走出各具特色的养老服务新路。贵州以“健康敲门行动”守住民生保障底线，面向省内失能老人提供上门健康与医养结合服务，将基本养老健康服务直接送达失能老人家庭；海南将旅居养老上升为省级战略产业，推出18条专项措施，开放旅居老人医保和长护险，打造“乐养海南”品牌；上海以居家社区与城市公共空间双向协同改造为抓手，以智能化手段补齐传统养老短板、全面提质15分钟养老服务圈。杭州积极探索智慧养老模式，将人工智能、大数据、物联网等数字技术应用于养老服务场景。</div></div><div class="sc-links"><span><a href="https://www.qstheory.cn/20260811/8d609636f24549a9afb1c0054052f380/c.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/e2/95/e295bbdf6fd9b7de8cacb4d0fc2e0130.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>博鳌亚洲论坛2026年年会老龄议题分论坛实录</h4><div class="sc-meta">民政部门户网站 | 2026年04月01日</div><div class="seg-block"><span class="crumb">博鳌亚洲论坛2026年年会老龄议题分论坛实录 <i>›</i> 消费理念理性务实，短期消费预期偏保守第四</span><div class="sc-excerpt plain">第四，筑牢养老服务质量和安全底线，推动行业规范发展。坚持把安全管理与质量管理深度融合，强化综合监管，建立适配中国国情的养老服务质量可持续改善机制，推进标准化、专业化、信息化建设，让老年人养老更安心、更舒心。
+安老怀少，扶老携幼。应对人口老龄化是各国面临的共同课题，让老年人安享幸福晚年，既是中国的民生大事，也是国际社会的共同追求。中国愿与各国加强交流互鉴，共同探索应对人口老龄化的有效路径。
+问：您长期深耕亚洲老龄化研究，结合澳大利亚及全球成熟银发市场的实践经验，当前亚洲银发经济的创新业态有哪些独特性？未来3—5年，亚洲银发业态迭代应聚焦哪些领域？
+澳大利亚新南威尔士大学人口老龄化研究中心教授菲利普·奥基夫：亚洲银发经济市场已成为仅次于美国、超越欧洲的全球第二大银发经济市场。尽管亚洲人口结构相对年轻，但当前市场规模已达1.2万亿至1.5万亿美元，无论从何种维度衡量，均稳居全球第二。
+多数亚洲国家老年群体人均消费水平仍偏低，市场蕴藏巨大潜力待释放。亚洲银发市场增速显著领先于美国、欧洲、澳大利亚等发达经济体，2020年市场规模已较欧洲高50%，预计到2030年将比欧洲高35%。亚洲居民收入快速增长，是支撑市场规模持续扩大、增速领跑全球的核心动力。
+亚洲银发市场呈现高度碎片化特征。受劳动力市场制度化不足、社会保障体系不完善等因素影响，老年群体若缺乏积蓄，往往需从事非正式工作或提高储蓄比例。在此背景下，亚洲发展中市场的城乡养老服务、正式与非正式养老市场差异明显，市场整体分散割裂。因此，推进劳动力市场改革与社保制度完善，是银发经济健康发展的关键。
+亚洲各国在政策引导与发展环境营造上表现突出，政府主动作为力度显著优于欧美地区。中国、新加坡、日本、韩国、泰国等多国密集出台扶持政策，为银发市场发展提供了有力支撑，形成鲜明的区域发展优势。</div></div><div class="sc-links"><span><a href="https://www.mca.gov.cn/n152/n166/c1662004999980009946/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/06/79/0679c2fc1ed7662824a7bc3f400b1c26.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>增进民生福祉   释放消费潜力</h4><div class="sc-meta">民政部门户网站 | 2025年03月24日</div><div class="seg-block"><span class="crumb">增进民生福祉   释放消费潜力</span><div class="sc-excerpt plain">2024年12月发布的《银发经济蓝皮书：中国银发经济发展报告（2024）》显示，目前我国银发经济规模在7万亿元左右，约占GDP的6%，到2035年，银发经济规模有望达到30万亿元，占GDP的10%。其中，养老服务业、老年用品消费、老年金融、健康、文旅等相关银发产业，将呈现爆发式增长态势。
+最近一段时间以来，许多地方对发展银发经济作出部署，进一步提振消费。江西省民政厅、省卫生健康委员会日前印发的《关于促进养老服务和老年健康消费的若干措施》提出，2025年将建设一批养老服务设施，发布一批银发旅游精品线路和目的地，举办一系列银发经济展销会，推出一批老年健康产品和服务，更好满足老年人养老服务和健康消费需求。近日，浙江省人民政府办公厅印发的《大力提振和扩大消费专项行动实施方案》明确，扩大电子产品、旅游、养老金融、老年教育、居家守护等领域适老产品供给，拓展老年旅游保险业务，推动消费设施适老化改造；推进养老服务“爱心卡”拓面，优化助餐、助洁、助急等服务，2025年计划为60周岁以上老年人累计办理“爱心卡”350万张以上。</div></div><div class="sc-links"><span><a href="https://www.mca.gov.cn/n152/n166/c1662004999980004189/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>养老服务条例公开征求意见——老旧小区可通过租赁等形式补充养老设施</h4><div class="sc-meta">北京市人民政府门户网站 | 2025年07月03日</div><div class="seg-block"><span class="crumb">养老服务条例公开征求意见——老旧小区可通过租赁等形式补充养老设施</span><div class="sc-excerpt plain">本市将以居家养老为基础、社区养老为依托，为老年人提供普惠性服务和市场化服务相结合的居家社区养老服务。按照征求意见稿，街道乡镇区域养老服务中心整合链接社区养老服务机构、专业服务机构等，不仅可以为老年人提供日间照料、专业照护、康复护理、助餐、助浴、助洁、助行、助医、助急等上门服务，还可以提供短期替代照护、家庭适老化改造等支持性服务。
+　　为有需求老年人提供集中用餐的养老助餐点，也可以整合物业服务企业人员、志愿者、快递外卖等相关力量，为有助餐需求的高龄独居、失能失智老年人提供订餐、送餐服务对接。
+　　为了便于家庭对失能失智老年人进行照护，失能失智老年人家庭可以向常住地养老机构、社区养老服务机构申请养老床位，这些机构也可以提供照护技能培训、短期替代照护服务等支持。
+　　老年人将可就近体验和租赁康复辅具。养老机构应当有针对性提供集中照护、康复护理、精神慰藉等服务，为老年人家庭成员看望或者问候老年人提供便利，为老年人出行、就医、联系家庭成员等提供帮助。其中，政府投资举办的养老机构应当在满足特困人员集中供养需求的前提下，为经济困难的失能失智和高龄老年人、计划生育特殊家庭老年人及优待服务保障老年人提供托养服务。同时，鼓励品牌化、连锁化的完全市场型养老机构参与提供普惠性养老服务。
+　　养老机构内设“医疗点”将纳入医保
+　　养老机构内不仅将能够设医疗机构，还能转诊和医保报销。征求意见稿提出，支持有条件的养老机构设置诊所、医务室等内设医疗机构，或者引入医疗服务站点，为入住机构老年人提供医疗卫生服务。符合条件的养老机构内设医疗机构将纳入医疗联合体管理，推动实行双向转诊，简化转诊就医程序，促进医疗服务有序衔接。
+　　本市还支持康复机构、护理机构、安宁疗护机构为老年人提供康复护理和安宁疗护等服务；符合条件的养老机构内设医疗机构将纳入基本医疗保险支持范围，为老年人提供更加便利的医疗卫生服务。
+　　“旅居养老”将规范服务标准
+　　近年来流行的“旅居养老”也被写入征求意见稿中。本市鼓励行业组织和市场主体发展旅居养老服务，建立旅居养老机构服务平台，制定服务公约，规范服务标准，为老年人提供旅居养老服务。</div></div><div class="sc-links"><span><a href="https://www.beijing.gov.cn/ywdt/gzdt/202507/t20250703_4140460.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>市场监管总局举行《养老机构基本规范》等2项养老服务强制性国家标准 专题新闻发布会</h4><div class="sc-meta">国务院新闻办公室门户网站 | 2026年09月04日</div><div class="seg-block"><span class="crumb">市场监管总局举行《养老机构基本规范》等2项养老服务强制性国家标准 专题新闻发布会</span><div class="sc-excerpt plain">标准编制的主要过程。标准立项后，民政部组织了29家专业单位，本着客观严谨、科学稳妥的原则推进标准编制工作。一是注重摸清调研，强化条款验证。起草组实地调研了东中西部10余省份、100多家养老机构，发放调查问卷13881份，通过选取不同地域、不同类型养老机构，建立数据模型等方式验证标准内容的科学性、可行性与实操性。二是广泛听取意见，凝聚各方共识。两项标准面向社会公开广泛征求意见，起草组同时通过调研走访、座谈等方式，大量听取养老机构的意见建议，征求了相关部门意见，积极研究充分采纳，不断优化完善条款。三是强化协同配合，加快发布进程。市场监管总局（国家标准委）大力支持两项标准的编制工作，开通绿色通道，加快审查报批流程。7月底，两项标准批准发布。
+标准主要内容。《养老机构基本规范》的主要内容包括：范围、规范性引用文件、术语和定义、选址与建筑、设施与设备、入院出院管理、基础服务、安全管理、运营管理、评价与改进等10个部分。
+在选址与建筑部分，明确了养老机构在选址、建筑等2方面18条硬性要求。重点对养老机构工程选址条件、楼高、用房设置、室内装修、安全疏散等提出明确要求。
+在设施与设备部分，明确了养老机构在设施、设备等2方面8条具体要求。重点对养老机构消防设施和消防器材、安全疏散辅助器材、电气线路敷设、无障碍设计等设施设备配置作出规定。
+在入院出院管理部分，明确了养老机构在评估、入院、出院等3方面8条要求。重点从老年人能力评估、制定照护计划、签订服务合同、新入住老年人适应情况、材料归档等方面，加强入院出院规范管理。
+在基础服务部分，明确了养老机构在生活照料服务、健康服务、膳食服务、清洁卫生和洗涤服务等4方面21条基本要求。重点对服务巡查频次、药品管理、膳食质量与安全、情绪疏导等作了细化规定。</div></div><div class="sc-links"><span><a href="http://www.scio.gov.cn/xwfb/bwxwfb/gbwfbh/gjscjgzj/202609/t20260907_1007126.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/a4/92/a492104476843367dfd77df67a66905e.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article></section>
 </div>
 
+
+
+<div class="ev-panel" id="ev-pop" hidden></div>
 <div class="sheet-mask" aria-hidden="true"></div>
 <div class="sheet" role="dialog" aria-label="核验材料">
   <div class="sheet-grab"></div>
@@ -333,19 +808,127 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 <script>
 (function () {
   "use strict";
-  var cards = Array.prototype.slice.call(document.querySelectorAll(".scard"));
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  var app = $(".app");
+  var isMobile = function () { return window.matchMedia("(max-width:680px)").matches; };
+
+  /* ===== 1. 双视图切换（保存/恢复各自滚动位置） ===== */
+  var savedScroll = { report: 0, library: 0 };
+  function setView(view) {
+    if (!app || app.getAttribute("data-view") === view) return;
+    savedScroll[app.getAttribute("data-view") || "report"] = window.scrollY;
+    app.setAttribute("data-view", view);
+    $$(".view-switch button").forEach(function (b) {
+      b.classList.toggle("on", b.getAttribute("data-view") === view);
+    });
+    window.scrollTo(0, Math.max(0, savedScroll[view] || 0));
+  }
+  $$(".view-switch button").forEach(function (b) {
+    b.addEventListener("click", function () { setView(b.getAttribute("data-view")); });
+  });
+
+  /* ===== 2. 阅读进度条 ===== */
+  var progress = $(".progress i");
+  function updateProgress() {
+    if (!progress) return;
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    progress.style.width = (max > 0 ? Math.min(100, (h.scrollTop / max) * 100) : 0) + "%";
+  }
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  updateProgress();
+
+  /* ===== 3. 只看正文（纯净阅读态切换） ===== */
+  var readBtn = $("#btn-reading");
+  if (readBtn) {
+    readBtn.addEventListener("click", function () {
+      var on = document.body.classList.toggle("reading");
+      readBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      readBtn.textContent = on ? "显示核验" : "只看正文";
+      /* 只看正文只作用于核验报告视图：正在材料专库时切回报告，专库不受影响 */
+      if (on && app && app.getAttribute("data-view") !== "report") setView("report");
+    });
+  }
+
+  /* ===== 4. 复制全文（章节标题 + 段落 + 表格，去角标） ===== */
+  var copyBtn = $("#btn-copy");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", function () {
+      var parts = [];
+      /* 按文档流顺序收集章节标题/段落/表格；克隆后剔除引文胶囊与角标，
+         只复制正文本身（胶囊标题/展开摘录/编号数字均不带出） */
+      var nodes = $$("#view-report .ch-head h2, #view-report .lead, #view-report .para, #view-report .tbl-wrap");
+      nodes.sort(function (a, b) { return (a.compareDocumentPosition(b) & 4) ? -1 : 1; });
+      nodes.forEach(function (el) {
+        var clone = el.cloneNode(true);
+        clone.querySelectorAll(".jb, sup.cite").forEach(function (x) { x.remove(); });
+        var t = clone.textContent.replace(/[ 	]+/g, " ").trim();
+        if (t) parts.push(t);
+      });
+      var text = parts.filter(Boolean).join("\n\n");
+      function done(ok) {
+        var old = copyBtn.textContent;
+        copyBtn.textContent = ok ? "已复制 ✓" : "复制失败";
+        setTimeout(function () { copyBtn.textContent = old; }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(fallback(text)); });
+      } else {
+        done(fallback(text));
+      }
+      function fallback(value) {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = value;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          var ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          return ok;
+        } catch (e) { return false; }
+      }
+    });
+  }
+
+  /* ===== 5. 打印归档（PDF）：下拉双选项——只打印正文 / 完整归档 ===== */
+  var printBtn = $("#btn-print");
+  var printDrop = $("#print-drop");
+  function printBy(mode) {
+    if (mode === "body") document.body.classList.add("print-body-only");
+    if (printDrop) printDrop.hidden = true;
+    window.print();
+  }
+  if (printBtn && printDrop) {
+    printBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      printDrop.hidden = !printDrop.hidden;
+    });
+    printDrop.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var t = e.target.closest("button");
+      if (!t) return;
+      printBy(t.id === "print-body" ? "body" : "full");
+    });
+    document.addEventListener("click", function () { printDrop.hidden = true; });
+    /* 打印结束移除临时模式（浏览器打印窗口关闭后触发） */
+    window.addEventListener("afterprint", function () { document.body.classList.remove("print-body-only"); });
+  }
+
+  /* ===== 6. 材料卡索引（专库列表内，不含打印附录） ===== */
+  var cards = $$("#lib-list .scard");
   var byId = {};
   cards.forEach(function (c) {
     var id = c.getAttribute("data-cite-id");
     if (id) byId[id] = c;
   });
 
-  /* 移动端底部弹层：点角标就地展示"正文表述 ↔ 原文原段"对照 + 材料卡，不打断正文阅读 */
-  var sheet = document.querySelector(".sheet");
-  var mask = document.querySelector(".sheet-mask");
-  function isMobile() {
-    return window.matchMedia("(max-width:680px)").matches;
-  }
+  /* 移动端底部弹层：正文表述 ↔ 原文原段 对照 + 材料卡 */
+  var sheet = $(".sheet");
+  var mask = $(".sheet-mask");
   function escHtml(s) {
     var d = document.createElement("div");
     d.textContent = s;
@@ -364,8 +947,8 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
       var cmp = document.createElement("div");
       cmp.className = "cmp";
       cmp.innerHTML =
-        '<div class="cmp-side cmp-ai"><div class="cmp-tag">正文表述（AI 生成）</div><p>' + escHtml(sentence) + '</p></div>' +
-        '<div class="cmp-side cmp-src"><div class="cmp-tag">原文原段（非 AI 生成）</div>' +
+        '<div class="cmp-side cmp-ai"><div class="cmp-tag">正文表述</div><p>' + escHtml(sentence) + '</p></div>' +
+        '<div class="cmp-side cmp-src"><div class="cmp-tag">原文原段</div>' +
         '<div class="sc-excerpt">' + (excerpt ? excerpt.innerHTML : "") + '</div></div>';
       body.appendChild(cmp);
     }
@@ -373,8 +956,6 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     clone.removeAttribute("id");
     clone.classList.remove("hide");
     clone.classList.add("open");
-    var sheetMore = clone.querySelector(".sc-more");
-    if (sheetMore) sheetMore.remove();
     body.appendChild(clone);
     sheet.classList.add("show");
     mask.classList.add("show");
@@ -393,98 +974,149 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     if (closeBtn) closeBtn.addEventListener("click", closeSheet);
   }
 
-  /* 角标 → 来源卡：精确 ID 匹配，缺失即红色警示，绝不按位置猜测。
-     手机单栏下不滚动定位（会跳到页面底部打断阅读），改为底部弹层就地查看。 */
-  document.querySelectorAll(".data-cite,[data-cite]").forEach(function (btn) {
-    if (btn.classList.contains("sheet-close")) return;
+  /* 行内引文 jb（原型行为）：点小胶囊 toggle 展开卡；点角标展开对应 jb 并 flash。
+     未绑定角标红色警示，绝不按位置猜测。 */
+  var JB_TABLES = {};
+  try {
+    var jbTablesEl = document.getElementById("jb-tables");
+    if (jbTablesEl) JB_TABLES = JSON.parse(jbTablesEl.textContent || "{}");
+  } catch (e) { JB_TABLES = {}; }
+  function fillTableHolders(jb) {
+    jb.querySelectorAll(".tbl-holder[data-tbl]").forEach(function (h) {
+      if (h.getAttribute("data-filled")) return;
+      var html = JB_TABLES[h.getAttribute("data-tbl")];
+      if (html) h.innerHTML = html;
+      h.setAttribute("data-filled", "1");
+    });
+  }
+  function toggleJb(jb, forceOpen) {
+    var open = forceOpen === true ? true : !jb.classList.contains("active");
+    document.querySelectorAll(".jb.active").forEach(function (x) { if (x !== jb) x.classList.remove("active"); });
+    jb.classList.toggle("active", open);
+    if (open) fillTableHolders(jb);
+    var name = jb.querySelector(".jb-name");
+    if (name) name.setAttribute("aria-expanded", open ? "true" : "false");
+    return open;
+  }
+  document.querySelectorAll(".jb-name").forEach(function (name) {
+    name.addEventListener("click", function () { toggleJb(name.closest(".jb")); });
+  });
+
+  /* 引文条目点击 → 材料专库定位对应卡：库内导航看完整材料；
+     外部原文跳转只保留 jb-head 的"查看全文"按钮，动线分离 */
+  function jumpToLibrary(id) {
+    var card = byId[id];
+    if (!card) return;
+    setView("library");
+    card.classList.remove("hide", "open");
+    card.classList.add("hl", "open");
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { card.scrollIntoView({ block: "center", behavior: "smooth" }); });
+    });
+    setTimeout(function () { card.classList.remove("hl"); }, 2200);
+  }
+  document.querySelectorAll(".jb-quote").forEach(function (q) {
+    function go() {
+      var jbEl = q.closest(".jb");
+      var id = jbEl && jbEl.getAttribute("data-cite");
+      if (id) jumpToLibrary(id);
+    }
+    q.addEventListener("click", go);
+    q.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+    });
+  });
+  document.querySelectorAll("sup.cite").forEach(function (btn) {
+    /* 仅剩未绑定角标（红色数字）走到这里：点击控制台留痕 */
     btn.addEventListener("click", function () {
-      var card = byId[btn.getAttribute("data-cite")];
-      if (!card) {
-        btn.classList.add("unresolved");
-        if (console.error) console.error("[核验] 未绑定角标:", btn.getAttribute("data-cite"));
-        return;
-      }
-      if (isMobile()) {
-        openSheet(card, sentenceOf(btn));
-        return;
-      }
-      card.classList.remove("hide", "open");
-      card.classList.add("hl", "open");
-      card.scrollIntoView({ block: "center", behavior: "smooth" });
-      setTimeout(function () { card.classList.remove("hl"); }, 2200);
+      if (console.error) console.error("[核验] 未绑定角标:", btn.getAttribute("data-cite"));
     });
   });
 
-  /* 摘录点击展开/收起：内容被截断（超出 4 行）的卡片显示"展开全文"引导，
-     未截断的短摘录不显示，避免误导 */
-  cards.forEach(function (c) {
-    var ex = c.querySelector(".sc-excerpt");
-    if (!ex) return;
-    if (ex.scrollHeight > ex.clientHeight + 4) c.classList.add("clampable");
-    var more = c.querySelector(".sc-more");
-    function toggleExcerpt() { c.classList.toggle("open"); }
-    ex.addEventListener("click", function (e) {
-      if (e.target.closest("a")) return;
-      toggleExcerpt();
-    });
-    if (more) {
-      more.addEventListener("click", toggleExcerpt);
-      more.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExcerpt(); }
-      });
-    }
-  });
+  /* 材料卡摘录直接全文展开（句后胶囊已承载即点即看，专库不再折叠） */
 
-  /* 证据 chips（灰框）：桌面端点击就地展开并高亮右栏来源卡；手机端不就地展开，点击直接弹出底部材料弹层。
-     展开锁定：浏览器（Chrome 系）对 <details> 展开会自动滚动露出内容、收起时滚动位置会被回夹，
-     点击时锁定滚动位置并在展开/收起后滚回，消除页面"轻微滚动"感。 */
+  /* 胶囊点击：桌面开关对照气泡（同一气泡再点收起）；手机端弹出底部材料弹层 */
   document.querySelectorAll(".ev-chip").forEach(function (chip) {
-    var summary = chip.querySelector("summary");
-    if (summary) {
-      summary.addEventListener("click", function (e) {
-        if (isMobile()) {
-          e.preventDefault();
-          var card = byId[chip.getAttribute("data-cite")];
-          if (card) openSheet(card, sentenceOf(chip));
-          return;
-        }
-        var y = window.scrollY;
-        var restore = function () { window.scrollTo(0, y); };
-        requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
-      });
-    }
-    chip.addEventListener("toggle", function () {
-      if (!chip.open || isMobile()) return;
-      var card = byId[chip.getAttribute("data-cite")];
-      if (!card) return;
-      cards.forEach(function (c) { c.classList.remove("hl"); });
-      card.classList.add("hl");
-      setTimeout(function () { card.classList.remove("hl"); }, 2200);
+    chip.addEventListener("click", function () {
+      var id = chip.getAttribute("data-cite");
+      if (isMobile()) {
+        var card = byId[id];
+        if (card) openSheet(card, sentenceOf(chip));
+        return;
+      }
+      togglePop(chip, id);
     });
   });
 
-  /* 检索分组筛选（单选 + 全部 + 未引用，胶囊样式）+ 关键字搜索叠加 */
+  /* ===== 7. 材料专库：tabs + 搜索 + 热词 ===== */
   var cond = "";
   var kw = "";
-  function apply() {
+  function applyFilter() {
+    var visible = 0;
     cards.forEach(function (c) {
       var okCond = !cond;
       if (cond === "__unused__") okCond = c.getAttribute("data-unused") === "1";
       else if (cond) okCond = c.getAttribute("data-search") === cond;
       var okKw = !kw || (c.textContent || "").toLowerCase().indexOf(kw) !== -1;
-      c.classList.toggle("hide", !(okCond && okKw));
+      var show = okCond && okKw;
+      c.classList.toggle("hide", !show);
+      if (show) visible++;
     });
+    var empty = $("#lib-empty");
+    if (empty) empty.classList.toggle("hide", visible !== 0);
   }
-  document.querySelectorAll(".filters button").forEach(function (b) {
+  $$(".lib-tabs button").forEach(function (b) {
     b.addEventListener("click", function () {
-      document.querySelectorAll(".filters button").forEach(function (x) { x.classList.remove("on"); });
+      $$(".lib-tabs button").forEach(function (x) { x.classList.remove("on"); });
       b.classList.add("on");
       cond = b.getAttribute("data-cond") || "";
-      apply();
+      applyFilter();
     });
   });
-  var search = document.querySelector(".src-search");
-  if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); apply(); });
+  var search = $(".lib-search");
+  if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); applyFilter(); });
+  $$(".hot-term").forEach(function (t) {
+    t.addEventListener("click", function () {
+      if (!search) return;
+      search.value = t.textContent.trim();
+      kw = search.value.toLowerCase();
+      applyFilter();
+      if (search.focus) search.focus();
+    });
+  });
+
+  /* ===== 8. 过程回顾条：检索步骤展开 ===== */
+  var pStep = $("#p-step-search");
+  var pDetail = $("#p-detail");
+  if (pStep && pDetail) {
+    function toggleDetail() { pDetail.classList.toggle("show"); }
+    pStep.addEventListener("click", toggleDetail);
+    pStep.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleDetail(); }
+    });
+  }
+
+  /* ===== 9. 章节目录（spy） ===== */
+  var toc = $(".toc");
+  if (toc) {
+    var links = $$("a", toc);
+    var secs = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+    links.forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        var target = document.querySelector(a.getAttribute("href"));
+        if (target) target.scrollIntoView({ block: "start", behavior: "smooth" });
+      });
+    });
+    function spy() {
+      var pos = window.scrollY + 130;
+      var current = -1;
+      secs.forEach(function (s, i) { if (s && s.offsetTop <= pos) current = i; });
+      links.forEach(function (a, i) { a.classList.toggle("on", i === current); });
+    }
+    window.addEventListener("scroll", spy, { passive: true });
+    spy();
+  }
 })();
 </script>
 </body>

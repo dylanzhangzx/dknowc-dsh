@@ -75,7 +75,7 @@
 python3 {skillDir}/scripts/svg_quality_checker.py dknowc-projects/<项目名> --quick-generate --stage final --json
 
 # 编译导出（quick 模式）
-uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pptx.py dknowc-projects/<项目名> --quick-generate
+uv run --with python-pptx --with XlsxWriter uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pptx.py dknowc-projects/<项目名> --quick-generate
 ```
 
 质检 errors（exit 1）必须修复后重新导出；warnings 可评估后放行。导出成功后 `.pptx` 写入项目 `exports/`。

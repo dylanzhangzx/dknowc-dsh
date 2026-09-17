@@ -7,7 +7,7 @@ description: "当用户需要可信搜索、权威材料检索、政策法规/�
 description_zh: "深知可信搜索（法律、政策、标准）是由北京彩智科技有限公司旗下“深知可信智能”提供的可信搜索与权威材料检索 Skill，面向政策法规、政务办事依据、税务社保、公积金、企业补贴、资质证照、行业标准、公共服务、合规义务、政策调研、城市政策对比和企业投资/技改/税惠材料核验等工作场景。默认调用可信搜索接口，按需调用深度搜索接口，输出带权威来源、知识专库、可点击溯源 HTML 和干净 Markdown 的结果。"
 description_en: "dknowc trusted search is a trusted search and authoritative-source retrieval Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It supports policy, regulation, government-service evidence, standards, compliance, subsidy, tax-benefit and policy research tasks. It defaults to trusted search, uses deep search only on explicit user request or confirmation, and delivers a direct answer, clickable provenance HTML, and clean Markdown without citation markers."
 category: 通用办公
-version: 1.2.1-dsh
+version: 1.3.1-dsh
 author: 彩智科技
 permissions:
   network:
@@ -162,7 +162,7 @@ python3 <skillDir>/scripts/render_trace_html.py \
 
 适配脚本会把 `materials` 转成渲染脚本消费的 `data.检索文章`（中文键，含标题/来源/发布日期/源网址/摘要），并把 `knowledge_base_url` 映射为 `knowledgeBase`（驼峰）。综合答案时直接读规范化后 JSON 的 `data.检索文章` 与 `knowledgeBase`。
 
-`render_trace_html.py` 生成**溯源核验报告**（报告头部公文眉头式身份章；首屏核验报告单：依据溯源/引用对应/材料新旧/材料构成/交付前检查五项指标，全部由脚本真实计算；一篇材料一张卡（同一篇多段落合并为摘录）；摘录上方"▍ 原文原段（非 AI 生成）"标注与超 4 行折叠；材料卡标题链与"高可信"金色徽标；检索分组筛选胶囊；未引用召回材料分组（灰标、不计入核验结论）；打印归档模式；移动端"正文表述↔原文原段"对照弹层）与同名 `.clean.md`，输出到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`，文件名形如《标题_溯源核验报告_时间戳.html》。角标按答案首次出现顺序自动重排为 [1][2][3]…，来源卡同号对应。如需指定干净 Markdown 路径，传 `--clean-md-output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/xxx.md`。未传 `--self-check-file` 时核验单如实显示"交付前检查 未记录"，不假装通过。
+`render_trace_html.py` 生成**溯源核验报告**（整体重构版）：双视图单页——核验报告视图（顶栏身份章+工具组：只看正文/复制全文/打印归档下拉；Hero 大标题+真实统计；阅读进度条）与**材料专库独立视图**（大搜索+热词真实统计+检索分组 tabs+已引用/未引用筛选）；正文为连续文档流，角标渲染为**句后引文胶囊**（编号徽章+材料标题），点击原地展开溯源卡（多段分块原文摘录+面包屑标题链"文章 › 章 › 节"+查看全文/存档全文），同段同材料只保留最后一处角标；每章标题右侧"本章引用 N 处 · 已核验"徽章；过程回顾条（检索→入库→逐条比对→核验完成，数字真实计算）。**生成时原文链接活性检测**（HTTP 404/410+政府站软 404 嗅探，连接失败/403 保守放行；`--skip-link-check` 跳过）与**存档快照兜底**（接口 screenShotPath，失效链接改出"查看存档全文"；`--no-snapshot` 关闭）。核验结论分级：缺原文链接属数据源覆盖问题，黄色提醒不拖垮结论；缺摘录仍计未通过。首屏核验报告单五项指标（依据溯源/引用对应/材料新旧/材料构成/交付前检查）全部由脚本真实计算；文号关键性行（policyFiles 按标题本地匹配）；知识专库回看（缺链材料自动挂专库链接）。角标按答案首次出现顺序自动重排；未传 `--self-check-file` 时核验单如实显示"交付前检查 未记录"。输出与同名 `.clean.md` 落 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`，文件名形如《标题_溯源核验报告_时间戳.html》；如需指定干净 Markdown 路径传 `--clean-md-output`。
 
 ## 深度搜索调用（MCP）
 
@@ -210,6 +210,7 @@ python3 <skillDir>/scripts/render_trace_html.py \
 - `query`：自然语言检索问题，聚焦一个层级、一个目的或一种材料类型；不要把多个年份、多个地域或内部调试目的堆进 query。
 - `eff_time`：用户问题对应的办理/适用/生效时间，只能传一个值，格式为 `YYYY年`、`YYYY年MM月` 或 `YYYY年MM月DD日`。不要传 `2024-2025年`、`2024至2025年`、`2024 2025`。
 - `service_area`：用户问题对应的单个办理地域/政策地域。不要传多个地域；国家层面用 `中国`，市级用城市，区县/园区用具体区县或园区。
+- `simplified`：**默认 false（完整返回）**。实测 `true` 会返回精简集且丢失存档快照字段——生成核验报告时**不要**传 `simplified=true`。
 
 推荐示例：
 

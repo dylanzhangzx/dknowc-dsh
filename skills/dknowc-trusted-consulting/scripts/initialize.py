@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
-"""深知可信咨询 dsh 版初始化检查。
+"""深知可信咨询 SkillHub public 版初始化检查。
 
-API Key 解析（dsh 场景三级）：
-1. 插件经 shell-env 显式注入的 DSH_DKNOWC_API_KEY——来源为 dsh 主进程环境变量
-   DKNOWC_API_KEY（dsh 安全机制会清理名字含 KEY 的隐式环境变量，子进程读不到
-   原始 DKNOWC_API_KEY，MCP Bearer 与主进程同源）；
-2. 进程环境变量 DKNOWC_API_KEY（本地裸跑 / 临时前缀注入）；
-3. ~/.zshrc 兜底解析——注册成功后 register_key.mjs 会自动把 Key 持久化到
-   ~/.zshrc，dsh 主进程在该写入之后、重启之前的窗口期内环境变量还没有它，
-   此时不应误报缺失（api_key.py 同源逻辑）。
+API Key 解析：优先进程环境变量 DKNOWC_API_KEY，缺失时从 ~/.zshrc 兜底解析——
+宿主应用（WorkBuddy 等）的会话进程可能读不到用户 shell 环境变量（启动早于
+key 写入，或宿主不再加载 ~/.zshrc 导出值），盘上已有 key 时不应误报缺失。
 不读取、不写入本地 config.ini 中的 Key。
 """
 
@@ -30,33 +25,26 @@ def _in_dsh() -> bool:
     return os.environ.get("DSH_SHELL") == "1"
 
 
-def _resolve_zshrc_key() -> tuple[str, str]:
-    """从 ~/.zshrc 解析已持久化的 Key（api_key.py 同源兜底）。"""
-    try:
-        from api_key import resolve_api_key
-        return resolve_api_key()
-    except ImportError:
-        return "", ""
-
-
 def check_api_key_config():
     if _in_dsh():
-        # dsh 场景：优先插件注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源）
+        # dsh 场景：优先插件经 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源）；
+        # 缺失时本地环境变量 / ~/.zshrc 兜底（注册成功自动持久化后、dsh 重启前的窗口期）。
         api_key = os.environ.get("DSH_DKNOWC_API_KEY", "").strip()
         source = "environment"
-        note = "dsh 场景：接口经深知可信工作台 MCP 转接（credible_chat），API Key 由 dsh 主进程环境变量 DKNOWC_API_KEY 提供（经 shell-env 显式注入为 DSH_DKNOWC_API_KEY）。"
         if not _looks_like_key(api_key):
-            # 兜底：本地裸跑前缀注入 / ~/.zshrc 持久化（注册自动写入后、dsh 重启前）
-            api_key2, source2 = _resolve_zshrc_key()
-            if _looks_like_key(api_key2):
-                api_key, source = api_key2, source2
-                note = (
-                    "dsh 场景：Key 已持久化在 ~/.zshrc（api_key_source=zshrc）。"
-                    "当前 dsh 主进程环境变量尚未加载该 Key——本会话的 MCP Bearer 认证在启动时已冻结，"
-                    "请经 scripts/mcp_direct.py 直调完成当前任务（脚本会自动从 ~/.zshrc 解析 Key）；"
-                    "重启 dsh 或新开会话后自动恢复正常 MCP 转接。"
-                )
+            try:
+                from api_key import resolve_api_key
+                api_key2, source2 = resolve_api_key()
+                if _looks_like_key(api_key2):
+                    api_key, source = api_key2, source2
+            except ImportError:
+                pass
         if _looks_like_key(api_key):
+            note = "dsh 场景：接口经深知可信工作台 MCP 转接（credible_chat），API Key 由 dsh 主进程环境变量 DKNOWC_API_KEY 提供（经 shell-env 显式注入为 DSH_DKNOWC_API_KEY）。"
+            if source == "zshrc":
+                note = ("dsh 场景：Key 已持久化在 ~/.zshrc（api_key_source=zshrc）。当前 dsh 主进程环境变量尚未加载该 Key——"
+                        "本会话的 MCP Bearer 认证在启动时已冻结，请经 scripts/mcp_direct.py 直调完成当前任务"
+                        "（脚本会自动从 ~/.zshrc 解析 Key）；重启 dsh 或新开会话后自动恢复正常 MCP 转接。")
             return {
                 "api_key_configured": True,
                 "api_key_env": f"{API_KEY_ENV} (DSH_DKNOWC_API_KEY)" if source == "environment" else API_KEY_ENV,
@@ -74,9 +62,11 @@ def check_api_key_config():
             "search_note": f"当前未检测到可用的 {API_KEY_ENV}，暂时无法获取深知可信内容。",
         }
 
-    # 非 dsh 场景：环境变量优先，缺失时从 ~/.zshrc 兜底解析（与母版同源）
-    api_key, source = _resolve_zshrc_key()
-    if not _looks_like_key(api_key):
+    # 环境变量优先，缺失时从 ~/.zshrc 兜底解析（与深知公文写作 api_key.py 同源）
+    try:
+        from api_key import resolve_api_key
+        api_key, source = resolve_api_key()
+    except ImportError:
         api_key = os.environ.get(API_KEY_ENV, "").strip()
         source = "environment" if api_key else ""
     if _looks_like_key(api_key):

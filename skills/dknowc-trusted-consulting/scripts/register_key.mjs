@@ -12,11 +12,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const ZSHRC_START = "# >>> dknowc trusted consulting api key >>>";
-const ZSHRC_END = "# <<< dknowc trusted consulting api key <<<";
+const ZSHRC_START = "# >>> dknowc api key >>>";
+const ZSHRC_END = "# <<< dknowc api key <<<";
 // 早期版本遗留的标记块名（本 Skill 历史上无其他块名，保留机制以备后续变更）
 const LEGACY_BLOCKS = [
-  ["# >>> dknowc api key >>>", "# <<< dknowc api key <<<"],
+  ["# >>> dknowc trusted search api key >>>", "# <<< dknowc trusted search api key <<<"],
+  ["# >>> dknowc trusted consulting api key >>>", "# <<< dknowc trusted consulting api key <<<"],
+  ["# >>> dknowc official doc writer api key >>>", "# <<< dknowc official doc writer api key <<<"],
 ];
 
 const DEFAULT_BASE = "https://platform.dknowc.cn/auth/home/userAuto";

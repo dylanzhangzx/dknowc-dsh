@@ -32,7 +32,7 @@ deep_query 内层（deep 模式，需要映射）：
 - 输入：MCP 工具返回 JSON（mcp_direct.py --output 的产物，或模型保存的
   dsh mcp-client 工具返回；支持 content[].text / structuredContent / 已解包形态）
 - 输出：render_trace_html.py 可直接消费的接口 JSON
-- --mode：chat=可信咨询 / search=可信搜索 / deep=深度搜索；缺省自动识别
+- --mode：chat=可信咨询 / search=可信搜索 / deep=深度搜索 / outline=公文范文大纲；缺省自动识别
 """
 
 import argparse
@@ -234,11 +234,59 @@ def detect_mode(payload: Dict[str, Any]) -> str:
     return "chat"
 
 
+
+
+def _normalize_outline(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """规范化公文范文大纲（doc_outline）返回：复刻 outline_reference.build_output 形态。
+
+    MCP 内层为上游完整响应 {code, msg, id, data:{success, outline[], outline_title,
+    doc_type, structure_summary, style_notes, risk_notes, reason, search_suggestions?}}；
+    归一化后与 outline_reference.py --output 产物同构，SKILL.md 大纲确认流程不变。
+    """
+    body = payload
+    data = body.get("data") if isinstance(body.get("data"), dict) else {}
+    outline_available = (
+        body.get("code") == 200
+        and data.get("success") is True
+        and isinstance(data.get("outline"), list)
+        and len(data.get("outline")) > 0
+    )
+    result: Dict[str, Any] = {
+        "success": body.get("code") == 200,
+        "outline_available": outline_available,
+        "response_id": body.get("id"),
+        "message": body.get("msg"),
+        "query": body.get("query") or payload.get("query"),
+        "raw_response": body,
+    }
+    if data:
+        result["outline_title"] = data.get("outline_title")
+        result["doc_type"] = data.get("doc_type")
+        result["structure_summary"] = data.get("structure_summary")
+        result["outline"] = data.get("outline")
+        result["style_notes"] = data.get("style_notes")
+        result["risk_notes"] = data.get("risk_notes")
+        result["reason"] = data.get("reason") if data.get("success") is False else None
+    else:
+        result["reason"] = body.get("msg") or "接口未返回 data 对象"
+    result["summary"] = {
+        "request_success": result.get("success"),
+        "outline_available": result.get("outline_available"),
+        "outline_title": result.get("outline_title"),
+        "doc_type": result.get("doc_type"),
+        "outline_count": len(result.get("outline") or []),
+        "reason": result.get("reason"),
+        "next_action": "confirm_outline_and_search_suggestions" if result.get("outline_available") else "ignore_outline_and_continue_314_flow",
+        "via": "mcp_doc_outline",
+    }
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="MCP 返回 → 渲染脚本输入 适配器（按 2026-08-19 实测 MCP 结构映射）")
     parser.add_argument("input_json", help="MCP 工具返回 JSON 文件路径")
     parser.add_argument("--output", "-o", required=True, help="规范化 JSON 输出路径")
-    parser.add_argument("--mode", choices=["chat", "search", "deep"], default=None, help="接口类型；缺省自动识别")
+    parser.add_argument("--mode", choices=["chat", "search", "deep", "outline"], default=None, help="接口类型；缺省自动识别")
     args = parser.parse_args()
 
     src = Path(args.input_json).expanduser()
@@ -265,6 +313,8 @@ def main() -> int:
         out = _normalize_search(payload)
     elif mode == "deep":
         out = _normalize_deep(payload)
+    elif mode == "outline":
+        out = _normalize_outline(payload)
     else:
         out = _normalize_chat(payload)
 

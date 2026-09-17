@@ -3,39 +3,113 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>溯源核验报告 · 溯源核验报告</title>
+<title>小微企业增值税优惠政策（示例）梳理 · 溯源核验报告</title>
 <style>
 :root{
-  --navy:#0b1f3a; --ink:#172236; --muted:#667085; --line:#dce4ef; --line-strong:#b9c6d9;
-  --brand:#1559c7; --brand-soft:#e8f0ff;
-  --policy:#0c9b78; --policy-soft:#e2f6ef;
-  --case:#b26a00; --case-soft:#fff4e0;
-  --ref:#4b5563; --ref-soft:#eef1f6;
-  --warn:#b26a00; --danger:#b93939; --ok:#0c9b78;
+  --navy:#20242c; --navy-2:#3a4152;
+  --ink:#1f2328; --muted:#6b7280; --line:#e5e7eb; --line-strong:#cbd2dd;
+  --brand:#6512ad; --brand-2:#8b5cf6; --brand-soft:#ede9fe;
+  --grad:linear-gradient(135deg,#6512ad,#8b5cf6);
+  --policy:#0f9d6e; --policy-soft:#e3f5ee;
+  --case:#9a6700; --case-soft:#fdf3dc;
+  --ref:#4b5563; --ref-soft:#f0f1f4;
+  --warn:#9a6700; --danger:#e5484d; --ok:#0f9d6e;
+  --shadow-1:0 1px 3px rgba(24,20,40,.04),0 8px 30px rgba(24,20,40,.08);
+  --shadow-2:0 3px 9px rgba(101,18,173,.22),0 14px 36px rgba(24,20,40,.14);
+  --primary-bright:#8b5cf6; --tint:#f3edfc; --tint-2:#faf7ff; --tint-bd:#e9dff9;
+  --tint-strong:#e6d9f9; --tint-bd-strong:#d3bef0; --body-c:#3b4152; --card-bd:#e8e6f0;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  color:var(--ink);background:#f4f7fb;line-height:1.75;font-size:14.5px}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
+  color:var(--ink);background:#f4f5f7;line-height:1.75;font-size:14.5px}
 a{color:var(--brand)}
-.topbar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:10px 22px;background:var(--navy);color:#fff;font-size:13px}
-.topbar .tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.topbar .tags{display:flex;align-items:center;gap:6px;flex:none}
-.topbar .tags span{padding:2px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;font-size:11.5px}
-.layout{display:grid;grid-template-columns:minmax(0,760px) minmax(340px,420px);gap:26px;
-  max-width:1240px;margin:0 auto;padding:26px 18px 60px}
-/* 左栏 */
-.report{min-width:0}
-.r-head{padding:22px 26px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;text-align:center}
-.r-badge{display:inline-flex;align-items:center;gap:14px;margin:0 0 6px;color:var(--navy);
-  font-size:16px;font-weight:800;letter-spacing:7px;text-indent:7px;line-height:1.5}
-.r-badge::before,.r-badge::after{content:"";width:64px;border-top:1px solid var(--line-strong)}
-.r-head h1{margin:0 0 8px;font-size:22px;color:var(--navy);line-height:1.5}
-.r-head .sub{color:var(--muted);font-size:12.5px}
+
+/* ===== 顶栏 ===== */
+.topbar{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:9px 22px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.tb-left{display:flex;align-items:center;gap:10px;min-width:0}
+.tb-stamp{flex:none;font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:4px;text-indent:4px}
+.tb-stamp::before,.tb-stamp::after{content:"";display:inline-block;width:22px;border-top:1px solid var(--line-strong);
+  vertical-align:middle;margin:0 6px}
+.tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:13px}
+.tb-right{display:flex;align-items:center;gap:8px;flex:none}
+.view-switch{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+.view-switch button{border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:700;
+  padding:5px 14px;cursor:pointer}
+.view-switch button.on{background:var(--grad);color:#fff}
+.tb-tools{display:flex;gap:6px}
+.tb-tools button{border:1px solid var(--line);border-radius:8px;background:#fff;color:#3b3550;
+  font-size:12.5px;font-weight:700;padding:5px 11px;cursor:pointer}
+.tb-tools button:hover{border-color:var(--brand-2);color:var(--brand)}
+.tb-tools button[aria-pressed="true"]{background:var(--grad);border-color:var(--brand);color:#fff}
+.print-menu{position:relative;display:inline-flex}
+.print-drop{position:absolute;top:calc(100% + 6px);right:0;z-index:70;display:flex;flex-direction:column;gap:4px;
+  min-width:190px;padding:6px;background:#fff;border:1px solid var(--tint-bd);border-radius:10px;
+  box-shadow:var(--shadow-2);text-align:left}
+.print-drop[hidden]{display:none}
+.print-drop button{border:0;background:none;border-radius:7px;color:var(--ink);font-size:12.5px;font-weight:600;
+  padding:8px 12px;cursor:pointer;text-align:left;font-family:inherit;white-space:nowrap}
+.print-drop button:hover{background:var(--tint);color:var(--brand)}
+.progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:transparent}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6512ad,#8b5cf6)}
+
+/* ===== Hero ===== */
+.hero{position:relative;background:linear-gradient(180deg,#fbfaff 0%,#f7f4fd 100%);
+  color:var(--ink);padding:32px 22px 58px;text-align:center;border-bottom:1px solid var(--line)}
+.r-badge{display:inline-flex;align-items:center;gap:14px;margin:0 0 8px;
+  background:var(--grad);color:#fff;border-radius:999px;padding:4px 22px;
+  font-size:15px;font-weight:800;letter-spacing:7px;text-indent:7px;line-height:1.6;
+  box-shadow:0 2px 8px rgba(101,18,173,.22)}
+.hero h1{margin:0 0 10px;font-size:24px;line-height:1.5;max-width:860px;margin-left:auto;margin-right:auto;color:var(--ink)}
+.hero .meta{color:var(--muted);font-size:13px;letter-spacing:.5px}
+.hero-switch{margin-top:16px;display:flex;justify-content:center}
+.hero-switch .view-switch{border-color:#d9c9f4;background:#fff;box-shadow:0 1px 3px rgba(24,20,40,.04)}
+.hero-switch .view-switch button{color:#70678a;padding:6px 22px;font-size:13px}
+.hero-switch .view-switch button.on{background:var(--grad);color:#fff}
+
+/* ===== 容器与视图 ===== */
+.container{max-width:1080px;margin:0 auto;padding:0 18px}
+.app[data-view="library"] #view-report{display:none}
+#view-library{display:none}
+.app[data-view="library"] #view-library{display:block}
+
+/* ===== 过程回顾条 ===== */
+.process{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-1);
+  padding:15px 20px 13px;margin:-36px auto 16px;position:relative}
+.p-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.p-head b{font-size:14.5px;color:var(--navy);letter-spacing:1px}
+.p-head span{font-size:11.5px;color:var(--muted)}
+.p-steps{list-style:none;display:flex;align-items:stretch;gap:8px;margin:0;padding:0;flex-wrap:wrap}
+.p-step{display:flex;gap:9px;align-items:center;min-width:0;flex:1 1 150px;
+  border:1px solid var(--line);border-radius:10px;padding:8px 11px;background:#fafbfc}
+.p-no{flex:none;width:24px;height:24px;border-radius:50%;background:var(--grad);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.p-txt{min-width:0}
+.p-txt b{display:block;font-size:12.8px;color:var(--navy);line-height:1.5}
+.p-txt i{display:block;font-style:normal;font-size:11px;color:var(--muted);line-height:1.5;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-step.done{border-color:#bfe8da;background:#f2faf7}
+.p-step.done .p-no{background:var(--ok)}
+.p-step.bad{border-color:#f6c9cb;background:#fffafa}
+.p-step.bad .p-no{background:var(--danger)}
+.p-step.expandable{cursor:pointer}
+.p-step.expandable:hover{border-color:var(--brand)}
+.p-arrow{align-self:center;color:#b9c6d9;font-size:16px;font-weight:700;flex:none}
+.p-detail{display:none;margin-top:10px;border-top:1px dashed var(--line-strong);padding-top:9px}
+.p-detail.show{display:block}
+.pd-row{display:flex;justify-content:space-between;gap:14px;padding:3px 2px;font-size:12.3px;flex-wrap:wrap}
+.pd-row b{color:var(--navy);font-weight:700;min-width:0}
+.pd-row span{color:var(--muted)}
+
+/* ===== 核验报告视图 ===== */
+#view-report{padding-bottom:26px}
 .warn-box{margin:0 0 16px;padding:13px 16px;border:1.5px solid var(--danger);border-radius:10px;
   background:#fdf3f3;color:#8f2626;font-size:13.5px;line-height:1.7}
-.verify{margin:0 0 16px;background:#fff;border:1px solid #bfe5d6;border-radius:12px;padding:16px 20px}
-.verify.fail{border-color:#f2c4c4;background:#fffafa}
+.verify{margin:0 0 16px;background:#fff;border:1px solid #bfe8da;border-left:4px solid var(--ok);
+  border-radius:14px;padding:16px 20px;box-shadow:var(--shadow-1)}
+.verify.fail{border-color:#f6c9cb;border-left-color:var(--danger);background:#fffafa}
 .v-head{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;color:var(--ok)}
 .verify.fail .v-head{color:var(--danger)}
 .v-shield{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;
@@ -45,9 +119,8 @@ a{color:var(--brand)}
   padding:1px 8px;letter-spacing:2px;flex:none}
 .v-stamp.bad{border-color:var(--danger);color:var(--danger)}
 .v-reasons{margin-top:6px;font-size:12.5px;color:var(--danger)}
-.v-reasons.note{color:var(--warn)}
 .v-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-top:10px}
-.vi{display:flex;gap:7px;align-items:baseline;font-size:12.5px;color:#35445c;line-height:1.7;min-width:0}
+.vi{display:flex;gap:7px;align-items:baseline;font-size:12.5px;color:#3b3550;line-height:1.7;min-width:0}
 .vi .s{font-weight:800;flex:none}
 .vi .s.ok{color:var(--ok)}
 .vi .s.warn{color:var(--warn)}
@@ -56,158 +129,222 @@ a{color:var(--brand)}
 .vi .s.none{color:var(--muted)}
 .vi .d{color:var(--muted);min-width:0}
 .v-note{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--muted);line-height:1.7}
-/* 正文章节卡 */
-.doc-sec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:16px}
-.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px;
-  padding-bottom:10px;border-bottom:1px solid var(--line)}
-.sec-no{display:inline-flex;width:26px;height:26px;border-radius:7px;background:var(--brand);color:#fff;
-  align-items:center;justify-content:center;font-size:13.5px;font-weight:700;flex:none}
-.sec-head h3{margin:0;font-size:16.5px;color:var(--navy);line-height:1.5}
-.sec-badge{margin-left:auto;font-size:11.5px;color:var(--ok);background:var(--policy-soft);
-  border-radius:6px;padding:2px 9px;font-weight:700;flex:none}
-.sec-badge.bad{color:var(--danger);background:#fdecea}
-.doc-sub{margin:16px 0 8px;color:var(--navy);font-size:14.5px;font-weight:700}
-h5.doc-sub{font-size:13.5px}
-.doc-block,.doc-item{margin:0 0 12px}
-.doc-block p,.doc-item p{margin:0;font-size:14px;line-height:1.9}
-.doc-item{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px}
-.doc-item.numbered{grid-template-columns:28px minmax(0,1fr)}
-.doc-bullet{padding-top:1px;color:#111827;font-size:15px;line-height:1.85}
+
+/* 正文（原型复刻）：章节 / 段落 / 角标 / 句后溯源卡 */
+.doc-paper{background:#fff;border-radius:14px;box-shadow:var(--shadow-1);padding:26px 34px 22px;margin:0 0 16px}
+.chapter{margin:40px 0 0}
+.chapter:first-child{margin-top:6px}
+.ch-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;scroll-margin-top:86px}
+.ch-head h2{font-size:19.5px;font-weight:700;color:var(--ink);letter-spacing:.2px;line-height:1.4;flex:1;min-width:0}
+.ch-head::after{content:"";flex-basis:110px;height:1px;background:linear-gradient(90deg,#e9dff9,transparent);order:3;flex-grow:0;flex-shrink:0}
+.ch-head .sec-badge{order:4;flex:none;font-size:11.5px;color:var(--ok);background:var(--policy-soft);border-radius:6px;padding:2px 9px;font-weight:700}
+.ch-head .sec-badge.bad{color:var(--danger);background:#fdecec}
+@media(min-width:1000px){.ch-head::after{flex-basis:200px}}
+.lead{font-size:15.5px;line-height:1.95;color:var(--body-c);margin:14px 0;padding:0 2px;word-break:break-word}
+.para{font-size:15.5px;line-height:1.95;color:var(--body-c);margin:14px 0;padding:0 2px;word-break:break-word}
+.para b.kw,.lead b.kw{font-weight:600;color:var(--ink)}
 .doc-divider{border:0;border-top:1px solid var(--line);margin:18px 0}
-code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
+code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#3f3d52;
   font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 .tbl-wrap{max-width:100%;overflow-x:auto;margin:8px 0}
 .data-tbl{width:100%;border-collapse:collapse;border:1px solid var(--line);font-size:13px}
 .data-tbl th,.data-tbl td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.65}
-.data-tbl th{background:#f2f5fb;font-weight:700;color:#374151}
+.data-tbl th{background:#f5f6f8;font-weight:700;color:#3f3d52}
+
 /* 角标 */
-.cite{margin:0 1px;padding:0 5px;border:0;border-radius:4px;background:var(--brand-soft);color:var(--brand);
-  font-weight:800;font-size:10.5px;cursor:pointer;vertical-align:super;font-family:monospace}
-.cite:hover,.cite:focus-visible{background:var(--brand);color:#fff;outline:none}
-.cite.unresolved{background:#fdecea;color:var(--danger)}
-/* 段落级证据 chips */
-.ev-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
-.ev-chip{max-width:100%}
-.ev-chip summary{display:inline-flex;align-items:center;max-width:100%;border-radius:999px;padding:3px 10px;
-  color:#4b5563;background:#f3f4f6;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  list-style:none;font-size:11.5px}
+.cite{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:18px;padding:0 5px;margin:0 2px 2px 3px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--brand);background:var(--tint);border:1px solid var(--tint-bd);border-radius:5px;cursor:pointer;vertical-align:super;line-height:1;transition:.14s;position:relative;top:-1px;user-select:none;font-family:inherit}
+.cite:hover{background:var(--brand);border-color:var(--brand);color:#fff}
+.cite.flash{background:var(--primary-bright);border-color:var(--primary-bright);color:#fff}
+.cite.unresolved{color:var(--danger);border-color:#f6c9cb;background:#fdf7f7}
+
+/* 段落级证据 chips（引文卡） */
+/* 行内引文 jb（原型复刻）：角标后小胶囊，点击展开块级卡（溯源原文+引文摘录） */
+.jb{display:inline-block;vertical-align:top;max-width:100%;margin:2px 4px 2px 0;position:relative}
+.jb.active{display:block;margin:12px 0 2px;max-width:none}
+.jb-name{display:inline-flex;align-items:center;gap:6px;max-width:380px;min-height:26px;padding:4px 13px;border-radius:13px;border:1px solid var(--tint-bd);background:var(--tint);color:#540e8f;font-family:inherit;font-size:12px;font-weight:600;line-height:18px;cursor:pointer;transition:.16s;white-space:nowrap}
+.jb-name:hover{background:#fff;border-color:var(--brand)}
+.jb-name .jb-id{flex:none;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;color:#fff;background:linear-gradient(135deg,#6512ad,#8b5cf6);box-shadow:0 1px 3px rgba(101,18,173,.28)}
+.jb-name .jb-txt{overflow:hidden;text-overflow:ellipsis}
+.jb-name svg{flex:none;transition:transform .2s}
+.jb.active .jb-name{max-width:100%;white-space:normal;line-height:20px;color:var(--ink);background:#fff;font-size:13.5px;font-weight:700;text-align:left}
+.jb.active .jb-name svg{transform:rotate(180deg)}
+.jb-src{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:4px 13px;border-radius:13px;background:linear-gradient(135deg,#6512ad,#8b5cf6);color:#fff;font-size:11px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(101,18,173,.22);transition:.15s;flex-shrink:0}
+.jb-src:hover{filter:brightness(1.1)}
+.jb-src span{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jb-body{display:none}
+.jb.active .jb-body{position:relative;display:block;margin-top:13px;background:#fff;border:1px solid var(--card-bd);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow-1)}
+.jb-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.jb-label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--brand);letter-spacing:.5px}
+.jb-label svg{flex:none}
+.jb-site{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#70678a;background:#f6f4fa;
+  border:1px solid var(--line);border-radius:999px;padding:3.5px 10px;max-width:100%;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;margin:0 0 2px}
+.jb-site .dot{width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,#6512ad,#8b5cf6);flex-shrink:0}
+.jb-quote{display:flex;gap:9px;align-items:flex-start;margin-top:9px;padding:10px 12px;background:#faf9fd;border:1px solid var(--line);border-radius:9px;text-decoration:none;transition:.15s;cursor:pointer}
+.jb-quote{cursor:pointer}
+.jb-quote:hover{border-color:var(--brand);background:#f7f4fc}
+.jb-no{flex:none;width:17px;height:17px;margin-top:4px;border-radius:4px;background:var(--tint);border:1px solid var(--tint-bd);color:var(--brand);font-size:10px;font-weight:700;font-style:normal;display:flex;align-items:center;justify-content:center}
+.jb-quote span{font-size:12.5px;line-height:1.95;color:#4b4658;word-break:break-word;text-align:justify}
+.jb-quote .sc-excerpt{flex:1;min-width:0;display:block}
+a.jb-quote{text-decoration:none}
+.jb.flash{animation:cardFlash 1.6s ease}
+.ev-title{font-weight:700;font-size:13.5px;margin-bottom:4px;color:var(--ink)}
+.ev-meta{color:var(--muted);font-size:12px;margin-bottom:6px}
+.ev-chip summary{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-height:26px;padding:4px 13px;
+  border-radius:13px;color:#fff;background:var(--grad);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  list-style:none;font-size:11px;font-weight:600;box-shadow:0 2px 8px rgba(101,18,173,.22);transition:.15s}
+.ev-chip summary:hover{filter:brightness(1.12)}
 .ev-chip summary::-webkit-details-marker{display:none}
-.ev-chip summary::after{content:"核验";margin-left:7px;color:#9ca3af;font-size:10.5px}
-.ev-chip[open] summary::after{content:"收起"}
-.ev-chip summary b{color:var(--brand);margin-right:5px}
-.ev-panel{margin:7px 0 6px;padding:12px 14px;border:1px solid var(--line);border-radius:9px;background:#fbfcfe;
-  box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.ev-chip summary b{color:#fff;margin-right:2px;font-weight:700}
+
 .ev-title{font-weight:700;font-size:13.5px;margin-bottom:4px;color:var(--navy)}
 .ev-meta{color:var(--muted);font-size:12px;margin-bottom:6px}
-.ev-panel p{margin:0 0 8px;color:#374151;font-size:12.8px;line-height:1.7}
+.ev-panel p{margin:0 0 8px;color:#3f3d52;font-size:12.8px;line-height:1.7}
 .sc-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .sc-links span{display:inline-flex}
 .sc-links a{display:inline-flex;align-items:center;min-height:24px;padding:3px 9px;border-radius:6px;
   background:var(--brand-soft);color:var(--brand);font-weight:700;text-decoration:none;font-size:12px}
-/* 右栏 核验材料 */
-.sources{position:sticky;top:56px;align-self:start;max-height:calc(100vh - 76px);overflow:auto;
-  background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
-.sources h3{margin:0 0 3px;font-size:15px;color:var(--navy)}
-.src-tip{font-size:11.5px;color:var(--muted);margin-bottom:10px}
-.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.filters button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
-  padding:3px 11px;font-size:12px;cursor:pointer}
-.filters button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
-.sc-unused{font-size:10.5px;font-weight:800;color:var(--muted);background:#eef1f6;border-radius:4px;
-  padding:1px 7px;flex:none}
-.src-search{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;margin-bottom:12px}
-.scard{border:1px solid var(--line);border-left-width:3px;border-radius:10px;padding:11px 13px;margin-bottom:10px;
-  background:#fff;transition:box-shadow .25s}
+
+/* ===== 材料专库视图 ===== */
+#view-library{padding:26px 0 30px}
+.lib-head{max-width:860px;margin:0 auto 16px;text-align:center}
+.lib-title{margin-bottom:14px}
+.lib-title b{font-size:17px;color:var(--navy);letter-spacing:2px}
+.lib-title span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.lib-searchWrap{position:relative;max-width:620px;margin:0 auto}
+.lib-searchIcon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#a6adbd;font-size:16px;font-weight:700}
+.lib-search{width:100%;padding:11px 16px 11px 38px;border:1.5px solid var(--line-strong);border-radius:999px;
+  font-size:14px;background:#fff;box-shadow:var(--shadow-1);outline:none}
+.lib-search:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(139,92,246,.18)}
+.hot-terms{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:12px;align-items:center}
+.hot-label{font-size:12px;color:var(--muted)}
+.hot-term{border:0;border-radius:999px;background:var(--brand-soft);color:var(--brand);
+  font-size:12.3px;font-weight:700;padding:3px 13px;cursor:pointer}
+.hot-term:hover{background:var(--grad);color:#fff}
+.lib-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px}
+.lib-tabs button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
+  padding:4px 13px;font-size:12.3px;cursor:pointer}
+.lib-tabs button.on{background:var(--grad);border-color:var(--brand);color:#fff;font-weight:700}
+.lib-list{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:14px}
+.lib-empty{max-width:860px;margin:30px auto;text-align:center;color:var(--muted);font-size:13.5px}
+.lib-empty.hide{display:none}
+.lib-foot{text-align:center;color:var(--muted);font-size:11.5px;padding:18px 0 0;line-height:1.8}
+
+/* ===== 材料卡 ===== */
+.scard{border:1px solid var(--line);border-left-width:3px;border-radius:12px;padding:14px 18px;
+  background:#fff;box-shadow:var(--shadow-1);transition:box-shadow .25s}
+.scard:hover{box-shadow:var(--shadow-2)}
 .scard.pol{border-left-color:var(--policy)}
-.scard.dat{border-left-color:var(--brand)}
+.scard.dat{border-left-color:var(--brand-2)}
 .scard.cas{border-left-color:var(--case)}
 .scard.ref,.scard.mat{border-left-color:var(--ref)}
-.scard.hl{box-shadow:0 0 0 3px var(--brand)}
+.scard.hl{box-shadow:0 0 0 3px rgba(139,92,246,.35),var(--shadow-2)}
 .scard.hide{display:none}
-.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:4px}
-.sc-id{font-family:monospace;font-weight:800;font-size:11px;color:var(--brand);background:var(--brand-soft);
-  border-radius:4px;padding:1px 7px}
+.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.sc-id{font-family:monospace;font-weight:800;font-size:11px;color:#fff;background:var(--grad);
+  border-radius:5px;padding:1px 8px}
 .sc-type{font-size:11px;font-weight:700;border-radius:4px;padding:1px 8px;background:var(--ref-soft);color:var(--ref)}
 .scard.pol .sc-type{background:var(--policy-soft);color:var(--policy)}
 .scard.dat .sc-type{background:var(--brand-soft);color:var(--brand)}
 .scard.cas .sc-type{background:var(--case-soft);color:var(--case)}
 .sc-vk{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}
 .sc-vk.warn{color:var(--warn)}
-.sc-conf{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e8c98a;
+.sc-unused{font-size:10.5px;font-weight:800;color:var(--muted);background:#efedf4;border-radius:4px;
+  padding:1px 7px;flex:none}
+.sc-conf{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e6cf8f;
   border-radius:4px;padding:0 7px;flex:none}
-.sc-extag{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line-strong);font-size:11px;color:#0b6e4f;font-weight:700}
-.sc-chain{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600;line-height:1.6;cursor:help}
-.scard h4{margin:0 0 4px;font-size:13px;color:var(--navy);line-height:1.55}
+.scard h4{margin:0 0 5px;font-size:14.5px;color:var(--ink);line-height:1.55}
 .sc-meta{font-size:11.5px;color:var(--muted)}
-.sc-section{font-size:11.5px;color:var(--brand);margin-top:3px;font-weight:600}
+/* 标题链面包屑（模型生成的结构化位置，核验核心抓手）与多段分块 */
+.crumb{font-size:11.5px;color:var(--brand);margin:10px 0 4px;font-weight:600;line-height:1.6;
+  padding:3px 9px;background:var(--tint);border-radius:7px;display:inline-block;max-width:100%;
+  overflow-wrap:break-word}
+.crumb i{font-style:normal;color:#c9b3ec;margin:0 2px;font-weight:400}
+.seg-block{margin-top:8px}
+.seg-block:first-child{margin-top:2px}
+.seg-block .sc-excerpt{margin-top:5px}
 .sc-vnote{margin-top:5px;font-size:11.3px;color:var(--ok);line-height:1.6}
-.sc-excerpt{margin:7px 0;padding:9px 10px;border-radius:7px;background:#f8fafc;color:#42566f;font-size:12px;line-height:1.7;
-  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
-.scard.open .sc-excerpt{display:block;-webkit-line-clamp:unset}
-.sc-more{display:none;margin:-3px 2px 4px;text-align:right;font-size:11px;color:var(--brand);font-weight:700;cursor:pointer;user-select:none}
-.scard.clampable .sc-more{display:block}
-.scard.clampable .sc-more::before{content:"展开全文 ▾"}
-.scard.clampable.open .sc-more::before{content:"收起 ▴"}
+.sc-excerpt{margin:8px 0 0;padding:10px 12px;border:1px solid #eceaf2;border-radius:9px;
+  background:#faf9fd;color:#4a4260;font-size:12.3px;line-height:1.75}
 .sc-excerpt.rich{overflow-x:auto}
 .sc-excerpt.rich table{width:max-content;min-width:100%;border-collapse:collapse;background:#fff;font-size:12px}
 .sc-excerpt.rich td,.sc-excerpt.rich th{min-width:92px;max-width:220px;padding:7px 8px;border:1px solid var(--line);
   vertical-align:top;word-break:break-word}
-.sc-excerpt.rich thead td,.sc-excerpt.rich th{background:#f3f4f6;color:#374151;font-weight:700}
+.sc-excerpt.rich thead td,.sc-excerpt.rich th{background:#f3f4f6;color:#3f3d52;font-weight:700}
 .scard .sc-links a{font-size:12px}
 .scard .sc-links{margin-top:4px}
 .no-link{font-size:11.5px;color:var(--muted)}
-.uncited-group{margin-top:12px;border-top:1px dashed var(--line-strong);padding-top:10px}
-.ug-title{font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.6}
-.uncited-group .uncited-list{margin-top:10px}
-.empty{color:var(--muted)}
+.sc-links a.snap{background:#faf5ff;border-color:#d9c9f4;color:#5b21b6}
+.dead-link{font-size:11.5px;color:var(--warn)}
+
+/* ===== 章节目录（spy，长报告） ===== */
+.toc{position:fixed;left:calc((100vw - 1080px)/2 - 168px);top:120px;width:140px;max-height:60vh;overflow:auto;
+  display:flex;flex-direction:column;gap:2px;font-size:12px}
+.toc a{color:var(--muted);text-decoration:none;padding:4px 10px;border-left:2px solid var(--line);
+  line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toc a.on{color:var(--brand);border-left-color:var(--brand);font-weight:700}
+@media (max-width:1460px){.toc{display:none}}
+
 .foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
-@media (max-width:1020px){
-  .layout{grid-template-columns:1fr}
-  .sources{position:static;max-height:none}
-}
-/* —— 移动端专项适配（手机阅读核验报告） —— */
-.mobile-nav{display:none}
-.back-doc{display:none}
-/* 移动端材料底部弹层：点角标就地弹出材料卡，不跳转打断阅读 */
+
+/* ===== 只看正文（纯净阅读态） ===== */
+body.reading .process,body.reading .verify,body.reading .jb,body.reading .sec-badge,
+body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!important}
+
+/* ===== 打印附录 ===== */
+.print-appendix{display:none}
+
+/* ===== 移动端 ===== */
 .sheet-mask{display:none}
 .sheet{display:none}
 @media (max-width:680px){
   body{font-size:14px;line-height:1.8}
-  .layout{grid-template-columns:1fr;padding:12px 10px 40px;gap:14px}
-  .topbar{padding:8px 12px;font-size:12px;gap:4px;flex-wrap:wrap}
-  .topbar .tags span{font-size:10.5px;padding:1px 8px;margin-left:4px}
+  .topbar{padding:7px 10px;gap:6px}
+  .tb-stamp{font-size:11px;letter-spacing:2px;text-indent:2px}
+  .tb-stamp::before,.tb-stamp::after{width:12px;margin:0 4px}
+  .tb-title{display:none}
+  .topbar .view-switch{display:none}
+  .tb-tools button{font-size:11.5px;padding:4px 8px}
+  .hero{padding:24px 14px 50px}
+  .ch-head{gap:8px;margin-bottom:14px;flex-wrap:nowrap}
+  .ch-head h2{font-size:17px;line-height:1.45}
+  .ch-head::after{display:none}
+  .ch-head .sec-badge{font-size:10.5px;padding:2px 7px;white-space:nowrap}
+  .jb-name{max-width:calc(100vw - 72px)}
   .r-badge{font-size:13.5px;letter-spacing:6px;text-indent:6px;gap:10px}
-  .r-badge::before,.r-badge::after{width:40px}
-  .r-head{padding:16px 14px;border-radius:10px}
-  .r-head h1{font-size:18px}
-  .r-head .sub{font-size:11.5px;line-height:1.6}
-  .verify{padding:13px 14px;border-radius:10px}
+  .hero h1{font-size:18.5px}
+  .hero .meta{font-size:11.5px;line-height:1.7}
+  .hero-switch .view-switch button{padding:6px 16px;font-size:12.5px}
+  .process{margin-top:-30px;padding:12px 12px 11px}
+  .p-step{flex:1 1 100%}
+  .p-arrow{display:none}
+  .verify{padding:13px 14px}
   .v-head{font-size:14px}
   .v-grid{grid-template-columns:1fr;gap:2px 0}
   .vi{flex-wrap:wrap;gap:4px 8px}
   .vi .d{min-width:0}
   .warn-box{font-size:12.5px;padding:11px 12px}
-  .doc-sec{padding:14px;border-radius:10px}
-  .sec-no{width:22px;height:22px;font-size:12px;border-radius:6px}
+  .doc-paper{padding:16px 14px 10px;border-radius:10px}
   .sec-head{gap:7px;padding-bottom:8px;margin-bottom:8px}
   .sec-head h3{font-size:15px}
   .sec-badge{margin-left:0;font-size:11px}
-  .doc-block p,.doc-item p{font-size:13.5px;line-height:1.95}
+  .doc-block p,.doc-item p{font-size:15px;line-height:1.95}
   .doc-sub{font-size:14px;margin:12px 0 6px}
   .data-tbl{font-size:12px}
   .data-tbl th,.data-tbl td{padding:6px 7px;line-height:1.55}
   .cite{font-size:11px;padding:0 4px}
   .ev-chip summary{font-size:11px}
-  .sources{padding:12px;border-radius:10px}
+  #view-library{padding:18px 0 24px}
+  .lib-search{padding:10px 14px 10px 34px;font-size:13.5px}
+  .lib-tabs{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .lib-tabs::-webkit-scrollbar{display:none}
+  .lib-tabs button{flex:none}
+  .lib-list{grid-template-columns:1fr;gap:10px}
   .scard{padding:10px 11px}
-  .sc-extag{font-size:10.5px}
-  .sc-chain{font-size:11px}
+  .crumb{font-size:11px}
   .sc-excerpt{font-size:11.5px}
-  .mobile-nav{display:block;margin:0 0 14px;padding:11px 14px;border:1.5px solid var(--brand);
-    border-radius:10px;background:var(--brand-soft);color:var(--brand);font-weight:800;
-    font-size:13.5px;text-decoration:none;text-align:center}
-  .back-doc{display:inline-block;margin:0 0 8px;font-size:12px;color:var(--brand);
-    font-weight:700;text-decoration:none}
+  /* 移动端材料底部弹层：点角标就地弹出材料卡，不跳转打断阅读 */
   .sheet-mask{display:block;position:fixed;inset:0;background:rgba(11,31,58,.45);z-index:99;opacity:0;
     pointer-events:none;transition:opacity .2s}
   .sheet-mask.show{opacity:1;pointer-events:auto}
@@ -219,7 +356,7 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .sheet-grab{width:38px;height:4px;border-radius:2px;background:#c9d4e2;margin:2px auto 8px}
   .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
   .sheet-head b{font-size:13.5px;color:var(--navy)}
-  .sheet-close{border:1px solid var(--line);background:#f5f8fc;border-radius:8px;color:#3b4a61;
+  .sheet-close{border:1px solid var(--line);background:#f5f3fa;border-radius:8px;color:#3b4a61;
     font-size:12.5px;font-weight:700;padding:5px 14px;cursor:pointer}
   .sheet .scard{box-shadow:none;margin-bottom:0}
   .sheet .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
@@ -228,83 +365,648 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
   .cmp-tag{font-size:11px;font-weight:800;padding:3px 10px}
   .cmp-side{padding:9px 12px;font-size:12.8px;line-height:1.7}
   .cmp-side p{margin:0}
-  .cmp-ai{background:#fbfcfe;color:#374151}
+  .cmp-ai{background:#fbfaff;color:#3f3d52}
   .cmp-ai .cmp-tag{background:#eef1f6;color:var(--ref)}
   .cmp-src{background:#f4faf7;color:#2f4a3e;border-top:1px dashed var(--line-strong)}
   .cmp-src .cmp-tag{background:var(--policy-soft);color:#0b6e4f}
   .cmp-src .sc-excerpt{display:block;-webkit-line-clamp:unset;background:#fff;cursor:auto;font-size:12px;padding:8px 10px;margin:0}
 }
+
+/* ===== 打印归档 ===== */
 @media print{
-  .topbar,.filters,.src-search{display:none!important}
-  .layout{grid-template-columns:1fr;max-width:none;padding:0;gap:14px}
+  .topbar,.process .p-detail,.hero-switch,.tb-tools,.view-switch,.lib-head,.toc,.sheet,.sheet-mask,
+  .progress{display:none!important}
+  #view-library{display:none!important}
+  #view-report{display:block!important}
+  .app[data-view="library"] #view-report{display:block!important}
+  .hero{background:none;border:0;color:var(--ink);padding:10px 0 4px}
+  .hero .meta{color:var(--muted)}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .process{box-shadow:none;margin:6px 0 12px}
+  .verify{border-color:#bbb;box-shadow:none;break-inside:avoid}
+  .doc-paper{box-shadow:none;border-radius:0;padding:0}
   body{background:#fff;font-size:12.5px}
-  .sources{position:static;max-height:none;border:0;padding:0;overflow:visible}
-  .r-head,.verify,.doc-sec{border-color:#bbb;box-shadow:none;break-inside:avoid}
   .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
-  .uncited-group[open] .uncited-list,.uncited-group{break-inside:avoid}
   .scard{break-inside:avoid}
-  .cite{background:#eee;color:#333}
+  .cite{background:none!important;color:#333!important;text-decoration:none!important}
+  .cite::before{content:"["}.cite::after{content:"]"}
+  .jb{display:inline!important}
+  .jb .jb-name{border:0;background:none;padding:0;color:#333;font-weight:600}
+  .jb .jb-name .jb-id{color:#333;background:none;border:1px solid #999;border-radius:3px}
+  .jb .jb-body{display:none!important}
+  .jb.active{break-inside:avoid}
+  .jb.active .jb-body{display:block!important}
+  .jb.active .jb-body .jb-quote{break-inside:avoid}
+  body.reading .verify,body.reading .process,body.reading .ev-row,body.reading .sec-badge,
+  body.reading .cite{display:none!important}
+  .print-appendix{display:block;break-before:page}
+  body.print-body-only .verify,body.print-body-only .process,body.print-body-only .print-appendix,
+  body.print-body-only .jb,body.print-body-only .foot{display:none!important}
+  .print-appendix h3{font-size:15px;color:var(--navy);border-bottom:1px solid #999;padding-bottom:6px;margin:0 0 12px}
+  .print-appendix .scard{margin-bottom:10px}
 }
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <div class="tb-title">溯源核验报告 · 溯源核验报告</div>
-  <div class="tags">
-    <span>生成于 2026-09-09 14:19</span>
-    <span>素材来源：深知可信搜索</span>
+  <div class="tb-left">
+    <span class="tb-stamp">溯源核验报告</span>
+    <span class="tb-title">小微企业增值税优惠政策梳理</span>
   </div>
+  <div class="tb-right">
+    <div class="view-switch" role="tablist" aria-label="视图切换">
+      <button class="on" data-view="report" type="button">核验报告</button>
+      <button data-view="library" type="button">材料专库</button>
+    </div>
+    <div class="tb-tools">
+      <button id="btn-reading" type="button" aria-pressed="false" title="隐藏核验元素，纯阅读正文">只看正文</button>
+      <button id="btn-copy" type="button" title="复制正文纯文本">复制全文</button>
+      <span class="print-menu">
+        <button id="btn-print" type="button" aria-haspopup="true" title="浏览器打印／另存为 PDF">打印归档 ▾</button>
+        <span class="print-drop" id="print-drop" hidden>
+          <button id="print-body" type="button">只打印正文</button>
+          <button id="print-full" type="button">完整归档（含核验材料）</button>
+        </span>
+      </span>
+    </div>
+  </div>
+  <div class="progress" aria-hidden="true"><i></i></div>
 </header>
 
-<div class="layout">
-  <main class="report" aria-label="核验报告正文">
-    <div class="r-head" id="doc-top">
-      <div class="r-badge">溯源核验报告</div>
-      <h1>溯源核验报告</h1>
-      <div class="sub">素材：政策依据 1 ｜ 共 1 条 ｜ 点击正文角标 [1] 定位材料原文</div>
+<div class="hero">
+  <div class="r-badge">溯源核验报告</div>
+  <h1>小微企业增值税优惠政策梳理</h1>
+  <div class="meta">深知检索 1 次 · 召回材料 15 条 · 正文引用 4 处 · 生成于 2026-09-16 16:14 ｜ 素材来源：深知可信搜索</div>
+  <div class="hero-switch">
+    <div class="view-switch" role="tablist" aria-label="视图切换">
+      <button class="on" data-view="report" type="button">核验报告</button>
+      <button data-view="library" type="button">材料专库（15）</button>
     </div>
+  </div>
+</div>
+
+<div class="app container" data-view="report">
+  
+    <section class="process" aria-label="生成过程回顾">
+      <div class="p-head"><b>过程回顾</b><span>数字来自本次任务的真实记录</span></div>
+      <ol class="p-steps">
+        <li class="p-step expandable" id="p-step-search" role="button" tabindex="0" title="展开各路检索明细">
+          <span class="p-no">1</span>
+          <div class="p-txt"><b>深知检索 1 次</b><i>本次检索</i></div>
+        </li>
+        <li class="p-arrow" aria-hidden="true">›</li>
+        <li class="p-step">
+          <span class="p-no">2</span>
+          <div class="p-txt"><b>材料入库 15 条</b><i>正文采用 4 · 召回未采用 11</i></div>
+        </li>
+        <li class="p-arrow" aria-hidden="true">›</li>
+        <li class="p-step">
+          <span class="p-no">3</span>
+          <div class="p-txt"><b>逐条比对原文</b><i>依据溯源 4/4 · 摘录可比对</i></div>
+        </li>
+        <li class="p-arrow" aria-hidden="true">›</li>
+        <li class="p-step done">
+          <span class="p-no">✓</span>
+          <div class="p-txt"><b>核验完成</b><i>结论：正文依据逐条对过原文</i></div>
+        </li>
+      </ol>
+      <div class="p-detail" id="p-detail"><div class="pd-row"><b>本次检索</b><span>召回 15 条 · 正文采用 4 条</span></div></div>
+    </section>
+
+  <main class="view" id="view-report" aria-label="核验报告正文">
     
     
     <div class="verify ok">
       <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据逐条对过原文<span class="v-stamp">已核验</span></div>
       
       <div class="v-grid">
-        <div class="vi"><span class="s ok">✓ 依据溯源 1/1</span><span class="d">每条引用材料可回看原文</span></div><div class="vi"><span class="s ok">✓ 引用对应 2/2</span><span class="d">正文每处 [n] 都能找到对应材料</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2025-12～2025-12</span></div><div class="vi"><span class="s ok">✓ 材料构成</span><span class="d">政策依据 1</span></div><div class="vi"><span class="s ok">✓ 交付前检查 5/5</span><span class="d">事实有据、角标绑定、答案一致、时效确认、无未核验断言</span></div><div class="vi"><span class="s man">◐ 现行效力</span><span class="d">1 份政策文件建议按官方发布确认是否现行有效</span></div>
+        <div class="vi"><span class="s ok">✓ 依据溯源 4/4</span><span class="d">每条素材摘录可比对，原文或存档快照可回看</span></div><div class="vi"><span class="s ok">✓ 引用对应 4/4</span><span class="d">正文每处 [n] 都能找到对应材料</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2023-01～2027-12（5 条年头较久，按参考口径使用）</span></div><div class="vi"><span class="s none">— 材料构成</span><span class="d">材料没标类型</span></div><div class="vi"><span class="s ok" title="正文各项税费优惠均取自召回政策原文；4 处角标逐条绑定对应政策材料；HTML 展示与交付答案一致；全部材料为 2026-2027 年发布，现行有效；无未经召回材料支撑的数字断言">✓ 交付前检查 5/5</span><span class="d">事实有据、角标绑定、答案一致、时效确认、无未核验断言 · 悬停查看说明</span></div>
       </div>
       <div class="v-note">核验方式：先用深知可信搜索找权威来源，再把正文每处依据和原文逐条比对（都能点开原文回看），最后做了交付前五项检查。政策是否现行有效，以官方发布为准。</div>
     </div>
-    <a class="mobile-nav" href="#sources-panel">查看核验材料（1 条 · 点击角标可定位原文）↓</a>
-    <section class="doc-sec"><div class="sec-head"><h3>抵免要点</h3><span class="sec-badge ">本章引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>投资额 10% 可抵免，可结转 5 年 <button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>。</p><div class="ev-row">
-            <details class="ev-chip" data-cite="1">
-              <summary><b>[1]</b>财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</summary>
-              <div class="ev-panel">
-                <div class="ev-title">财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</div>
-                <div class="ev-meta">财政部官网 | 2025年12月10日</div>
-                <p>投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转抵免。
-申报时填报抵免明细，留存购置发票与目录归属证明备查。</p>
-                <div class="sc-links"><span><a href="https://example.gov.cn/notice.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
-              </div>
-            </details>
-            </div></div></div></section>
-<section class="doc-sec"><div class="sec-head"><h3>申报</h3><span class="sec-badge ">本章引用 1 处 · 已核验</span></div><div class="sec-body"><div class="doc-block"><p>填报明细留存发票备查 <button class="cite" data-cite="1" type="button" title="核验依据 [1]">[1]</button>。</p><div class="ev-row">
-            <details class="ev-chip" data-cite="1">
-              <summary><b>[1]</b>财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</summary>
-              <div class="ev-panel">
-                <div class="ev-title">财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</div>
-                <div class="ev-meta">财政部官网 | 2025年12月10日</div>
-                <p>投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转抵免。
-申报时填报抵免明细，留存购置发票与目录归属证明备查。</p>
-                <div class="sc-links"><span><a href="https://example.gov.cn/notice.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div>
-              </div>
-            </details>
-            </div></div></div></section>
-    <div class="foot">深知可信搜索（法律、政策、标准）· 溯源核验报告 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
+    <div class="doc-paper">
+    <section class="chapter" id="sec-1"><header class="ch-head"><h2>主要优惠内容</h2><span class="sec-badge ">本章引用 2 处 · 已核验</span></header>
+<p class="lead">对小规模纳税人，现行政策延续了减免安排：适用 3% 征收率的应税销售收入，减按 1% 征收增值税；月销售额 10 万元以下的，免征增值税。<span class="jb" data-cite="1"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">1</i><span class="jb-txt">关于增值税小规模纳税人减免增值税政策的公告</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.gov.cn/zhengce/zhengceku/202308/content_6896287.htm" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>中国政府网门户网站 · 2027年12月31日</span><span class="crumb">关于增值税小规模纳税人减免增值税政策的公告</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">1</i><span class="sc-excerpt">财政部 税务总局公告2023年第19号
+为进一步支持小微企业和个体工商户发展，现将延续小规模纳税人增值税减免政策公告如下： 
+一、对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。 
+二、增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。 
+三、本公告执行至2027年12月31日。
+特此公告。 
+财政部 税务总局 2023年8月1日</span></span></span></span></p>
+<p class="para">小微企业融资方面，金融机构向小型企业、微型企业及个体工商户发放小额贷款取得的利息收入，免征增值税。<span class="jb" data-cite="2"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">2</i><span class="jb-txt">关于支持小微企业融资有关税收政策的公告</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.gov.cn/zhengce/zhengceku/202308/content_6896295.htm" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>中国政府网门户网站 · 2027年12月31日</span><span class="crumb">关于支持小微企业融资有关税收政策的公告</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">2</i><span class="sc-excerpt">财政部 税务总局公告2023年第13号
+为继续加大对小微企业的支持力度，推动缓解融资难、融资贵问题，现将有关税收政策公告如下： 
+一、对金融机构向小型企业、微型企业及个体工商户发放小额贷款取得的利息收入，免征增值税。金融机构应将相关免税证明材料留存备查，单独核算符合免税条件的小额贷款利息收入，按现行规定向主管税务机关办理纳税申报；未单独核算的，不得免征增值税。 
+二、对金融机构与小型企业、微型企业签订的借款合同免征印花税。 
+三、本公告所称小型企业、微型企业，是指符合《中小企业划型标准规定》（工信部联企业〔2011〕300号）的小型企业和微型企业。其中，资产总额和从业人员指标均以贷款发放时的实际状态确定；营业收入指标以贷款发放前12个自然月的累计数确定，不满12个自然月的，按照以下公式计算： 
+营业收入（年）=企业实际存续期间营业收入/企业实际存续月数×12 
+四、本公告所称小额贷款，是指单户授信小于100万元（含本数）的小型企业、微型企业或个体工商户贷款；没有授信额度的，是指单户贷款合同金额且贷款余额在100万元（含本数）以下的贷款。 
+五、本公告执行至2027年12月31日。 
+特此公告。 
+财政部 税务总局 2023年8月2日</span></span></span></span></p>
+</section>
+<section class="chapter" id="sec-2"><header class="ch-head"><h2>政策衔接与时效</h2><span class="sec-badge ">本章引用 1 处 · 已核验</span></header>
+<p class="para">增值税法施行后，现行增值税优惠政策做好衔接，多项小微相关优惠继续实施至 2027 年底。<span class="jb" data-cite="3"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">3</i><span class="jb-txt">关于增值税法施行后增值税优惠政策衔接事项的公告</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="http://www.conghua.gov.cn/zwgk/zdlyxxgk/jsjf/grsdsyhzczt/content/post_10897634.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>财政部税务总局公告2026年第10号 · 2026年01月01日</span><span class="crumb">关于增值税法施行后增值税优惠政策衔接事项的公告</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">3</i><span class="sc-excerpt">（三）纳税人发生以下应税交易，可以选择适用简易计税方法，按照规定征收率计算缴纳增值税。
+1.自2026年1月1日起，一般纳税人销售自己使用过的属于增值税法第二十二条规定不得抵扣且未抵扣进项税额的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+固定资产，是指使用期限超过12个月的机器、机械、运输工具以及其他与生产经营相关的设备、工具、器具等。
+2.自2026年1月1日起，小规模纳税人（不含自然人）销售自己使用过的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+3.自2026年1月1日起，销售旧货，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+旧货，是指进入二次流通的具有部分使用价值的货物（含旧汽车、旧摩托车和旧游艇），但不包括自己使用过的物品。
+4.自2026年1月1日起，个人（不含个体工商户中的一般纳税人）出租住房，按照简易计税方法依照3%征收率减按1.5%计算缴纳增值税。
+5.自2026年1月1日起，《财政部 税务总局 住房城乡建设部关于完善住房租赁有关税收政策的公告》（财政部 税务总局 住房城乡建设部公告2021年第24号）中现行有效的增值税优惠政策。
+6.自2026年1月1日至2027年12月31日，小规模纳税人发生除销售、出租不动产或者转让土地使用权之外的增值税应税交易，依照3%征收率减按1%征收率征收增值税；按规定预缴增值税的项目，当期在预缴地实现的全部价款、预收款（均不含增值税）合计达到增值税起征点的，减按1%预征率预缴增值税。
+7.自2026年1月1日至2027年12月31日，《财政部 税务总局关于延续实施二手车经销有关增值税政策的公告》（财政部 税务总局公告2023年第63号）中现行有效的增值税优惠政策。</span></span></span></span></p>
+</section>
+<section class="chapter" id="sec-3"><header class="ch-head"><h2>政策背景</h2><span class="sec-badge ">本章引用 1 处 · 已核验</span></header>
+<p class="para">税费组合拳持续支持小微企业发展，优惠政策延期与个税征收减半等措施协同发力。<span class="jb" data-cite="4"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">4</i><span class="jb-txt">优惠政策延期、个税征收减半——税费组合拳促进小微企业发展</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.gov.cn/zhengce/202308/content_6896376.htm" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>中国政府网门户网站 · 2027年12月31日</span><span class="crumb">优惠政策延期、个税征收减半——税费组合拳促进小微企业发展</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">4</i><span class="sc-excerpt">财政部、国家税务总局8月2日联合发布多个公告，明确一系列支持小微企业和个体工商户发展有关税费政策，进一步为经营主体减负担、增动能。
+中央政治局会议要求，要继续实施积极的财政政策和稳健的货币政策，延续、优化、完善并落实好减税降费政策。“此次发布的多数政策是对今年底到期的优惠政策进行延续，一些政策在此前政策基础上进行优化完善，部分政策进一步加大支持力度。”中国财政科学研究院研究员许文表示。
+按照公告，自2023年1月1日至2027年12月31日，对个体工商户年应纳税所得额不超过200万元的部分，减半征收个人所得税。个体工商户在享受现行其他个人所得税优惠政策的基础上，可叠加享受上述优惠政策。
+许文分析，按照上述规定，将个体工商户减半征收个人所得税的年应纳税所得额范围，由不超过100万元提高为不超过200万元，“为进一步支持个体工商户发展，国家提高了政策优惠力度”。
+公告还规定，自2023年1月1日至2027年12月31日，对增值税小规模纳税人、小型微利企业和个体工商户减半征收资源税（不含水资源税）、城市维护建设税、房产税、城镇土地使用税、印花税（不含证券交易印花税）、耕地占用税和教育费附加、地方教育附加。此外，对小型微利企业减按25%计算应纳税所得额，按20%的税率缴纳企业所得税政策，延续执行至2027年12月31日。
+值得关注的是，小规模纳税人减免增值税政策也延续至2027年底。按照规定，对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。
+“以小规模纳税人年应税收入为500万元、适用征收率为3%为例，由于减按1%征收率征收增值税，一年可节省10万元增值税，减负效果十分明显。”北京国家会计学院学术委员会主任李旭红分析。</span></span></span></span></p>
+</section>
+    </div>
+    <div class="foot">深知可信搜索 · 溯源核验报告 ｜ 内容由 AI 生成，仅供参考，政策现行效力以官方发布为准</div>
   </main>
-  <aside class="sources" id="sources-panel" aria-label="核验材料面板"><a class="back-doc" href="#doc-top">↑ 返回核验报告单</a><h3>核验材料（已引用 1 条 · 全部已核验）</h3><div class="src-tip">点击正文角标 [1] 定位材料原文并核对</div><input class="src-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源"><div class="src-list"><article class="scard pol" id="src-1" data-type="policy" data-cite-id="1" data-search=""><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例）</h4><div class="sc-meta">财政部官网 | 2025年12月10日</div><div class="sc-chain" title="原文中的位置：财政部 税务总局关于节能节水专用设备抵免企业所得税的通知（示例） › 一、抵免比例与结转 › （一）比例">标题：一、抵免比例与结转 › （一）比例</div><div class="sc-extag">▍ 原文原段（非 AI 生成）</div><div class="sc-excerpt plain">投资额的 10% 可从当年应纳税额中抵免；不足抵免可在以后 5 个纳税年度结转抵免。
-申报时填报抵免明细，留存购置发票与目录归属证明备查。</div><div class="sc-more" role="button" tabindex="0"></div><div class="sc-links"><span><a href="https://example.gov.cn/notice.html" target="_blank" rel="noopener">查看原文 ↗</a></span></div></article></div></aside>
+
+  
+    <section class="view" id="view-library" aria-label="材料专库">
+      <div class="lib-head">
+        <div class="lib-title"><b>材料专库</b>
+          <span>共 15 条 · 已引用 4 · 全部已核验</span>
+        </div>
+        <div class="lib-searchWrap">
+          <span class="lib-searchIcon" aria-hidden="true">⌕</span>
+          <input class="lib-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索材料">
+        </div>
+        <div class="hot-terms" aria-label="热门搜索词"><span class="hot-label">大家都在搜</span><button class="hot-term" type="button">增值税</button><button class="hot-term" type="button">优惠</button><button class="hot-term" type="button">本次检索</button><button class="hot-term" type="button">优惠政策</button><button class="hot-term" type="button">小微</button><button class="hot-term" type="button">小微企业</button><button class="hot-term" type="button">税费</button><button class="hot-term" type="button">公告</button></div>
+        <div class="lib-tabs" role="tablist" aria-label="按检索分组筛选"><button class="on" data-cond="" type="button">全部（15）</button><button data-cond="本次检索" type="button">本次检索（15）</button><button data-cond="__unused__" type="button">未引用（11）</button></div>
+      </div>
+      <div class="lib-list" id="lib-list"><article class="scard mat" id="src-1" data-type="material" data-cite-id="1" data-search="本次检索"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>关于增值税小规模纳税人减免增值税政策的公告</h4><div class="sc-meta">中国政府网门户网站 | 2027年12月31日</div><div class="seg-block"><span class="crumb">关于增值税小规模纳税人减免增值税政策的公告</span><div class="sc-excerpt plain">财政部 税务总局公告2023年第19号
+为进一步支持小微企业和个体工商户发展，现将延续小规模纳税人增值税减免政策公告如下： 
+一、对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。 
+二、增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。 
+三、本公告执行至2027年12月31日。
+特此公告。 
+财政部 税务总局 2023年8月1日</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/zhengceku/202308/content_6896287.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-2" data-type="material" data-cite-id="2" data-search="本次检索"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>关于支持小微企业融资有关税收政策的公告</h4><div class="sc-meta">中国政府网门户网站 | 2027年12月31日</div><div class="seg-block"><span class="crumb">关于支持小微企业融资有关税收政策的公告</span><div class="sc-excerpt plain">财政部 税务总局公告2023年第13号
+为继续加大对小微企业的支持力度，推动缓解融资难、融资贵问题，现将有关税收政策公告如下： 
+一、对金融机构向小型企业、微型企业及个体工商户发放小额贷款取得的利息收入，免征增值税。金融机构应将相关免税证明材料留存备查，单独核算符合免税条件的小额贷款利息收入，按现行规定向主管税务机关办理纳税申报；未单独核算的，不得免征增值税。 
+二、对金融机构与小型企业、微型企业签订的借款合同免征印花税。 
+三、本公告所称小型企业、微型企业，是指符合《中小企业划型标准规定》（工信部联企业〔2011〕300号）的小型企业和微型企业。其中，资产总额和从业人员指标均以贷款发放时的实际状态确定；营业收入指标以贷款发放前12个自然月的累计数确定，不满12个自然月的，按照以下公式计算： 
+营业收入（年）=企业实际存续期间营业收入/企业实际存续月数×12 
+四、本公告所称小额贷款，是指单户授信小于100万元（含本数）的小型企业、微型企业或个体工商户贷款；没有授信额度的，是指单户贷款合同金额且贷款余额在100万元（含本数）以下的贷款。 
+五、本公告执行至2027年12月31日。 
+特此公告。 
+财政部 税务总局 2023年8月2日</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/zhengceku/202308/content_6896295.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-3" data-type="material" data-cite-id="3" data-search="本次检索"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>关于增值税法施行后增值税优惠政策衔接事项的公告</h4><div class="sc-meta">财政部税务总局公告2026年第10号 | 2026年01月01日</div><div class="seg-block"><span class="crumb">关于增值税法施行后增值税优惠政策衔接事项的公告</span><div class="sc-excerpt plain">（三）纳税人发生以下应税交易，可以选择适用简易计税方法，按照规定征收率计算缴纳增值税。
+1.自2026年1月1日起，一般纳税人销售自己使用过的属于增值税法第二十二条规定不得抵扣且未抵扣进项税额的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+固定资产，是指使用期限超过12个月的机器、机械、运输工具以及其他与生产经营相关的设备、工具、器具等。
+2.自2026年1月1日起，小规模纳税人（不含自然人）销售自己使用过的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+3.自2026年1月1日起，销售旧货，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+旧货，是指进入二次流通的具有部分使用价值的货物（含旧汽车、旧摩托车和旧游艇），但不包括自己使用过的物品。
+4.自2026年1月1日起，个人（不含个体工商户中的一般纳税人）出租住房，按照简易计税方法依照3%征收率减按1.5%计算缴纳增值税。
+5.自2026年1月1日起，《财政部 税务总局 住房城乡建设部关于完善住房租赁有关税收政策的公告》（财政部 税务总局 住房城乡建设部公告2021年第24号）中现行有效的增值税优惠政策。
+6.自2026年1月1日至2027年12月31日，小规模纳税人发生除销售、出租不动产或者转让土地使用权之外的增值税应税交易，依照3%征收率减按1%征收率征收增值税；按规定预缴增值税的项目，当期在预缴地实现的全部价款、预收款（均不含增值税）合计达到增值税起征点的，减按1%预征率预缴增值税。
+7.自2026年1月1日至2027年12月31日，《财政部 税务总局关于延续实施二手车经销有关增值税政策的公告》（财政部 税务总局公告2023年第63号）中现行有效的增值税优惠政策。</div></div><div class="sc-links"><span><a href="http://www.conghua.gov.cn/zwgk/zdlyxxgk/jsjf/grsdsyhzczt/content/post_10897634.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-4" data-type="material" data-cite-id="4" data-search="本次检索"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>优惠政策延期、个税征收减半——税费组合拳促进小微企业发展</h4><div class="sc-meta">中国政府网门户网站 | 2027年12月31日</div><div class="seg-block"><span class="crumb">优惠政策延期、个税征收减半——税费组合拳促进小微企业发展</span><div class="sc-excerpt plain">财政部、国家税务总局8月2日联合发布多个公告，明确一系列支持小微企业和个体工商户发展有关税费政策，进一步为经营主体减负担、增动能。
+中央政治局会议要求，要继续实施积极的财政政策和稳健的货币政策，延续、优化、完善并落实好减税降费政策。“此次发布的多数政策是对今年底到期的优惠政策进行延续，一些政策在此前政策基础上进行优化完善，部分政策进一步加大支持力度。”中国财政科学研究院研究员许文表示。
+按照公告，自2023年1月1日至2027年12月31日，对个体工商户年应纳税所得额不超过200万元的部分，减半征收个人所得税。个体工商户在享受现行其他个人所得税优惠政策的基础上，可叠加享受上述优惠政策。
+许文分析，按照上述规定，将个体工商户减半征收个人所得税的年应纳税所得额范围，由不超过100万元提高为不超过200万元，“为进一步支持个体工商户发展，国家提高了政策优惠力度”。
+公告还规定，自2023年1月1日至2027年12月31日，对增值税小规模纳税人、小型微利企业和个体工商户减半征收资源税（不含水资源税）、城市维护建设税、房产税、城镇土地使用税、印花税（不含证券交易印花税）、耕地占用税和教育费附加、地方教育附加。此外，对小型微利企业减按25%计算应纳税所得额，按20%的税率缴纳企业所得税政策，延续执行至2027年12月31日。
+值得关注的是，小规模纳税人减免增值税政策也延续至2027年底。按照规定，对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。
+“以小规模纳税人年应税收入为500万元、适用征收率为3%为例，由于减按1%征收率征收增值税，一年可节省10万元增值税，减负效果十分明显。”北京国家会计学院学术委员会主任李旭红分析。</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/202308/content_6896376.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-5" data-type="material" data-cite-id="5" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>财政部税务总局发布：增值税法施行后优惠政策衔接明确——现行有效优惠继续实施，资源综合利用政策（2021年第40号）延续</h4><div class="sc-meta">2026年01月01日</div><div class="seg-block"><span class="crumb">财政部税务总局发布：增值税法施行后优惠政策衔接明确——现行有效优惠继续实施，资源综合利用政策（2021年第40号）延续 <i>›</i> 适用简易计税方法的项目（三）</span><div class="sc-excerpt plain">（三）纳税人发生以下应税交易，可以选择适用简易计税方法，按照规定征收率计算缴纳增值税。
+1.自2026年1月1日起，一般纳税人销售自己使用过的属于增值税法第二十二条规定不得抵扣且未抵扣进项税额的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+固定资产，是指使用期限超过12个月的机器、机械、运输工具以及其他与生产经营相关的设备、工具、器具等。
+2.自2026年1月1日起，小规模纳税人（不含自然人）销售自己使用过的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+3.自2026年1月1日起，销售旧货，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+旧货，是指进入二次流通的具有部分使用价值的货物（含旧汽车、旧摩托车和旧游艇），但不包括自己使用过的物品。
+4.自2026年1月1日起，个人（不含个体工商户中的一般纳税人）出租住房，按照简易计税方法依照3%征收率减按1.5%计算缴纳增值税。
+5.自2026年1月1日起，《财政部 税务总局 住房城乡建设部关于完善住房租赁有关税收政策的公告》（财政部 税务总局 住房城乡建设部公告2021年第24号）中现行有效的增值税优惠政策。
+6.自2026年1月1日至2027年12月31日，小规模纳税人发生除销售、出租不动产或者转让土地使用权之外的增值税应税交易，依照3%征收率减按1%征收率征收增值税；按规定预缴增值税的项目，当期在预缴地实现的全部价款、预收款（均不含增值税）合计达到增值税起征点的，减按1%预征率预缴增值税。
+7.自2026年1月1日至2027年12月31日，《财政部 税务总局关于延续实施二手车经销有关增值税政策的公告》（财政部 税务总局公告2023年第63号）中现行有效的增值税优惠政策。</div></div><div class="sc-links"><span><a href="https://www.crra.org.cn/news/qiye/1541.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-6" data-type="material" data-cite-id="6" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>[经济日报] 增值税征管兼顾效率和公平</h4><div class="sc-meta">国家税务总局门户网站 | 2026年02月03日</div><div class="seg-block"><span class="crumb">[经济日报] 增值税征管兼顾效率和公平</span><div class="sc-excerpt plain">按次纳税的主体中，自然人纳税人占绝大多数。为减轻自然人办税负担，《中华人民共和国增值税法实施条例》第四十四条明确，按次纳税的纳税人，销售额达到起征点的，应当自纳税义务发生之日起至次年6月30日前进行申报纳税，在申报纳税期限方面为纳税人预留了较为充足的时间。考虑到自然人流动性强，为便利其申报纳税，减轻按次纳税办税负担，《征管公告》明确自然人发生应税交易达到起征点的，不论是向税务机关申请代开发票，还是由扣缴义务人代扣代缴，均视为办理了申报纳税。
+“从公告规定来看，税务部门尽量减少了自然人需要自行申报纳税的情况。”黄立新表示，如果自然人代开发票、代扣代缴两种方式都未涉及，才适用兜底方式，就其本年度尚未缴纳增值税的应税交易，按照规定向主管税务机关申报纳税，这样就减轻了自然人的办税负担。
+《征管公告》还对小规模纳税人灵活享受减免税优惠进行了明确。《中华人民共和国增值税法》第二十七条明确，“纳税人可以放弃增值税优惠；放弃优惠的，在三十六个月内不得享受该项税收优惠，小规模纳税人除外”。基于上述条款规定，《征管公告》延续了近年来一直执行的征管口径，明确提出，小规模纳税人发生应税交易，销售额未达到起征点标准的，可以选择全部或者部分应税交易放弃免税并开具增值税专用发票。
+国家税务总局货物和劳务税司有关负责人介绍，由于增值税实行“环环征收、道道抵扣”的链条式征扣税机制，小规模纳税人放弃减免税的主要目的，一般是为了满足下游客户索取增值税专用发票用以抵扣进项的需求。根据《征管公告》规定，小规模纳税人可以根据自身经营情况，灵活选择是否就某笔应税交易放弃减免税优惠，单笔放弃享受优惠的，不会影响其他应税交易继续享受优惠。需要提醒的是，小规模纳税人在准确把握政策规定灵活享受减免税优惠的同时，应当做到合规经营，确保长远稳定发展。
+（记者：董碧娟）
+网站纠错
+责任编辑： 曾彪
+[人民日报] 国家税务总局制发公告 明确起征点标准等增值税征管事项
+[人民日报] 国家税务总局发布新出口退税管理办法 申报办理更加便捷高效</div></div><div class="sc-links"><span><a href="http://www.chinatax.gov.cn/chinatax/n810219/n810780/c5247519/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-7" data-type="material" data-cite-id="7" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>[经济日报] 优化税收环境激发新活力</h4><div class="sc-meta">国家税务总局门户网站 | 2026年01月01日</div><div class="seg-block"><span class="crumb">[经济日报] 优化税收环境激发新活力</span><div class="sc-excerpt plain">近年来，小微企业和个体工商户一直是减税降费的支持重点。2023年，我国延续实施了多项小微企业和个体工商户十分关注的税费优惠政策，大部分政策直接延续到2027年底。比如，对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。对个体工商户年应纳税所得额不超过200万元的部分，减半征收个人所得税。对小型微利企业减按25%计算应纳税所得额，按20%的税率缴纳企业所得税。这些税费政策普惠性强，符合条件的小微企业和个体工商户都可以享受。
+“民营企业以中小企业和个体工商户为主，具有数量多、第三产业居多等特征。这些小微企业抗风险能力普遍较弱。近年来，为帮助中小企业及服务业纾困，我国出台了一揽子税费支持政策，在助力中小民营企业渡过难关并实现持续发展方面发挥了积极作用。”北京国家会计学院副院长李旭红表示。
+在税费优惠等多方面政策助力下，民营经营主体活力不断释放。税收数据显示，2024年民营经济销售收入增速比全国企业平均水平高0.5个百分点。其中，高技术制造业、数字经济核心产业销售收入同比分别增长13%、4.7%，较全国同行业企业分别高1.8个、1.7个百分点。
+强化法治公平
+2024年12月25日，十四届全国人大常委会第十三次会议表决通过了《中华人民共和国增值税法》，自2026年1月1日起施行。我国第一大税种增值税有了专门法律，对于健全有利于高质量发展的增值税制度、规范增值税的征收和缴纳、保护纳税人的合法权益具有重要意义。
+“法治公平是最好的营商环境。目前，我国18个税种中已经有14个完成立法，涉及的税收收入在全部税收收入中所占比重超80%，基本形成了系统完备、科学规范、运行有效的税收法律制度体系。”吉林财经大学税务学院院长张巍表示，税收立法有助于增强税制确定性，让企业稳定预期、提振信心。</div></div><div class="sc-links"><span><a href="http://www.chinatax.gov.cn/chinatax/n810219/n810780/c5238961/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-8" data-type="material" data-cite-id="8" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>最新的小微企业增值税优惠政策是如何规定的？</h4><div class="sc-meta">国家税务总局门户网站 | 2025年10月30日</div><div class="seg-block"><span class="crumb">最新的小微企业增值税优惠政策是如何规定的？</span><div class="sc-excerpt plain">知识详情
+智能咨询
+关于12366
+首页
+北京市 [切换]
+A-G
+北京市
+安徽省
+福建省
+广东省
+广西壮族自治区
+重庆市
+贵州省
+甘肃省
+大连市
+H-K
+河北省
+吉林省
+黑龙江省
+江苏省
+江西省
+河南省
+湖北省
+湖南省
+海南省
+L-S
+山西省
+内蒙古自治区
+辽宁省
+上海市
+山东省
+四川省
+陕西省
+青海省
+宁夏回族自治区
+宁波市
+青岛市
+深圳市
+T-Z
+天津市
+浙江省
+云南省
+西藏自治区
+新疆维吾尔自治区
+厦门市
+我的收藏
+好友申请
+我的消息
+注册
+登录
+用户名称
+个人中心
+退出
+知识详情
+最新的小微企业增值税优惠政策是如何规定的？
+发布日期：2025-10-30
+打印
+字体：
+大
+中
+小阅读量17798
+　　根据《关于增值税小规模纳税人减免增值税政策的公告》(财政部 税务总局公告2023年第19号)规定，一、对月销售额10万元以下(含本数)的增值税小规模纳税人，免征增值税。</div></div><div class="seg-block"><span class="crumb">最新的小微企业增值税优惠政策是如何规定的？ <i>›</i> 本公告执行至2027年12月31日。</span><div class="sc-excerpt plain">三、本公告执行至2027年12月31日。
+下载
+收藏
+纠错
+纠错
+提交
+0
+相关附件
+相关法规
+问题解答
+办税流程
+你可能关注的
+换一换
+[视频点播]增值税申报表更正及医疗服务、教育服务免征增值税政策
+发布时间：2025-12-10
+[热点问题]纳税人发生跨境应税行为，按照《国家税务总局关于发布〈营业税改征增值税跨境应税行为增值税免税管理办法（试行）〉的公告》（国家税务总局公告2016年第29号）的规定办理免税备案手续后发生的相同跨境应税行为，是否需要重新办理备案手续？
+发布时间：2025-12-09
+[视频点播]社保费基数补差操作指引
+发布时间：2025-12-08
+[视频点播]个转企“一件事”办理指南
+发布时间：2025-12-08
+[视频点播]纳税信用缴费
+发布时间：2025-12-08
+[视频点播]契税优惠政策中的“家庭唯一住房”
+发布时间：2025-12-05
+[视频点播]山东省土地增值税预征率是多少
+发布时间：2025-12-05
+[视频点播]办税一点通高效指南 代开增值税发票
+发布时间：2025-12-05
+版权所有：国家税务总局 网站标识码：bm29000002
+京ICP备13021685号-2
+京公网安备 11040102700073号
+主办单位：国家税务总局 地址：北京市西城区枣林前街68号 |
+联系我们
+建议您使用IE9及以上版本、Edge、Chrome、Firefox和360等主流浏览器浏览本网站
+X
+您即将离开12366纳税服务平台网站，
+是否继续？
+继续访问 放弃
+X
+分享到 - 微信</div></div><div class="sc-links"><span><a href="https://12366.chinatax.gov.cn/sscx/detail?code=0000000002019012200002&amp;flag=2&amp;tslx=2" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-9" data-type="material" data-cite-id="9" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>支持小微企业和个体工商户发展税费优惠政策指引（2.0）</h4><div class="sc-meta">2023年12月21日</div><div class="seg-block"><span class="crumb">支持小微企业和个体工商户发展税费优惠政策指引（2.0） <i>›</i> 第三十七条</span><div class="sc-excerpt plain">【政策案例】
+某教授在外单位授课获取酬劳，8月5日到办税服务厅代开征收率为1%的增值税普通发票。如代开发票金额为400元，未超过500元的起征点，则可免征增值税；如代开发票金额为800元，超过500元的起征点，则需按照800元全额缴纳增值税8元（=800*1%）。
+2．增值税小规模纳税人月销售额10万元以下免征增值税政策
+【享受主体】
+增值税小规模纳税人
+【优惠内容】
+自2023年1月1日至2027年12月31日，对月销售额10万元以下（含本数）的增值税小规模纳税人免征增值税。
+【享受条件】
+1．适用于按期纳税的增值税小规模纳税人。
+2．小规模纳税人以1个月为1个纳税期的，月销售额未超过10万元；小规模纳税人以1个季度为1个纳税期的，季度销售额未超过30万元，可以享受免征增值税政策。
+3．小规模纳税人发生增值税应税销售行为，合计月销售额超过10万元，但扣除本期发生的销售不动产的销售额后未超过10万元的，其销售货物、劳务、服务、无形资产取得的销售额免征增值税。
+4．适用增值税差额征税政策的小规模纳税人，以差额后的销售额确定是否可以享受上述免征增值税政策。
+5．其他个人采取一次性收取租金形式出租不动产取得的租金收入，可在对应的租赁期内平均分摊，分摊后的月租金收入未超过10万元的，免征增值税。
+6．按固定期限纳税的小规模纳税人可以选择以1个月或1个季度为纳税期限，一经选择，一个会计年度内不得变更。
+【享受方式】</div></div><div class="seg-block"><span class="crumb">支持小微企业和个体工商户发展税费优惠政策指引（2.0）</span><div class="sc-excerpt plain">二　
+、推动普惠金融发展
+13．金融机构小微企业及个体工商户1000万元及以下小额贷款利息收入免征增值税政策
+【享受主体】
+向小型企业、微型企业及个体工商户发放小额贷款的金融机构
+【优惠内容】
+2027年12月31日前，对金融机构向小型企业、微型企业和个体工商户发放小额贷款取得的利息收入，免征增值税。金融机构可以选择以下两种方法之一适用免税：
+(1)对金融机构向小型企业、微型企业和个体工商户发放的，利率水平不高于全国银行间同业拆借中心公布的贷款市场报价利率（LPR）150%（含本数）的单笔小额贷款取得的利息收入，免征增值税；高于全国银行间同业拆借中心公布的贷款市场报价利率（LPR）150%的单笔小额贷款取得的利息收入，按照现行政策规定缴纳增值税。
+(2)对金融机构向小型企业、微型企业和个体工商户发放单笔小额贷款取得的利息收入中，不高于该笔贷款按照全国银行间同业拆借中心公布的贷款市场报价利率（LPR）150%（含本数）计算的利息收入部分，免征增值税；超过部分按照现行政策规定缴纳增值税。
+金融机构可按会计年度在以上两种方法之间选定其一作为该年的免税适用方法，一经选定，该会计年度内不得变更。
+【享受条件】
+1．小型企业、微型企业，是指符合《中小企业划型标准规定》（工信部联企业〔2011〕300号）的小型企业和微型企业。其中，资产总额和从业人员指标均以贷款发放时的实际状态确定，营业收入指标以贷款发放前12个自然月的累计数确定，不满12个自然月的，按照以下公式计算：
+营业收入（年）=企业实际存续期间营业收入/企业实际存续月数×12</div></div><div class="sc-links"><span><a href="http://zc.gjzwfw.gov.cn/art/2023/12/22/art_14_71595.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-10" data-type="material" data-cite-id="10" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>增值税小规模纳税人增值税优惠政策</h4><div class="sc-meta">2023年01月01日</div><div class="seg-block"><span class="crumb">增值税小规模纳税人增值税优惠政策 <i>›</i> 表格</span><div class="sc-excerpt rich"><table>
+ <tbody>
+ <tr>
+ <td>政策依据</td>
+ <td>1.《财政部税务总局关于增值税小规模纳税人减免增值税政策的公告》（财政部税务总局公告2023年第19号）； 2.《国家税务总局关于增值税小规模纳税人减免增值税等政策有关征管事项的公告》（国家税务总局公告2023年第1号）。</td>
+ </tr>
+ <tr>
+ <td>政策内容</td>
+ <td>1.自2023年1月1日至2027年12月31日，对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。 3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。</td>
+ </tr>
+ <tr>
+ <td>适用对象</td>
+ </tr>
+ <tr>
+ <td>适用时间</td>
+ <td>1.随增值税纳税申报； 2.2023年1月1日起实施，有效期至2027年12月31日。</td>
+ </tr>
+ <tr>
+ <td>咨询电话</td>
+ <td>纳税人主管税务机关0472-8012366，0472-8917188</td>
+ </tr>
+ <tr>
+ <td>申请条件</td>
+ <td>1.增值税小规模纳税人（以下简称小规模纳税人）发生增值税应税销售行为，合计月销售额未超过10万元（以1个季度为1个纳税期的，季度销售额未超过30万元）的，免征增值税。 2.小规模纳税人发生增值税应税销售行为，合计月销售额超过10万元，但扣除本期发生的销售不动产的销售额后未超过10万元的，其销售货物、劳务、服务、无形资产取得的销售额免征增值税 3.按照现行规定应当预缴增值税税款的小规模纳税人，凡在预缴地实现的月销售额未超过10万元的，当期无需预缴税款。在预缴地实现的月销售额超过10万元的，适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。</td>
+ </tr>
+ <tr>
+ <td>申请材料</td>
+ </tr>
+ </tbody>
+</table></div></div><div class="sc-links"><span><a href="http://www.tmtyq.gov.cn/zfxxgk/fdzdgknr/zdlyxxgk/zqsk/zqsk_jsjf/202510/t20251014_678346.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-11" data-type="material" data-cite-id="11" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>关于《国家税务总局关于资源回收企业向自然人报废产品出售者“反向开票”有关事项的公告》的解读</h4><div class="sc-meta">2024年04月25日</div><div class="seg-block"><span class="crumb">关于《国家税务总局关于资源回收企业向自然人报废产品出售者“反向开票”有关事项的公告》的解读 <i>›</i> 八、 出售者可享受的增值税优惠 <i>›</i> 出售者可享受的增值税优惠政策</span><div class="sc-excerpt plain">答：出售者通过“反向开票”销售报废产品，可按规定享受小规模纳税人月销售额10万元以下免征增值税和3%征收率减按1%计算缴纳增值税等税费优惠政策。后续如小规模纳税人相关税费优惠政策调整，按照调整后的政策执行。</div></div><div class="sc-links"><span><a href="https://fgk.chinatax.gov.cn/zcfgk/c100015/c5225083/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-12" data-type="material" data-cite-id="12" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>支持小微企业和个体工商户发展 多项税收优惠政策延续优化至2027年底</h4><div class="sc-meta">中国政府网门户网站 | 2023年08月04日</div><div class="seg-block"><span class="crumb">支持小微企业和个体工商户发展 多项税收优惠政策延续优化至2027年底</span><div class="sc-excerpt plain">财政部、国家税务总局日前联合发布一系列公告，明确多项支持小微企业和个体工商户发展的税费政策，为经营主体减负担、增动能，促进重点群体创业就业。
+为继续减轻小微企业和个体工商户税费负担，公告明确，2027年底前，对个体工商户年应纳税所得额不超过200万元的部分，减半征收个人所得税；对增值税小规模纳税人、小型微利企业和个体工商户减半征收资源税（不含水资源税）、城市维护建设税、房产税、城镇土地使用税、印花税（不含证券交易印花税）、耕地占用税和教育费附加、地方教育附加；对小型微利企业减按25%计算应纳税所得额，按20%的税率缴纳企业所得税。与此同时，小规模纳税人减免增值税政策也延续至2027年底，即对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税；增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。
+为继续推动缓解小微企业和个体工商户融资难、融资贵问题，公告明确，2027年底前，对金融机构向小型企业、微型企业及个体工商户发放小额贷款取得的利息收入，免征增值税。对金融机构与小型企业、微型企业签订的借款合同免征印花税。纳税人为农户、小型企业、微型企业及个体工商户借款、发行债券提供融资担保取得的担保费收入，以及为上述融资担保提供再担保取得的再担保费收入，免征增值税。</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/202308/content_6896550.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-13" data-type="material" data-cite-id="13" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>学习收藏！按季申报小规模纳税人享受减免增值税政策等14问</h4><div class="sc-meta">国家税务总局门户网站 | 2025年01月07日</div><div class="seg-block"><span class="crumb">学习收藏！按季申报小规模纳税人享受减免增值税政策等14问</span><div class="sc-excerpt plain">答：《财政部 税务总局关于增值税小规模纳税人减免增值税政策的公告》（2023年第19号）第二条规定，增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税。根据上述规定，您可以享受3%征收率销售收入减按1%征收增值税政策。但由于您开具的3%征收率的机动车销售统一发票，具有抵扣功能，您的客户如为一般纳税人，可以凭您开具的3%征收率的机动车销售统一发票，抵扣对应的进项税额。因此，您需要追回已开具的3%征收率的机动车销售统一发票，重新开具1%征收率的机动车销售统一发票，方能享受减税政策。如无法追回，则需要按照3%征收率计算缴纳增值税。今后您要享受3%征收率销售收入减按1%征收增值税政策时，如需开具机动车销售统一发票，注意应按照1%征收率开具。
+【问题10】我公司是一家增值税小规模纳税人，2021年适用3%征收率减按1%征收增值税政策。有一笔纳税义务发生时间在2021年12月1日的收入，已经按照1%征收率开具发票，但由于购买方名称填写错误被购买方拒收，请问是否可以重新开票？
+答：可以。《国家税务总局关于增值税小规模纳税人减免增值税等政策有关征管事项的公告》（国家税务总局公告2023年第1号）第六条规定，小规模纳税人取得应税销售收入，纳税义务发生时间在2022年12月31日前并已开具增值税发票，如发生销售折让、中止或者退回等情形需要开具红字发票，应开具对应征收率红字发票或免税红字发票；开票有误需要重新开具的，应开具对应征收率红字发票或免税红字发票，再重新开具正确的蓝字发票。
+【问题11】我公司是一家住房租赁企业，属于增值税小规模纳税人。请问，小规模纳税人新政策出台后，我公司出租位于省外城市的住房还需要预缴增值税吗？</div></div><div class="sc-links"><span><a href="https://www.chinatax.gov.cn/chinatax/n810356/n3010387/c5237719/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-14" data-type="material" data-cite-id="14" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>国新办举行优化完善部分阶段性税费优惠政策国务院政策例行吹风会 图文实录</h4><div class="sc-meta">国务院新闻办公室门户网站 | 2023年03月31日</div><div class="seg-block"><span class="crumb">国新办举行优化完善部分阶段性税费优惠政策国务院政策例行吹风会 图文实录</span><div class="sc-excerpt plain">3月24日国务院常务会议决定延续实施减征小微企业和个体工商户的所得税政策。今年1月，按照国务院部署，财政部已经会同有关部门明确了小规模纳税人增值税的相关优惠政策。今年支持小微企业和个体工商户的政策措施，我们梳理了一下，主要包括以下几项：一是优化完善小微企业和个体工商户的所得税政策。自2023年1月1日至2024年12月31日，对小微企业年应纳税所得额不超过100万元的部分，减按25%计入应纳税所得额，按20%的税率缴纳企业所得税，保持相关优惠政策的衔接协调，同时对个体工商户年应纳税所得额不超过100万元的部分，在现行优惠政策基础上减半征收个人所得税。二是将小规模纳税人的增值税征收率降至1%。三是对月销售额10万元及以下小规模纳税人免征增值税。四是对生产生活性服务业纳税人分别实施5%、10%的增值税加计抵减。以上各项政策，将与现行其他支持小微企业和个体工商户的政策形成合力。
+　　下一步，我们将按照党中央、国务院决策部署，进一步优化政策实施方式，及时研究解决经营主体反映的突出问题，有效纾解小微企业和个体工商户生产经营的困难，激发市场活力和信心。谢谢。
+　　2023-03-31 10:19:28
+中国日报记者提问（刘健 摄）
+中国日报记者:　　日前，国务院常务会议决定延续和优化实施部分税费优惠政策，我们想问一下税务部门，在政策落实方面有哪些安排和进展？谢谢。
+　　2023-03-31 10:25:20
+王道树（徐想 摄）
+国家税务总局副局长王道树:　　谢谢您的关心。3月24日国务院常务会议研究到期税费优惠政策接续安排，这充分体现了党中央、国务院因时应势的科学谋划和务实高效的工作作风，对激发市场活力、稳定市场预期、提振市场信心具有重要意义。
+　　前期，税务部门积极会同有关部门深入开展调研，广泛听取企业和专家的意见，认真开展测算，研究提出政策延续和优化完善的建议。在国务院常务会议作出决定之后，税务总局党委高度重视，党委书记、局长王军同志亲自主持召开党委会议，进行抓好落实工作的部署，研究推出“五个迅速”的落实工作行动安排：</div></div><div class="sc-links"><span><a href="http://www.scio.gov.cn/gwyzclxcfh/cfh/49553/49741/tw49743/202305/t20230517_714205.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-15" data-type="material" data-cite-id="15" data-search="本次检索" data-unused="1"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>国新办举行优化完善部分阶段性税费优惠政策例行吹风会</h4><div class="sc-meta">国家税务总局门户网站 | 2023年05月05日</div><div class="seg-block"><span class="crumb">国新办举行优化完善部分阶段性税费优惠政策例行吹风会</span><div class="sc-excerpt plain">正如刚刚我讲到的，当前我国发展面临的不确定、难预料的因素比较多，小微企业和个体工商户仍然面临不少困难。所以面对新形势，我们要综合考虑财政的承受能力和助企纾困的需要，在落实好前期出台政策的基础上，根据实际情况进一步完善税费优惠政策，突出对小微企业、个体工商户的支持，以稳定市场预期、提振市场信心，持续激发市场主体的活力。
+3月24日国务院常务会议决定延续实施减征小微企业和个体工商户的所得税政策。今年1月，按照国务院部署，财政部已经会同有关部门明确了小规模纳税人增值税的相关优惠政策。今年支持小微企业和个体工商户的政策措施，我们梳理了一下，主要包括以下几项：一是优化完善小微企业和个体工商户的所得税政策。自2023年1月1日至2024年12月31日，对小微企业年应纳税所得额不超过100万元的部分，减按25%计入应纳税所得额，按20%的税率缴纳企业所得税，保持相关优惠政策的衔接协调，同时对个体工商户年应纳税所得额不超过100万元的部分，在现行优惠政策基础上减半征收个人所得税。二是将小规模纳税人的增值税征收率降至1%。三是对月销售额10万元及以下小规模纳税人免征增值税。四是对生产生活性服务业纳税人分别实施5%、10%的增值税加计抵减。以上各项政策，将与现行其他支持小微企业和个体工商户的政策形成合力。
+下一步，我们将按照党中央、国务院决策部署，进一步优化政策实施方式，及时研究解决市场主体反映的突出问题，有效纾解小微企业和个体工商户生产经营的困难，激发市场活力和信心。谢谢。
+日前，国务院常务会议决定延续和优化实施部分税费优惠政策，我们想问一下税务部门，在政策落实方面有哪些安排和进展？谢谢。
+王道树（徐想 摄）
+国家税务总局副局长王道树：
+谢谢您的关心。3月24日国务院常务会议研究到期税费优惠政策接续安排，这充分体现了党中央、国务院因时应势的科学谋划和务实高效的工作作风，对激发市场活力、稳定市场预期、提振市场信心具有重要意义。</div></div><div class="sc-links"><span><a href="http://www.chinatax.gov.cn/chinatax/n810219/n810724/c5185995/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article></div>
+      <div class="lib-empty hide" id="lib-empty">没有符合当前筛选的材料。</div>
+      <div class="lib-foot">材料来源：深知可信搜索 · 每条摘录均取自原文原段</div>
+    </section>
+  <section class="print-appendix" aria-label="核验材料附录（打印归档）"><h3>核验材料（全 15 条）</h3><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>关于增值税小规模纳税人减免增值税政策的公告</h4><div class="sc-meta">中国政府网门户网站 | 2027年12月31日</div><div class="seg-block"><span class="crumb">关于增值税小规模纳税人减免增值税政策的公告</span><div class="sc-excerpt plain">财政部 税务总局公告2023年第19号
+为进一步支持小微企业和个体工商户发展，现将延续小规模纳税人增值税减免政策公告如下： 
+一、对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。 
+二、增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。 
+三、本公告执行至2027年12月31日。
+特此公告。 
+财政部 税务总局 2023年8月1日</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/zhengceku/202308/content_6896287.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>关于支持小微企业融资有关税收政策的公告</h4><div class="sc-meta">中国政府网门户网站 | 2027年12月31日</div><div class="seg-block"><span class="crumb">关于支持小微企业融资有关税收政策的公告</span><div class="sc-excerpt plain">财政部 税务总局公告2023年第13号
+为继续加大对小微企业的支持力度，推动缓解融资难、融资贵问题，现将有关税收政策公告如下： 
+一、对金融机构向小型企业、微型企业及个体工商户发放小额贷款取得的利息收入，免征增值税。金融机构应将相关免税证明材料留存备查，单独核算符合免税条件的小额贷款利息收入，按现行规定向主管税务机关办理纳税申报；未单独核算的，不得免征增值税。 
+二、对金融机构与小型企业、微型企业签订的借款合同免征印花税。 
+三、本公告所称小型企业、微型企业，是指符合《中小企业划型标准规定》（工信部联企业〔2011〕300号）的小型企业和微型企业。其中，资产总额和从业人员指标均以贷款发放时的实际状态确定；营业收入指标以贷款发放前12个自然月的累计数确定，不满12个自然月的，按照以下公式计算： 
+营业收入（年）=企业实际存续期间营业收入/企业实际存续月数×12 
+四、本公告所称小额贷款，是指单户授信小于100万元（含本数）的小型企业、微型企业或个体工商户贷款；没有授信额度的，是指单户贷款合同金额且贷款余额在100万元（含本数）以下的贷款。 
+五、本公告执行至2027年12月31日。 
+特此公告。 
+财政部 税务总局 2023年8月2日</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/zhengceku/202308/content_6896295.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>关于增值税法施行后增值税优惠政策衔接事项的公告</h4><div class="sc-meta">财政部税务总局公告2026年第10号 | 2026年01月01日</div><div class="seg-block"><span class="crumb">关于增值税法施行后增值税优惠政策衔接事项的公告</span><div class="sc-excerpt plain">（三）纳税人发生以下应税交易，可以选择适用简易计税方法，按照规定征收率计算缴纳增值税。
+1.自2026年1月1日起，一般纳税人销售自己使用过的属于增值税法第二十二条规定不得抵扣且未抵扣进项税额的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+固定资产，是指使用期限超过12个月的机器、机械、运输工具以及其他与生产经营相关的设备、工具、器具等。
+2.自2026年1月1日起，小规模纳税人（不含自然人）销售自己使用过的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+3.自2026年1月1日起，销售旧货，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+旧货，是指进入二次流通的具有部分使用价值的货物（含旧汽车、旧摩托车和旧游艇），但不包括自己使用过的物品。
+4.自2026年1月1日起，个人（不含个体工商户中的一般纳税人）出租住房，按照简易计税方法依照3%征收率减按1.5%计算缴纳增值税。
+5.自2026年1月1日起，《财政部 税务总局 住房城乡建设部关于完善住房租赁有关税收政策的公告》（财政部 税务总局 住房城乡建设部公告2021年第24号）中现行有效的增值税优惠政策。
+6.自2026年1月1日至2027年12月31日，小规模纳税人发生除销售、出租不动产或者转让土地使用权之外的增值税应税交易，依照3%征收率减按1%征收率征收增值税；按规定预缴增值税的项目，当期在预缴地实现的全部价款、预收款（均不含增值税）合计达到增值税起征点的，减按1%预征率预缴增值税。
+7.自2026年1月1日至2027年12月31日，《财政部 税务总局关于延续实施二手车经销有关增值税政策的公告》（财政部 税务总局公告2023年第63号）中现行有效的增值税优惠政策。</div></div><div class="sc-links"><span><a href="http://www.conghua.gov.cn/zwgk/zdlyxxgk/jsjf/grsdsyhzczt/content/post_10897634.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文链接与知识专库可回看">✓ 已核验</span></div><h4>优惠政策延期、个税征收减半——税费组合拳促进小微企业发展</h4><div class="sc-meta">中国政府网门户网站 | 2027年12月31日</div><div class="seg-block"><span class="crumb">优惠政策延期、个税征收减半——税费组合拳促进小微企业发展</span><div class="sc-excerpt plain">财政部、国家税务总局8月2日联合发布多个公告，明确一系列支持小微企业和个体工商户发展有关税费政策，进一步为经营主体减负担、增动能。
+中央政治局会议要求，要继续实施积极的财政政策和稳健的货币政策，延续、优化、完善并落实好减税降费政策。“此次发布的多数政策是对今年底到期的优惠政策进行延续，一些政策在此前政策基础上进行优化完善，部分政策进一步加大支持力度。”中国财政科学研究院研究员许文表示。
+按照公告，自2023年1月1日至2027年12月31日，对个体工商户年应纳税所得额不超过200万元的部分，减半征收个人所得税。个体工商户在享受现行其他个人所得税优惠政策的基础上，可叠加享受上述优惠政策。
+许文分析，按照上述规定，将个体工商户减半征收个人所得税的年应纳税所得额范围，由不超过100万元提高为不超过200万元，“为进一步支持个体工商户发展，国家提高了政策优惠力度”。
+公告还规定，自2023年1月1日至2027年12月31日，对增值税小规模纳税人、小型微利企业和个体工商户减半征收资源税（不含水资源税）、城市维护建设税、房产税、城镇土地使用税、印花税（不含证券交易印花税）、耕地占用税和教育费附加、地方教育附加。此外，对小型微利企业减按25%计算应纳税所得额，按20%的税率缴纳企业所得税政策，延续执行至2027年12月31日。
+值得关注的是，小规模纳税人减免增值税政策也延续至2027年底。按照规定，对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。
+“以小规模纳税人年应税收入为500万元、适用征收率为3%为例，由于减按1%征收率征收增值税，一年可节省10万元增值税，减负效果十分明显。”北京国家会计学院学术委员会主任李旭红分析。</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/202308/content_6896376.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>财政部税务总局发布：增值税法施行后优惠政策衔接明确——现行有效优惠继续实施，资源综合利用政策（2021年第40号）延续</h4><div class="sc-meta">2026年01月01日</div><div class="seg-block"><span class="crumb">财政部税务总局发布：增值税法施行后优惠政策衔接明确——现行有效优惠继续实施，资源综合利用政策（2021年第40号）延续 <i>›</i> 适用简易计税方法的项目（三）</span><div class="sc-excerpt plain">（三）纳税人发生以下应税交易，可以选择适用简易计税方法，按照规定征收率计算缴纳增值税。
+1.自2026年1月1日起，一般纳税人销售自己使用过的属于增值税法第二十二条规定不得抵扣且未抵扣进项税额的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+固定资产，是指使用期限超过12个月的机器、机械、运输工具以及其他与生产经营相关的设备、工具、器具等。
+2.自2026年1月1日起，小规模纳税人（不含自然人）销售自己使用过的固定资产，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+3.自2026年1月1日起，销售旧货，按照简易计税方法依照3%征收率减按2%计算缴纳增值税。
+旧货，是指进入二次流通的具有部分使用价值的货物（含旧汽车、旧摩托车和旧游艇），但不包括自己使用过的物品。
+4.自2026年1月1日起，个人（不含个体工商户中的一般纳税人）出租住房，按照简易计税方法依照3%征收率减按1.5%计算缴纳增值税。
+5.自2026年1月1日起，《财政部 税务总局 住房城乡建设部关于完善住房租赁有关税收政策的公告》（财政部 税务总局 住房城乡建设部公告2021年第24号）中现行有效的增值税优惠政策。
+6.自2026年1月1日至2027年12月31日，小规模纳税人发生除销售、出租不动产或者转让土地使用权之外的增值税应税交易，依照3%征收率减按1%征收率征收增值税；按规定预缴增值税的项目，当期在预缴地实现的全部价款、预收款（均不含增值税）合计达到增值税起征点的，减按1%预征率预缴增值税。
+7.自2026年1月1日至2027年12月31日，《财政部 税务总局关于延续实施二手车经销有关增值税政策的公告》（财政部 税务总局公告2023年第63号）中现行有效的增值税优惠政策。</div></div><div class="sc-links"><span><a href="https://www.crra.org.cn/news/qiye/1541.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>[经济日报] 增值税征管兼顾效率和公平</h4><div class="sc-meta">国家税务总局门户网站 | 2026年02月03日</div><div class="seg-block"><span class="crumb">[经济日报] 增值税征管兼顾效率和公平</span><div class="sc-excerpt plain">按次纳税的主体中，自然人纳税人占绝大多数。为减轻自然人办税负担，《中华人民共和国增值税法实施条例》第四十四条明确，按次纳税的纳税人，销售额达到起征点的，应当自纳税义务发生之日起至次年6月30日前进行申报纳税，在申报纳税期限方面为纳税人预留了较为充足的时间。考虑到自然人流动性强，为便利其申报纳税，减轻按次纳税办税负担，《征管公告》明确自然人发生应税交易达到起征点的，不论是向税务机关申请代开发票，还是由扣缴义务人代扣代缴，均视为办理了申报纳税。
+“从公告规定来看，税务部门尽量减少了自然人需要自行申报纳税的情况。”黄立新表示，如果自然人代开发票、代扣代缴两种方式都未涉及，才适用兜底方式，就其本年度尚未缴纳增值税的应税交易，按照规定向主管税务机关申报纳税，这样就减轻了自然人的办税负担。
+《征管公告》还对小规模纳税人灵活享受减免税优惠进行了明确。《中华人民共和国增值税法》第二十七条明确，“纳税人可以放弃增值税优惠；放弃优惠的，在三十六个月内不得享受该项税收优惠，小规模纳税人除外”。基于上述条款规定，《征管公告》延续了近年来一直执行的征管口径，明确提出，小规模纳税人发生应税交易，销售额未达到起征点标准的，可以选择全部或者部分应税交易放弃免税并开具增值税专用发票。
+国家税务总局货物和劳务税司有关负责人介绍，由于增值税实行“环环征收、道道抵扣”的链条式征扣税机制，小规模纳税人放弃减免税的主要目的，一般是为了满足下游客户索取增值税专用发票用以抵扣进项的需求。根据《征管公告》规定，小规模纳税人可以根据自身经营情况，灵活选择是否就某笔应税交易放弃减免税优惠，单笔放弃享受优惠的，不会影响其他应税交易继续享受优惠。需要提醒的是，小规模纳税人在准确把握政策规定灵活享受减免税优惠的同时，应当做到合规经营，确保长远稳定发展。
+（记者：董碧娟）
+网站纠错
+责任编辑： 曾彪
+[人民日报] 国家税务总局制发公告 明确起征点标准等增值税征管事项
+[人民日报] 国家税务总局发布新出口退税管理办法 申报办理更加便捷高效</div></div><div class="sc-links"><span><a href="http://www.chinatax.gov.cn/chinatax/n810219/n810780/c5247519/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>[经济日报] 优化税收环境激发新活力</h4><div class="sc-meta">国家税务总局门户网站 | 2026年01月01日</div><div class="seg-block"><span class="crumb">[经济日报] 优化税收环境激发新活力</span><div class="sc-excerpt plain">近年来，小微企业和个体工商户一直是减税降费的支持重点。2023年，我国延续实施了多项小微企业和个体工商户十分关注的税费优惠政策，大部分政策直接延续到2027年底。比如，对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。对个体工商户年应纳税所得额不超过200万元的部分，减半征收个人所得税。对小型微利企业减按25%计算应纳税所得额，按20%的税率缴纳企业所得税。这些税费政策普惠性强，符合条件的小微企业和个体工商户都可以享受。
+“民营企业以中小企业和个体工商户为主，具有数量多、第三产业居多等特征。这些小微企业抗风险能力普遍较弱。近年来，为帮助中小企业及服务业纾困，我国出台了一揽子税费支持政策，在助力中小民营企业渡过难关并实现持续发展方面发挥了积极作用。”北京国家会计学院副院长李旭红表示。
+在税费优惠等多方面政策助力下，民营经营主体活力不断释放。税收数据显示，2024年民营经济销售收入增速比全国企业平均水平高0.5个百分点。其中，高技术制造业、数字经济核心产业销售收入同比分别增长13%、4.7%，较全国同行业企业分别高1.8个、1.7个百分点。
+强化法治公平
+2024年12月25日，十四届全国人大常委会第十三次会议表决通过了《中华人民共和国增值税法》，自2026年1月1日起施行。我国第一大税种增值税有了专门法律，对于健全有利于高质量发展的增值税制度、规范增值税的征收和缴纳、保护纳税人的合法权益具有重要意义。
+“法治公平是最好的营商环境。目前，我国18个税种中已经有14个完成立法，涉及的税收收入在全部税收收入中所占比重超80%，基本形成了系统完备、科学规范、运行有效的税收法律制度体系。”吉林财经大学税务学院院长张巍表示，税收立法有助于增强税制确定性，让企业稳定预期、提振信心。</div></div><div class="sc-links"><span><a href="http://www.chinatax.gov.cn/chinatax/n810219/n810780/c5238961/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>最新的小微企业增值税优惠政策是如何规定的？</h4><div class="sc-meta">国家税务总局门户网站 | 2025年10月30日</div><div class="seg-block"><span class="crumb">最新的小微企业增值税优惠政策是如何规定的？</span><div class="sc-excerpt plain">知识详情
+智能咨询
+关于12366
+首页
+北京市 [切换]
+A-G
+北京市
+安徽省
+福建省
+广东省
+广西壮族自治区
+重庆市
+贵州省
+甘肃省
+大连市
+H-K
+河北省
+吉林省
+黑龙江省
+江苏省
+江西省
+河南省
+湖北省
+湖南省
+海南省
+L-S
+山西省
+内蒙古自治区
+辽宁省
+上海市
+山东省
+四川省
+陕西省
+青海省
+宁夏回族自治区
+宁波市
+青岛市
+深圳市
+T-Z
+天津市
+浙江省
+云南省
+西藏自治区
+新疆维吾尔自治区
+厦门市
+我的收藏
+好友申请
+我的消息
+注册
+登录
+用户名称
+个人中心
+退出
+知识详情
+最新的小微企业增值税优惠政策是如何规定的？
+发布日期：2025-10-30
+打印
+字体：
+大
+中
+小阅读量17798
+　　根据《关于增值税小规模纳税人减免增值税政策的公告》(财政部 税务总局公告2023年第19号)规定，一、对月销售额10万元以下(含本数)的增值税小规模纳税人，免征增值税。</div></div><div class="seg-block"><span class="crumb">最新的小微企业增值税优惠政策是如何规定的？ <i>›</i> 本公告执行至2027年12月31日。</span><div class="sc-excerpt plain">三、本公告执行至2027年12月31日。
+下载
+收藏
+纠错
+纠错
+提交
+0
+相关附件
+相关法规
+问题解答
+办税流程
+你可能关注的
+换一换
+[视频点播]增值税申报表更正及医疗服务、教育服务免征增值税政策
+发布时间：2025-12-10
+[热点问题]纳税人发生跨境应税行为，按照《国家税务总局关于发布〈营业税改征增值税跨境应税行为增值税免税管理办法（试行）〉的公告》（国家税务总局公告2016年第29号）的规定办理免税备案手续后发生的相同跨境应税行为，是否需要重新办理备案手续？
+发布时间：2025-12-09
+[视频点播]社保费基数补差操作指引
+发布时间：2025-12-08
+[视频点播]个转企“一件事”办理指南
+发布时间：2025-12-08
+[视频点播]纳税信用缴费
+发布时间：2025-12-08
+[视频点播]契税优惠政策中的“家庭唯一住房”
+发布时间：2025-12-05
+[视频点播]山东省土地增值税预征率是多少
+发布时间：2025-12-05
+[视频点播]办税一点通高效指南 代开增值税发票
+发布时间：2025-12-05
+版权所有：国家税务总局 网站标识码：bm29000002
+京ICP备13021685号-2
+京公网安备 11040102700073号
+主办单位：国家税务总局 地址：北京市西城区枣林前街68号 |
+联系我们
+建议您使用IE9及以上版本、Edge、Chrome、Firefox和360等主流浏览器浏览本网站
+X
+您即将离开12366纳税服务平台网站，
+是否继续？
+继续访问 放弃
+X
+分享到 - 微信</div></div><div class="sc-links"><span><a href="https://12366.chinatax.gov.cn/sscx/detail?code=0000000002019012200002&amp;flag=2&amp;tslx=2" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>支持小微企业和个体工商户发展税费优惠政策指引（2.0）</h4><div class="sc-meta">2023年12月21日</div><div class="seg-block"><span class="crumb">支持小微企业和个体工商户发展税费优惠政策指引（2.0） <i>›</i> 第三十七条</span><div class="sc-excerpt plain">【政策案例】
+某教授在外单位授课获取酬劳，8月5日到办税服务厅代开征收率为1%的增值税普通发票。如代开发票金额为400元，未超过500元的起征点，则可免征增值税；如代开发票金额为800元，超过500元的起征点，则需按照800元全额缴纳增值税8元（=800*1%）。
+2．增值税小规模纳税人月销售额10万元以下免征增值税政策
+【享受主体】
+增值税小规模纳税人
+【优惠内容】
+自2023年1月1日至2027年12月31日，对月销售额10万元以下（含本数）的增值税小规模纳税人免征增值税。
+【享受条件】
+1．适用于按期纳税的增值税小规模纳税人。
+2．小规模纳税人以1个月为1个纳税期的，月销售额未超过10万元；小规模纳税人以1个季度为1个纳税期的，季度销售额未超过30万元，可以享受免征增值税政策。
+3．小规模纳税人发生增值税应税销售行为，合计月销售额超过10万元，但扣除本期发生的销售不动产的销售额后未超过10万元的，其销售货物、劳务、服务、无形资产取得的销售额免征增值税。
+4．适用增值税差额征税政策的小规模纳税人，以差额后的销售额确定是否可以享受上述免征增值税政策。
+5．其他个人采取一次性收取租金形式出租不动产取得的租金收入，可在对应的租赁期内平均分摊，分摊后的月租金收入未超过10万元的，免征增值税。
+6．按固定期限纳税的小规模纳税人可以选择以1个月或1个季度为纳税期限，一经选择，一个会计年度内不得变更。
+【享受方式】</div></div><div class="seg-block"><span class="crumb">支持小微企业和个体工商户发展税费优惠政策指引（2.0）</span><div class="sc-excerpt plain">二　
+、推动普惠金融发展
+13．金融机构小微企业及个体工商户1000万元及以下小额贷款利息收入免征增值税政策
+【享受主体】
+向小型企业、微型企业及个体工商户发放小额贷款的金融机构
+【优惠内容】
+2027年12月31日前，对金融机构向小型企业、微型企业和个体工商户发放小额贷款取得的利息收入，免征增值税。金融机构可以选择以下两种方法之一适用免税：
+(1)对金融机构向小型企业、微型企业和个体工商户发放的，利率水平不高于全国银行间同业拆借中心公布的贷款市场报价利率（LPR）150%（含本数）的单笔小额贷款取得的利息收入，免征增值税；高于全国银行间同业拆借中心公布的贷款市场报价利率（LPR）150%的单笔小额贷款取得的利息收入，按照现行政策规定缴纳增值税。
+(2)对金融机构向小型企业、微型企业和个体工商户发放单笔小额贷款取得的利息收入中，不高于该笔贷款按照全国银行间同业拆借中心公布的贷款市场报价利率（LPR）150%（含本数）计算的利息收入部分，免征增值税；超过部分按照现行政策规定缴纳增值税。
+金融机构可按会计年度在以上两种方法之间选定其一作为该年的免税适用方法，一经选定，该会计年度内不得变更。
+【享受条件】
+1．小型企业、微型企业，是指符合《中小企业划型标准规定》（工信部联企业〔2011〕300号）的小型企业和微型企业。其中，资产总额和从业人员指标均以贷款发放时的实际状态确定，营业收入指标以贷款发放前12个自然月的累计数确定，不满12个自然月的，按照以下公式计算：
+营业收入（年）=企业实际存续期间营业收入/企业实际存续月数×12</div></div><div class="sc-links"><span><a href="http://zc.gjzwfw.gov.cn/art/2023/12/22/art_14_71595.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>增值税小规模纳税人增值税优惠政策</h4><div class="sc-meta">2023年01月01日</div><div class="seg-block"><span class="crumb">增值税小规模纳税人增值税优惠政策 <i>›</i> 表格</span><div class="sc-excerpt rich"><table>
+ <tbody>
+ <tr>
+ <td>政策依据</td>
+ <td>1.《财政部税务总局关于增值税小规模纳税人减免增值税政策的公告》（财政部税务总局公告2023年第19号）； 2.《国家税务总局关于增值税小规模纳税人减免增值税等政策有关征管事项的公告》（国家税务总局公告2023年第1号）。</td>
+ </tr>
+ <tr>
+ <td>政策内容</td>
+ <td>1.自2023年1月1日至2027年12月31日，对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。 3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。</td>
+ </tr>
+ <tr>
+ <td>适用对象</td>
+ </tr>
+ <tr>
+ <td>适用时间</td>
+ <td>1.随增值税纳税申报； 2.2023年1月1日起实施，有效期至2027年12月31日。</td>
+ </tr>
+ <tr>
+ <td>咨询电话</td>
+ <td>纳税人主管税务机关0472-8012366，0472-8917188</td>
+ </tr>
+ <tr>
+ <td>申请条件</td>
+ <td>1.增值税小规模纳税人（以下简称小规模纳税人）发生增值税应税销售行为，合计月销售额未超过10万元（以1个季度为1个纳税期的，季度销售额未超过30万元）的，免征增值税。 2.小规模纳税人发生增值税应税销售行为，合计月销售额超过10万元，但扣除本期发生的销售不动产的销售额后未超过10万元的，其销售货物、劳务、服务、无形资产取得的销售额免征增值税 3.按照现行规定应当预缴增值税税款的小规模纳税人，凡在预缴地实现的月销售额未超过10万元的，当期无需预缴税款。在预缴地实现的月销售额超过10万元的，适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。</td>
+ </tr>
+ <tr>
+ <td>申请材料</td>
+ </tr>
+ </tbody>
+</table></div></div><div class="sc-links"><span><a href="http://www.tmtyq.gov.cn/zfxxgk/fdzdgknr/zdlyxxgk/zqsk/zqsk_jsjf/202510/t20251014_678346.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>关于《国家税务总局关于资源回收企业向自然人报废产品出售者“反向开票”有关事项的公告》的解读</h4><div class="sc-meta">2024年04月25日</div><div class="seg-block"><span class="crumb">关于《国家税务总局关于资源回收企业向自然人报废产品出售者“反向开票”有关事项的公告》的解读 <i>›</i> 八、 出售者可享受的增值税优惠 <i>›</i> 出售者可享受的增值税优惠政策</span><div class="sc-excerpt plain">答：出售者通过“反向开票”销售报废产品，可按规定享受小规模纳税人月销售额10万元以下免征增值税和3%征收率减按1%计算缴纳增值税等税费优惠政策。后续如小规模纳税人相关税费优惠政策调整，按照调整后的政策执行。</div></div><div class="sc-links"><span><a href="https://fgk.chinatax.gov.cn/zcfgk/c100015/c5225083/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>支持小微企业和个体工商户发展 多项税收优惠政策延续优化至2027年底</h4><div class="sc-meta">中国政府网门户网站 | 2023年08月04日</div><div class="seg-block"><span class="crumb">支持小微企业和个体工商户发展 多项税收优惠政策延续优化至2027年底</span><div class="sc-excerpt plain">财政部、国家税务总局日前联合发布一系列公告，明确多项支持小微企业和个体工商户发展的税费政策，为经营主体减负担、增动能，促进重点群体创业就业。
+为继续减轻小微企业和个体工商户税费负担，公告明确，2027年底前，对个体工商户年应纳税所得额不超过200万元的部分，减半征收个人所得税；对增值税小规模纳税人、小型微利企业和个体工商户减半征收资源税（不含水资源税）、城市维护建设税、房产税、城镇土地使用税、印花税（不含证券交易印花税）、耕地占用税和教育费附加、地方教育附加；对小型微利企业减按25%计算应纳税所得额，按20%的税率缴纳企业所得税。与此同时，小规模纳税人减免增值税政策也延续至2027年底，即对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税；增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税；适用3%预征率的预缴增值税项目，减按1%预征率预缴增值税。
+为继续推动缓解小微企业和个体工商户融资难、融资贵问题，公告明确，2027年底前，对金融机构向小型企业、微型企业及个体工商户发放小额贷款取得的利息收入，免征增值税。对金融机构与小型企业、微型企业签订的借款合同免征印花税。纳税人为农户、小型企业、微型企业及个体工商户借款、发行债券提供融资担保取得的担保费收入，以及为上述融资担保提供再担保取得的再担保费收入，免征增值税。</div></div><div class="sc-links"><span><a href="https://www.gov.cn/zhengce/202308/content_6896550.htm" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>学习收藏！按季申报小规模纳税人享受减免增值税政策等14问</h4><div class="sc-meta">国家税务总局门户网站 | 2025年01月07日</div><div class="seg-block"><span class="crumb">学习收藏！按季申报小规模纳税人享受减免增值税政策等14问</span><div class="sc-excerpt plain">答：《财政部 税务总局关于增值税小规模纳税人减免增值税政策的公告》（2023年第19号）第二条规定，增值税小规模纳税人适用3%征收率的应税销售收入，减按1%征收率征收增值税。根据上述规定，您可以享受3%征收率销售收入减按1%征收增值税政策。但由于您开具的3%征收率的机动车销售统一发票，具有抵扣功能，您的客户如为一般纳税人，可以凭您开具的3%征收率的机动车销售统一发票，抵扣对应的进项税额。因此，您需要追回已开具的3%征收率的机动车销售统一发票，重新开具1%征收率的机动车销售统一发票，方能享受减税政策。如无法追回，则需要按照3%征收率计算缴纳增值税。今后您要享受3%征收率销售收入减按1%征收增值税政策时，如需开具机动车销售统一发票，注意应按照1%征收率开具。
+【问题10】我公司是一家增值税小规模纳税人，2021年适用3%征收率减按1%征收增值税政策。有一笔纳税义务发生时间在2021年12月1日的收入，已经按照1%征收率开具发票，但由于购买方名称填写错误被购买方拒收，请问是否可以重新开票？
+答：可以。《国家税务总局关于增值税小规模纳税人减免增值税等政策有关征管事项的公告》（国家税务总局公告2023年第1号）第六条规定，小规模纳税人取得应税销售收入，纳税义务发生时间在2022年12月31日前并已开具增值税发票，如发生销售折让、中止或者退回等情形需要开具红字发票，应开具对应征收率红字发票或免税红字发票；开票有误需要重新开具的，应开具对应征收率红字发票或免税红字发票，再重新开具正确的蓝字发票。
+【问题11】我公司是一家住房租赁企业，属于增值税小规模纳税人。请问，小规模纳税人新政策出台后，我公司出租位于省外城市的住房还需要预缴增值税吗？</div></div><div class="sc-links"><span><a href="https://www.chinatax.gov.cn/chinatax/n810356/n3010387/c5237719/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>国新办举行优化完善部分阶段性税费优惠政策国务院政策例行吹风会 图文实录</h4><div class="sc-meta">国务院新闻办公室门户网站 | 2023年03月31日</div><div class="seg-block"><span class="crumb">国新办举行优化完善部分阶段性税费优惠政策国务院政策例行吹风会 图文实录</span><div class="sc-excerpt plain">3月24日国务院常务会议决定延续实施减征小微企业和个体工商户的所得税政策。今年1月，按照国务院部署，财政部已经会同有关部门明确了小规模纳税人增值税的相关优惠政策。今年支持小微企业和个体工商户的政策措施，我们梳理了一下，主要包括以下几项：一是优化完善小微企业和个体工商户的所得税政策。自2023年1月1日至2024年12月31日，对小微企业年应纳税所得额不超过100万元的部分，减按25%计入应纳税所得额，按20%的税率缴纳企业所得税，保持相关优惠政策的衔接协调，同时对个体工商户年应纳税所得额不超过100万元的部分，在现行优惠政策基础上减半征收个人所得税。二是将小规模纳税人的增值税征收率降至1%。三是对月销售额10万元及以下小规模纳税人免征增值税。四是对生产生活性服务业纳税人分别实施5%、10%的增值税加计抵减。以上各项政策，将与现行其他支持小微企业和个体工商户的政策形成合力。
+　　下一步，我们将按照党中央、国务院决策部署，进一步优化政策实施方式，及时研究解决经营主体反映的突出问题，有效纾解小微企业和个体工商户生产经营的困难，激发市场活力和信心。谢谢。
+　　2023-03-31 10:19:28
+中国日报记者提问（刘健 摄）
+中国日报记者:　　日前，国务院常务会议决定延续和优化实施部分税费优惠政策，我们想问一下税务部门，在政策落实方面有哪些安排和进展？谢谢。
+　　2023-03-31 10:25:20
+王道树（徐想 摄）
+国家税务总局副局长王道树:　　谢谢您的关心。3月24日国务院常务会议研究到期税费优惠政策接续安排，这充分体现了党中央、国务院因时应势的科学谋划和务实高效的工作作风，对激发市场活力、稳定市场预期、提振市场信心具有重要意义。
+　　前期，税务部门积极会同有关部门深入开展调研，广泛听取企业和专家的意见，认真开展测算，研究提出政策延续和优化完善的建议。在国务院常务会议作出决定之后，税务总局党委高度重视，党委书记、局长王军同志亲自主持召开党委会议，进行抓好落实工作的部署，研究推出“五个迅速”的落实工作行动安排：</div></div><div class="sc-links"><span><a href="http://www.scio.gov.cn/gwyzclxcfh/cfh/49553/49741/tw49743/202305/t20230517_714205.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-unused">未引用</span><span class="sc-type">材料</span><span class="sc-vk" style="color:var(--muted)">可查看全文</span></div><h4>国新办举行优化完善部分阶段性税费优惠政策例行吹风会</h4><div class="sc-meta">国家税务总局门户网站 | 2023年05月05日</div><div class="seg-block"><span class="crumb">国新办举行优化完善部分阶段性税费优惠政策例行吹风会</span><div class="sc-excerpt plain">正如刚刚我讲到的，当前我国发展面临的不确定、难预料的因素比较多，小微企业和个体工商户仍然面临不少困难。所以面对新形势，我们要综合考虑财政的承受能力和助企纾困的需要，在落实好前期出台政策的基础上，根据实际情况进一步完善税费优惠政策，突出对小微企业、个体工商户的支持，以稳定市场预期、提振市场信心，持续激发市场主体的活力。
+3月24日国务院常务会议决定延续实施减征小微企业和个体工商户的所得税政策。今年1月，按照国务院部署，财政部已经会同有关部门明确了小规模纳税人增值税的相关优惠政策。今年支持小微企业和个体工商户的政策措施，我们梳理了一下，主要包括以下几项：一是优化完善小微企业和个体工商户的所得税政策。自2023年1月1日至2024年12月31日，对小微企业年应纳税所得额不超过100万元的部分，减按25%计入应纳税所得额，按20%的税率缴纳企业所得税，保持相关优惠政策的衔接协调，同时对个体工商户年应纳税所得额不超过100万元的部分，在现行优惠政策基础上减半征收个人所得税。二是将小规模纳税人的增值税征收率降至1%。三是对月销售额10万元及以下小规模纳税人免征增值税。四是对生产生活性服务业纳税人分别实施5%、10%的增值税加计抵减。以上各项政策，将与现行其他支持小微企业和个体工商户的政策形成合力。
+下一步，我们将按照党中央、国务院决策部署，进一步优化政策实施方式，及时研究解决市场主体反映的突出问题，有效纾解小微企业和个体工商户生产经营的困难，激发市场活力和信心。谢谢。
+日前，国务院常务会议决定延续和优化实施部分税费优惠政策，我们想问一下税务部门，在政策落实方面有哪些安排和进展？谢谢。
+王道树（徐想 摄）
+国家税务总局副局长王道树：
+谢谢您的关心。3月24日国务院常务会议研究到期税费优惠政策接续安排，这充分体现了党中央、国务院因时应势的科学谋划和务实高效的工作作风，对激发市场活力、稳定市场预期、提振市场信心具有重要意义。</div></div><div class="sc-links"><span><a href="http://www.chinatax.gov.cn/chinatax/n810219/n810724/c5185995/content.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article></section>
 </div>
 
+
+
+<div class="ev-panel" id="ev-pop" hidden></div>
 <div class="sheet-mask" aria-hidden="true"></div>
 <div class="sheet" role="dialog" aria-label="核验材料">
   <div class="sheet-grab"></div>
@@ -315,19 +1017,127 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
 <script>
 (function () {
   "use strict";
-  var cards = Array.prototype.slice.call(document.querySelectorAll(".scard"));
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  var app = $(".app");
+  var isMobile = function () { return window.matchMedia("(max-width:680px)").matches; };
+
+  /* ===== 1. 双视图切换（保存/恢复各自滚动位置） ===== */
+  var savedScroll = { report: 0, library: 0 };
+  function setView(view) {
+    if (!app || app.getAttribute("data-view") === view) return;
+    savedScroll[app.getAttribute("data-view") || "report"] = window.scrollY;
+    app.setAttribute("data-view", view);
+    $$(".view-switch button").forEach(function (b) {
+      b.classList.toggle("on", b.getAttribute("data-view") === view);
+    });
+    window.scrollTo(0, Math.max(0, savedScroll[view] || 0));
+  }
+  $$(".view-switch button").forEach(function (b) {
+    b.addEventListener("click", function () { setView(b.getAttribute("data-view")); });
+  });
+
+  /* ===== 2. 阅读进度条 ===== */
+  var progress = $(".progress i");
+  function updateProgress() {
+    if (!progress) return;
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    progress.style.width = (max > 0 ? Math.min(100, (h.scrollTop / max) * 100) : 0) + "%";
+  }
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  updateProgress();
+
+  /* ===== 3. 只看正文（纯净阅读态切换） ===== */
+  var readBtn = $("#btn-reading");
+  if (readBtn) {
+    readBtn.addEventListener("click", function () {
+      var on = document.body.classList.toggle("reading");
+      readBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      readBtn.textContent = on ? "显示核验" : "只看正文";
+      /* 只看正文只作用于核验报告视图：正在材料专库时切回报告，专库不受影响 */
+      if (on && app && app.getAttribute("data-view") !== "report") setView("report");
+    });
+  }
+
+  /* ===== 4. 复制全文（章节标题 + 段落 + 表格，去角标） ===== */
+  var copyBtn = $("#btn-copy");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", function () {
+      var parts = [];
+      /* 按文档流顺序收集章节标题/段落/表格；克隆后剔除引文胶囊与角标，
+         只复制正文本身（胶囊标题/展开摘录/编号数字均不带出） */
+      var nodes = $$("#view-report .ch-head h2, #view-report .lead, #view-report .para, #view-report .tbl-wrap");
+      nodes.sort(function (a, b) { return (a.compareDocumentPosition(b) & 4) ? -1 : 1; });
+      nodes.forEach(function (el) {
+        var clone = el.cloneNode(true);
+        clone.querySelectorAll(".jb, sup.cite").forEach(function (x) { x.remove(); });
+        var t = clone.textContent.replace(/[ 	]+/g, " ").trim();
+        if (t) parts.push(t);
+      });
+      var text = parts.filter(Boolean).join("\n\n");
+      function done(ok) {
+        var old = copyBtn.textContent;
+        copyBtn.textContent = ok ? "已复制 ✓" : "复制失败";
+        setTimeout(function () { copyBtn.textContent = old; }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(fallback(text)); });
+      } else {
+        done(fallback(text));
+      }
+      function fallback(value) {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = value;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          var ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          return ok;
+        } catch (e) { return false; }
+      }
+    });
+  }
+
+  /* ===== 5. 打印归档（PDF）：下拉双选项——只打印正文 / 完整归档 ===== */
+  var printBtn = $("#btn-print");
+  var printDrop = $("#print-drop");
+  function printBy(mode) {
+    if (mode === "body") document.body.classList.add("print-body-only");
+    if (printDrop) printDrop.hidden = true;
+    window.print();
+  }
+  if (printBtn && printDrop) {
+    printBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      printDrop.hidden = !printDrop.hidden;
+    });
+    printDrop.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var t = e.target.closest("button");
+      if (!t) return;
+      printBy(t.id === "print-body" ? "body" : "full");
+    });
+    document.addEventListener("click", function () { printDrop.hidden = true; });
+    /* 打印结束移除临时模式（浏览器打印窗口关闭后触发） */
+    window.addEventListener("afterprint", function () { document.body.classList.remove("print-body-only"); });
+  }
+
+  /* ===== 6. 材料卡索引（专库列表内，不含打印附录） ===== */
+  var cards = $$("#lib-list .scard");
   var byId = {};
   cards.forEach(function (c) {
     var id = c.getAttribute("data-cite-id");
     if (id) byId[id] = c;
   });
 
-  /* 移动端底部弹层：点角标就地展示"正文表述 ↔ 原文原段"对照 + 材料卡，不打断正文阅读 */
-  var sheet = document.querySelector(".sheet");
-  var mask = document.querySelector(".sheet-mask");
-  function isMobile() {
-    return window.matchMedia("(max-width:680px)").matches;
-  }
+  /* 移动端底部弹层：正文表述 ↔ 原文原段 对照 + 材料卡 */
+  var sheet = $(".sheet");
+  var mask = $(".sheet-mask");
   function escHtml(s) {
     var d = document.createElement("div");
     d.textContent = s;
@@ -346,8 +1156,8 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
       var cmp = document.createElement("div");
       cmp.className = "cmp";
       cmp.innerHTML =
-        '<div class="cmp-side cmp-ai"><div class="cmp-tag">正文表述（AI 生成）</div><p>' + escHtml(sentence) + '</p></div>' +
-        '<div class="cmp-side cmp-src"><div class="cmp-tag">原文原段（非 AI 生成）</div>' +
+        '<div class="cmp-side cmp-ai"><div class="cmp-tag">正文表述</div><p>' + escHtml(sentence) + '</p></div>' +
+        '<div class="cmp-side cmp-src"><div class="cmp-tag">原文原段</div>' +
         '<div class="sc-excerpt">' + (excerpt ? excerpt.innerHTML : "") + '</div></div>';
       body.appendChild(cmp);
     }
@@ -355,8 +1165,6 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     clone.removeAttribute("id");
     clone.classList.remove("hide");
     clone.classList.add("open");
-    var sheetMore = clone.querySelector(".sc-more");
-    if (sheetMore) sheetMore.remove();
     body.appendChild(clone);
     sheet.classList.add("show");
     mask.classList.add("show");
@@ -375,98 +1183,149 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#374151;
     if (closeBtn) closeBtn.addEventListener("click", closeSheet);
   }
 
-  /* 角标 → 来源卡：精确 ID 匹配，缺失即红色警示，绝不按位置猜测。
-     手机单栏下不滚动定位（会跳到页面底部打断阅读），改为底部弹层就地查看。 */
-  document.querySelectorAll(".data-cite,[data-cite]").forEach(function (btn) {
-    if (btn.classList.contains("sheet-close")) return;
+  /* 行内引文 jb（原型行为）：点小胶囊 toggle 展开卡；点角标展开对应 jb 并 flash。
+     未绑定角标红色警示，绝不按位置猜测。 */
+  var JB_TABLES = {};
+  try {
+    var jbTablesEl = document.getElementById("jb-tables");
+    if (jbTablesEl) JB_TABLES = JSON.parse(jbTablesEl.textContent || "{}");
+  } catch (e) { JB_TABLES = {}; }
+  function fillTableHolders(jb) {
+    jb.querySelectorAll(".tbl-holder[data-tbl]").forEach(function (h) {
+      if (h.getAttribute("data-filled")) return;
+      var html = JB_TABLES[h.getAttribute("data-tbl")];
+      if (html) h.innerHTML = html;
+      h.setAttribute("data-filled", "1");
+    });
+  }
+  function toggleJb(jb, forceOpen) {
+    var open = forceOpen === true ? true : !jb.classList.contains("active");
+    document.querySelectorAll(".jb.active").forEach(function (x) { if (x !== jb) x.classList.remove("active"); });
+    jb.classList.toggle("active", open);
+    if (open) fillTableHolders(jb);
+    var name = jb.querySelector(".jb-name");
+    if (name) name.setAttribute("aria-expanded", open ? "true" : "false");
+    return open;
+  }
+  document.querySelectorAll(".jb-name").forEach(function (name) {
+    name.addEventListener("click", function () { toggleJb(name.closest(".jb")); });
+  });
+
+  /* 引文条目点击 → 材料专库定位对应卡：库内导航看完整材料；
+     外部原文跳转只保留 jb-head 的"查看全文"按钮，动线分离 */
+  function jumpToLibrary(id) {
+    var card = byId[id];
+    if (!card) return;
+    setView("library");
+    card.classList.remove("hide", "open");
+    card.classList.add("hl", "open");
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { card.scrollIntoView({ block: "center", behavior: "smooth" }); });
+    });
+    setTimeout(function () { card.classList.remove("hl"); }, 2200);
+  }
+  document.querySelectorAll(".jb-quote").forEach(function (q) {
+    function go() {
+      var jbEl = q.closest(".jb");
+      var id = jbEl && jbEl.getAttribute("data-cite");
+      if (id) jumpToLibrary(id);
+    }
+    q.addEventListener("click", go);
+    q.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+    });
+  });
+  document.querySelectorAll("sup.cite").forEach(function (btn) {
+    /* 仅剩未绑定角标（红色数字）走到这里：点击控制台留痕 */
     btn.addEventListener("click", function () {
-      var card = byId[btn.getAttribute("data-cite")];
-      if (!card) {
-        btn.classList.add("unresolved");
-        if (console.error) console.error("[核验] 未绑定角标:", btn.getAttribute("data-cite"));
-        return;
-      }
-      if (isMobile()) {
-        openSheet(card, sentenceOf(btn));
-        return;
-      }
-      card.classList.remove("hide", "open");
-      card.classList.add("hl", "open");
-      card.scrollIntoView({ block: "center", behavior: "smooth" });
-      setTimeout(function () { card.classList.remove("hl"); }, 2200);
+      if (console.error) console.error("[核验] 未绑定角标:", btn.getAttribute("data-cite"));
     });
   });
 
-  /* 摘录点击展开/收起：内容被截断（超出 4 行）的卡片显示"展开全文"引导，
-     未截断的短摘录不显示，避免误导 */
-  cards.forEach(function (c) {
-    var ex = c.querySelector(".sc-excerpt");
-    if (!ex) return;
-    if (ex.scrollHeight > ex.clientHeight + 4) c.classList.add("clampable");
-    var more = c.querySelector(".sc-more");
-    function toggleExcerpt() { c.classList.toggle("open"); }
-    ex.addEventListener("click", function (e) {
-      if (e.target.closest("a")) return;
-      toggleExcerpt();
-    });
-    if (more) {
-      more.addEventListener("click", toggleExcerpt);
-      more.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExcerpt(); }
-      });
-    }
-  });
+  /* 材料卡摘录直接全文展开（句后胶囊已承载即点即看，专库不再折叠） */
 
-  /* 证据 chips（灰框）：桌面端点击就地展开并高亮右栏来源卡；手机端不就地展开，点击直接弹出底部材料弹层。
-     展开锁定：浏览器（Chrome 系）对 <details> 展开会自动滚动露出内容、收起时滚动位置会被回夹，
-     点击时锁定滚动位置并在展开/收起后滚回，消除页面"轻微滚动"感。 */
+  /* 胶囊点击：桌面开关对照气泡（同一气泡再点收起）；手机端弹出底部材料弹层 */
   document.querySelectorAll(".ev-chip").forEach(function (chip) {
-    var summary = chip.querySelector("summary");
-    if (summary) {
-      summary.addEventListener("click", function (e) {
-        if (isMobile()) {
-          e.preventDefault();
-          var card = byId[chip.getAttribute("data-cite")];
-          if (card) openSheet(card, sentenceOf(chip));
-          return;
-        }
-        var y = window.scrollY;
-        var restore = function () { window.scrollTo(0, y); };
-        requestAnimationFrame(function () { restore(); requestAnimationFrame(restore); });
-      });
-    }
-    chip.addEventListener("toggle", function () {
-      if (!chip.open || isMobile()) return;
-      var card = byId[chip.getAttribute("data-cite")];
-      if (!card) return;
-      cards.forEach(function (c) { c.classList.remove("hl"); });
-      card.classList.add("hl");
-      setTimeout(function () { card.classList.remove("hl"); }, 2200);
+    chip.addEventListener("click", function () {
+      var id = chip.getAttribute("data-cite");
+      if (isMobile()) {
+        var card = byId[id];
+        if (card) openSheet(card, sentenceOf(chip));
+        return;
+      }
+      togglePop(chip, id);
     });
   });
 
-  /* 检索分组筛选（单选 + 全部 + 未引用，胶囊样式）+ 关键字搜索叠加 */
+  /* ===== 7. 材料专库：tabs + 搜索 + 热词 ===== */
   var cond = "";
   var kw = "";
-  function apply() {
+  function applyFilter() {
+    var visible = 0;
     cards.forEach(function (c) {
       var okCond = !cond;
       if (cond === "__unused__") okCond = c.getAttribute("data-unused") === "1";
       else if (cond) okCond = c.getAttribute("data-search") === cond;
       var okKw = !kw || (c.textContent || "").toLowerCase().indexOf(kw) !== -1;
-      c.classList.toggle("hide", !(okCond && okKw));
+      var show = okCond && okKw;
+      c.classList.toggle("hide", !show);
+      if (show) visible++;
     });
+    var empty = $("#lib-empty");
+    if (empty) empty.classList.toggle("hide", visible !== 0);
   }
-  document.querySelectorAll(".filters button").forEach(function (b) {
+  $$(".lib-tabs button").forEach(function (b) {
     b.addEventListener("click", function () {
-      document.querySelectorAll(".filters button").forEach(function (x) { x.classList.remove("on"); });
+      $$(".lib-tabs button").forEach(function (x) { x.classList.remove("on"); });
       b.classList.add("on");
       cond = b.getAttribute("data-cond") || "";
-      apply();
+      applyFilter();
     });
   });
-  var search = document.querySelector(".src-search");
-  if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); apply(); });
+  var search = $(".lib-search");
+  if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); applyFilter(); });
+  $$(".hot-term").forEach(function (t) {
+    t.addEventListener("click", function () {
+      if (!search) return;
+      search.value = t.textContent.trim();
+      kw = search.value.toLowerCase();
+      applyFilter();
+      if (search.focus) search.focus();
+    });
+  });
+
+  /* ===== 8. 过程回顾条：检索步骤展开 ===== */
+  var pStep = $("#p-step-search");
+  var pDetail = $("#p-detail");
+  if (pStep && pDetail) {
+    function toggleDetail() { pDetail.classList.toggle("show"); }
+    pStep.addEventListener("click", toggleDetail);
+    pStep.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleDetail(); }
+    });
+  }
+
+  /* ===== 9. 章节目录（spy） ===== */
+  var toc = $(".toc");
+  if (toc) {
+    var links = $$("a", toc);
+    var secs = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+    links.forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        var target = document.querySelector(a.getAttribute("href"));
+        if (target) target.scrollIntoView({ block: "start", behavior: "smooth" });
+      });
+    });
+    function spy() {
+      var pos = window.scrollY + 130;
+      var current = -1;
+      secs.forEach(function (s, i) { if (s && s.offsetTop <= pos) current = i; });
+      links.forEach(function (a, i) { a.classList.toggle("on", i === current); });
+    }
+    window.addEventListener("scroll", spy, { passive: true });
+    spy();
+  }
 })();
 </script>
 </body>
