@@ -1,34 +1,77 @@
 #!/usr/bin/env node
-// 国内 MaaS headless 注册助手（供 skillhub skill 调用；纯 node，内置 fetch，无三方依赖）。
-//   node register_key.mjs [--base URL] send     --phone <p>
-//   node register_key.mjs [--base URL] register --phone <p> --vcode <c> [--type 11] [--organ ..] [--name ..] [--channel ..] [--source ..] [--password ..] [--new-key] [--no-zshrc]
-// 无需 cookie / 加密 / 登录态。注册成功后自动把 API Key 写入 ~/.zshrc 标记块（--no-zshrc 跳过）；
-// 业务脚本从 ~/.zshrc 直读，无需重启宿主。默认打生产，--base 可切测试环境。
+// MaaS key bootstrap helper for SkillHub Public.
+//   node register_key.mjs send --phone <phone>
+//   node register_key.mjs register --phone <phone> --vcode <code> [--new-key]
+//   node register_key.mjs save-key    # MCP create_api_key 拿到的密钥落盘（stdin 优先，或 --api-key）
 
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const DEFAULT_BASE = "https://platform.dknowc.cn/auth/home/userAuto";
 const DEFAULT_OPEN_BASE = "https://open.dknowc.cn";
 const DEFAULT_CHANNEL = "46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05";
 const DEFAULT_TYPE = "11";
-const DEFAULT_SOURCE = "agent";
+// 2026-09-29 调整：与统一来源声明（X-Dknowc-Attribution）的 source 对齐，
+// 不再用旧值 "agent"（与"来源统计最终方案 V1.0"的字段语义冲突）。
+const DEFAULT_SOURCE = "dknowc-ppt-assistant";
 const API_KEY_ENV = "DKNOWC_API_KEY";
 const MAAS_PLATFORM_URL = "https://platform.dknowc.cn/auth/#/login";
-const FALLBACK_REGISTER_URL = MAAS_PLATFORM_URL;
-const ZSHRC_START = "# >>> dknowc api key >>>";
-const ZSHRC_END = "# <<< dknowc api key <<<";
+// Key 持久化目标：本机专用配置文件（XDG 规范路径），不再依赖 ~/.zshrc。
+// 迁移：写入新文件成功后，清理 ~/.zshrc 中的历史 Key 块。
+const KEY_FILE_NAME = "api_key";
+const ZSHRC_START = "# >>> dknowc ppt assistant api key >>>";
+const ZSHRC_END = "# <<< dknowc ppt assistant api key <<<";
+// 历史 ~/.zshrc 标记块（含旧名），迁移期统一清理
+const LEGACY_BLOCKS = [
+  [ZSHRC_START, ZSHRC_END],
+  ["# >>> dknowc api key >>>", "# <<< dknowc api key <<<"],
+];
 
-function maskPhone(phone) {
-  const p = String(phone || "");
-  return p.length >= 7 ? `${p.slice(0, 3)}****${p.slice(-4)}` : p;
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function maskKey(apiKey) {
-  if (!apiKey) return null;
-  if (apiKey.length <= 12) return "***";
-  return `${apiKey.slice(0, 7)}...${apiKey.slice(-4)}`;
+function apiKeyFilePath() {
+  const home = os.homedir();
+  if (process.platform === "win32") {
+    const appdata = process.env.APPDATA || home;
+    return path.join(appdata, "dknowc", KEY_FILE_NAME);
+  }
+  const xdg = process.env.XDG_CONFIG_HOME || path.join(home, ".config");
+  return path.join(xdg, "dknowc", KEY_FILE_NAME);
+}
+
+function removeLegacyZshrcBlocks() {
+  // 迁移：从 ~/.zshrc 移除历史 Key 标记块（避免污染 shell 配置）
+  const zshrcPath = path.join(os.homedir(), ".zshrc");
+  try {
+    let existing = fs.existsSync(zshrcPath) ? fs.readFileSync(zshrcPath, "utf8") : "";
+    if (!existing) return;
+    let changed = false;
+    for (const [start, end] of LEGACY_BLOCKS) {
+      const re = new RegExp(`${escapeRegExp(start)}[\\s\\S]*?${escapeRegExp(end)}\\n?`, "m");
+      if (re.test(existing)) { existing = existing.replace(re, ""); changed = true; }
+    }
+    if (changed) fs.writeFileSync(zshrcPath, existing, { encoding: "utf8", mode: 0o600 });
+  } catch (e) { /* 清理失败不阻断写入流程 */ }
+}
+
+function writeApiKeyToConfigFile(apiKey) {
+  // 写本机专用配置文件（纯文本一行 Key，600 权限）；成功后清理历史 ~/.zshrc 块
+  const filePath = apiKeyFilePath();
+  try {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true, mode: 0o700 });
+    fs.writeFileSync(filePath, `${String(apiKey).trim()}\n`, { encoding: "utf8", mode: 0o600 });
+    removeLegacyZshrcBlocks();
+    return { written: true, path: filePath, error: null };
+  } catch (e) {
+    return { written: false, path: filePath, error: e && e.message ? e.message : String(e) };
+  }
 }
 
 function parseArgs(argv) {
@@ -51,13 +94,35 @@ function parseArgs(argv) {
   return out;
 }
 
+// —— 统一来源声明（X-Dknowc-Attribution）——
+// 读包根 attribution.json（kind/source/channel）+ SKILL.md 的 version；仅统计用、
+// 不参与鉴权；读取失败返回 null（不加头、不阻断请求）。
+function buildAttributionHeader() {
+  try {
+    const root = path.resolve(__dirname, "..");
+    const meta = JSON.parse(fs.readFileSync(path.join(root, "attribution.json"), "utf-8"));
+    if (!meta.source) return null;
+    const parts = [`kind=${meta.kind || "skill"}`, `source=${meta.source}`];
+    try {
+      const m = fs.readFileSync(path.join(root, "SKILL.md"), "utf-8").match(/^version:\s*"?([^"\n]+)"?/m);
+      if (m) parts.push(`version=${m[1].trim()}`);
+    } catch {}
+    if (meta.channel) parts.push(`channel=${meta.channel}`);
+    return parts.join(";");
+  } catch { return null; }
+}
+function withAttribution(headers) {
+  const attr = buildAttributionHeader();
+  return attr ? { ...headers, "X-Dknowc-Attribution": attr } : headers;
+}
+
 async function postJson(url, payload, headers = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   try {
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
+      headers: withAttribution({ "Content-Type": "application/json", ...headers }),
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
@@ -104,42 +169,19 @@ async function createNewApiKey(openBase, existingApiKey, name, remark) {
   return { result, apiKey };
 }
 
-function shellSingleQuote(value) {
-  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+function maskPhone(phone) {
+  const p = String(phone || "");
+  return p.length === 11 ? `${p.slice(0, 3)}****${p.slice(-4)}` : p;
 }
 
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function isValidCnPhone(phone) {
+  return /^1[3-9]\d{9}$/.test(String(phone || ""));
 }
 
-function writeApiKeyToZshrc(apiKey) {
-  const zshrcPath = path.join(os.homedir(), ".zshrc");
-  const block = [
-    ZSHRC_START,
-    `export ${API_KEY_ENV}=${shellSingleQuote(apiKey)}`,
-    ZSHRC_END,
-    "",
-  ].join("\n");
-  let existing = "";
-  try {
-    existing = fs.existsSync(zshrcPath) ? fs.readFileSync(zshrcPath, "utf8") : "";
-  } catch (error) {
-    const msg = error && error.message ? error.message : String(error);
-    return { written: false, path: zshrcPath, error: msg };
-  }
-
-  const pattern = new RegExp(`${escapeRegExp(ZSHRC_START)}[\\s\\S]*?${escapeRegExp(ZSHRC_END)}\\n?`, "m");
-  const next = pattern.test(existing)
-    ? existing.replace(pattern, block)
-    : `${existing}${existing && !existing.endsWith("\n") ? "\n" : ""}${block}`;
-
-  try {
-    fs.writeFileSync(zshrcPath, next, { encoding: "utf8", mode: 0o600 });
-    return { written: true, path: zshrcPath, error: null };
-  } catch (error) {
-    const msg = error && error.message ? error.message : String(error);
-    return { written: false, path: zshrcPath, error: msg };
-  }
+function maskKey(apiKey) {
+  if (!apiKey) return null;
+  if (apiKey.length <= 12) return "***";
+  return `${apiKey.slice(0, 7)}...${apiKey.slice(-4)}`;
 }
 
 async function main() {
@@ -152,20 +194,31 @@ async function main() {
       console.error("缺少 --phone");
       process.exit(2);
     }
-    // 渠道细分：sendMessage 与 register 请求体统一携带 SkillHub 渠道码。
-    const result = await postJson(`${base}/sendMessage`, {
-      phone: args.phone,
-      type: "register",
-      channel: args.channel && args.channel !== true ? args.channel : DEFAULT_CHANNEL,
-    });
-    // user_message：给用户的固定话术，Agent 必须原样转述，不得改写后发挥
+    const channel = args.channel && args.channel !== true ? args.channel : DEFAULT_CHANNEL;
+    if (!isValidCnPhone(args.phone)) {
+      console.log(JSON.stringify({
+        status: false,
+        msg: "手机号格式不正确",
+        user_message: "这个手机号格式好像不对，麻烦核对一下再发我。",
+      }));
+      process.exit(1);
+    }
+    let result;
+    try {
+      result = await postJson(`${base}/sendMessage`, {
+        phone: args.phone,
+        type: "register",
+        channel,
+      });
+    } catch (e) {
+      result = { status: false, msg: String((e && e.message) || e) };
+    }
+    // user_message：给用户的固定话术，Agent 必须原样转述，不得改写后发挥。
     let userMessage;
     if (result.status) {
       userMessage = `验证码已发送到 ${maskPhone(args.phone)}，请把最新一条短信里的 6 位验证码发我。`;
-    } else if (String(result.msg || "").includes("手机号")) {
-      userMessage = "这个手机号格式好像不对，麻烦核对一下再发我。";
     } else {
-      userMessage = `验证码发送没成功（可能是网络或短信通道问题），可以再试一次；如果连续失败，也可以用网页方式开通：${FALLBACK_REGISTER_URL}`;
+      userMessage = `验证码发送没成功（可能是网络或短信通道问题），可以再试一次；如果连续失败，也可以用网页方式开通：${MAAS_PLATFORM_URL}`;
     }
     console.log(JSON.stringify({ ...result, user_message: userMessage }));
     if (result.status) console.error("验证码已发送（话术见 user_message，请向用户转述后索取 6 位验证码）。");
@@ -192,11 +245,11 @@ async function main() {
 
     const result = await postJson(`${base}/register`, payload);
     const data = result.data || {};
-    const ok = Boolean(result.status) && Boolean(data.apiKey);
-    let apiKeyToSave = ok ? data.apiKey : "";
+    let apiKey = result.status && data.apiKey ? data.apiKey : "";
     let newKeyCreated = false;
     let newKeyError = null;
-    if (ok && args["new-key"]) {
+
+    if (apiKey && args["new-key"]) {
       const keyName = args["new-key-name"] && args["new-key-name"] !== true
         ? args["new-key-name"]
         : payload.apiKeyName;
@@ -205,64 +258,101 @@ async function main() {
         : "由 SkillHub 深知可信搜索按用户要求重新生成";
       const created = await createNewApiKey(
         args["open-base"] && args["open-base"] !== true ? args["open-base"] : DEFAULT_OPEN_BASE,
-        data.apiKey,
+        apiKey,
         keyName,
         keyRemark,
       );
       if (created.apiKey) {
-        apiKeyToSave = created.apiKey;
+        apiKey = created.apiKey;
         newKeyCreated = true;
       } else {
-        // 新建失败：沿用原密钥继续（不中断用户任务），newKeyCreated=false 明确区分新旧
+        // 新建失败：沿用原密钥继续并如实告知，不弃 key、不冒充新 Key
         newKeyError = created.result.errmsg || created.result.msg || "新 API Key 创建失败";
       }
     }
-    const zshrcWrite = ok && apiKeyToSave && !args["no-zshrc"]
-      ? writeApiKeyToZshrc(apiKeyToSave)
-      : { written: false, path: path.join(os.homedir(), ".zshrc"), error: null };
+
+    // 注册成功即写入本机专用配置文件（--no-persist 可关闭）：脚本直读文件，
+    // 避免宿主进程读不到环境变量造成"每任务重新注册"的误判。
+    const persistResult = registered && !args["no-persist"]
+      ? writeApiKeyToConfigFile(apiKey)
+      : { written: false, path: apiKeyFilePath(), error: null };
+
     // user_message：给用户的固定话术，Agent 必须原样转述，不得改写后发挥。
-    // 权益告知（300 次额度 + 实名认证赠金）已前移到开通引导（initialize.guide_message / onboarding_scripts S1），
-    // 此处只做轻确认，避免成功节点信息过重导致转述截断。
+    const registered = Boolean(apiKey);
     let userMessage;
-    if (ok && apiKeyToSave) {
-      userMessage = Boolean(data.existed)
-        ? `这个手机号之前开通过，已直接找回原来的密钥和额度，不用重新注册。我马上开始检索。`
-        : `开通成功，访问密钥已写入本机，300 次免费检索额度已生效。我马上开始检索。`;
-      if (newKeyError) {
-        userMessage += ` 另外你要求的新密钥生成失败（${newKeyError}），已先沿用现有密钥继续，不影响使用；需要的话稍后再重新生成。`;
-      }
-    } else if (String(result.msg || "").includes("验证码")) {
+    if (registered && data.existed) {
+      userMessage = "这个手机号之前开通过，已直接找回原来的密钥和额度，不用重新注册。我马上开始检索。";
+    } else if (registered) {
+      userMessage = "开通成功，访问密钥已写入本机，300 次免费检索额度已生效。我马上开始检索。";
+    } else if (/vcode|验证码/i.test(String(result.msg || ""))) {
       userMessage = `验证码校验没通过（可能是输入有误或已过期）。请核对 ${maskPhone(args.phone)} 最新一条短信的 6 位验证码重新发我；需要我重新发送一条，直接说一声。`;
     } else {
-      userMessage = `开通服务暂时没连上（${result.msg || "网络波动"}），可以稍后再试，或用网页方式开通：${FALLBACK_REGISTER_URL}`;
+      userMessage = `开通服务暂时没连上（${result.msg || "网络波动"}），可以稍后再试，或用网页方式开通：${MAAS_PLATFORM_URL}`;
     }
+    if (registered && newKeyError) {
+      userMessage += ` 另外你要求的新密钥生成失败（${newKeyError}），已先沿用现有密钥继续，不影响使用；需要的话稍后再重新生成。`;
+    }
+
     console.log(JSON.stringify({
-      status: ok && Boolean(apiKeyToSave),
+      status: registered,
       msg: result.msg,
       url: data.url || null,
       existed: Boolean(data.existed),
       keyCreatedByRegister: Boolean(data.keyCreated),
       newKeyRequested: Boolean(args["new-key"]),
       newKeyCreated,
-      user_message: userMessage,
       envName: API_KEY_ENV,
-      apiKey: apiKeyToSave,
-      apiKeyMasked: maskKey(apiKeyToSave),
-      envWriteRequired: false,
-      envWriteTarget: zshrcWrite.path,
-      envWriteSucceeded: Boolean(zshrcWrite.written),
-      envWriteError: zshrcWrite.error,
-      envWriteInstruction: zshrcWrite.written
-        ? `已写入 ${zshrcWrite.path}；脚本直读该文件，无需重启宿主。当前任务可继续使用返回的 apiKey。`
-        : `未能写入 ${zshrcWrite.path}，请由 Agent 或平台密钥配置将返回的 apiKey 写入环境变量 ${API_KEY_ENV}。`,
-      currentSessionInstruction: `当前任务继续执行初始化时，请用本次返回的 apiKey 临时注入环境变量 ${API_KEY_ENV}，不得向用户展示完整 Key。`,
+      apiKey,
+      apiKeyMasked: maskKey(apiKey),
+      keyFilePersisted: Boolean(persistResult.written),
+      keyFilePath: persistResult.path || null,
+      keyFileError: persistResult.error || null,
+      persistInstruction: persistResult.written
+        ? `访问密钥已写入本机专用配置文件（${persistResult.path}，仅本机、600 权限），后续任务直接读取、无需重复注册。`
+        : `本次返回的 apiKey 仅供当前任务临时注入 ${API_KEY_ENV}。任务完成后可在平台环境变量或密钥配置中保存 ${API_KEY_ENV}。`,
+      fallbackRegisterUrl: MAAS_PLATFORM_URL,
       newKeyError,
-      fallbackRegisterUrl: FALLBACK_REGISTER_URL,
+      user_message: userMessage,
     }));
-    process.exit(ok && Boolean(apiKeyToSave) ? 0 : 1);
+    process.exit(apiKey && !newKeyError ? 0 : 1);
   }
 
-  console.error("用法: node register_key.mjs <send|register> ...");
+  if (cmd === "save-key") {
+    // MCP create_api_key 拿到的密钥经 stdin 传入（避免出现在命令行参数与日志），--api-key 兜底
+    let key = "";
+    if (args["api-key"] && args["api-key"] !== true) {
+      key = String(args["api-key"]).trim();
+    } else {
+      key = await new Promise((resolve) => {
+        let buf = "";
+        process.stdin.setEncoding("utf8");
+        process.stdin.on("data", (chunk) => { buf += chunk; });
+        process.stdin.on("end", () => resolve(buf.trim()));
+      });
+    }
+    const looksValid = /^sk-/.test(key) && key.length >= 20;
+    if (!looksValid) {
+      console.log(JSON.stringify({
+        status: false,
+        user_message: "密钥格式不对（应以 sk- 开头），没有写入本机。请重新获取后再试。",
+      }));
+      process.exit(1);
+    }
+    const saved = writeApiKeyToConfigFile(key);
+    console.log(JSON.stringify({
+      status: Boolean(saved.written),
+      keyFilePath: saved.path || null,
+      keyFileError: saved.error || null,
+      envName: API_KEY_ENV,
+      apiKeyMasked: maskKey(key),
+      user_message: saved.written
+        ? "已通过你的深知可信工作台授权直接开通搜索功能，无需手机号验证，马上开始检索。"
+        : `密钥写入本机配置文件失败（${saved.error || "未知原因"}），本次可先用临时密钥继续，稍后再试。`,
+    }));
+    process.exit(saved.written ? 0 : 1);
+  }
+
+  console.error("用法: node register_key.mjs <send|register|save-key> ...");
   process.exit(2);
 }
 

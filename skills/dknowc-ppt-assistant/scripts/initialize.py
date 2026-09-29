@@ -54,8 +54,9 @@ def _in_dsh() -> bool:
 
 def check_api_key_config():
     if _in_dsh():
-        # dsh 场景：优先插件经 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源）；
-        # 缺失时 ~/.zshrc 兜底。无 Key 仅暂停检索，不阻断纯生成（材料/免检索模式）。
+        # dsh：优先 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源）；缺失时 resolve_api_key 兜底
+        # （环境变量 → 专用配置文件 → 历史 zshrc）。配置文件读取不受 dsh 环境清理影响，
+        # 注册后本会话脚本立即可用。无 Key 仅暂停检索，不阻断纯生成。
         api_key = os.environ.get("DSH_DKNOWC_API_KEY", "").strip()
         source = "environment"
         if not _looks_like_key(api_key):
@@ -69,8 +70,9 @@ def check_api_key_config():
         if _looks_like_key(api_key):
             return {"api_key_configured": True, "api_key_env": API_KEY_ENV, "api_key_source": source, "api_key_hint": None}
         return {"api_key_configured": False, "api_key_env": API_KEY_ENV, "api_key_source": None,
-                "api_key_hint": f"未检测到可用的 {API_KEY_ENV}（dsh 主进程环境变量与 ~/.zshrc 中均未找到）。需要先将有效的 API Key 配置到启动 dsh 的环境变量 {API_KEY_ENV}（如 ~/.zshrc），再重启 dsh 或新建会话。仅检索任务受影响，不涉及检索的生成任务可继续。"}
+                "api_key_hint": f"未检测到可用的 {API_KEY_ENV}（环境变量、专用配置文件与历史 zshrc 均未找到）。运行注册脚本开通后 Key 自动写入 ~/.config/dknowc/api_key，本会话立即可用。仅检索任务受影响，不涉及检索的生成任务可继续。"}
 
+def check_api_key_config():
     # 环境变量优先，缺失时从 ~/.zshrc 兜底解析（宿主进程早于 key 写入启动、
     # 或宿主不再加载 ~/.zshrc 导出变量时不误报缺失，与公文写作同源方案）
     try:

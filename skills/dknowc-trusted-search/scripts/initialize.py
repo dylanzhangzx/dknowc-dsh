@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """深知可信搜索 SkillHub / WorkBuddy public 版初始化检查。
 
-API Key 读取：优先进程环境变量 DKNOWC_API_KEY，缺失时从 ~/.zshrc 兜底解析
-（宿主进程早于 key 写入启动、或宿主安全更新后不再加载 zshrc 导出变量时不误报缺失）。
-注册脚本 register_key.mjs 注册成功后会自动把 Key 写入 ~/.zshrc 标记块，本检查直读该文件，
-无需重启宿主。不读取、不写入本地 config.ini 中的 Key。
+API Key 读取：优先进程环境变量 DKNOWC_API_KEY，缺失时从本机专用配置文件
+~/.config/dknowc/api_key 读取，历史 ~/.zshrc Key 块作为迁移期兜底
+（宿主进程早于 key 写入启动、或宿主安全更新后不再加载 shell 导出变量时不误报缺失）。
+注册脚本 register_key.mjs 注册成功后自动把 Key 写入专用配置文件并清理历史 zshrc 块，
+本检查直读该文件，无需重启宿主。不读取、不写入本地 config.ini 中的 Key。
 """
 
 import json
@@ -34,7 +35,8 @@ def _in_dsh() -> bool:
 def check_api_key_config():
     if _in_dsh():
         # dsh 场景：优先插件经 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源）；
-        # 缺失时 ~/.zshrc 兜底（注册成功自动持久化后、dsh 重启前的窗口期不误报缺失）。
+        # 缺失时经 resolve_api_key 兜底（进程环境变量 → 专用配置文件 → 历史 zshrc）——
+        # 配置文件读取不受 dsh 环境变量清理影响，注册写入后本会话脚本立即可用，无需重启。
         api_key = os.environ.get("DSH_DKNOWC_API_KEY", "").strip()
         source = "environment"
         if not _looks_like_key(api_key):
@@ -47,28 +49,18 @@ def check_api_key_config():
                 pass
         if _looks_like_key(api_key):
             note = None
-            if source == "zshrc":
-                note = ("dsh 场景：Key 已持久化在 ~/.zshrc。当前 dsh 主进程环境变量尚未加载该 Key——"
-                        "本会话的 MCP Bearer 认证在启动时已冻结，请经 scripts/mcp_direct.py 直调完成当前任务"
-                        "（脚本会自动从 ~/.zshrc 解析 Key）；重启 dsh 或新开会话后自动恢复正常 MCP 转接。")
-            return {
-                "api_key_configured": True,
-                "api_key_env": API_KEY_ENV,
-                "api_key_source": source,
-                "api_key_hint": None,
-                "search_ready": True,
-                "search_note": note,
-            }
-        return {
-            "api_key_configured": False,
-            "api_key_env": API_KEY_ENV,
-            "api_key_source": None,
-            "api_key_hint": f"未检测到可用的 {API_KEY_ENV}（dsh 主进程环境变量与 ~/.zshrc 中均未找到）。需要先将有效的 API Key 配置到启动 dsh 的环境变量 {API_KEY_ENV}（如 ~/.zshrc），再重启 dsh 或新建会话。",
-            "search_ready": False,
-            "search_note": f"当前缺少 {API_KEY_ENV}，暂时不能查询政策法规、办事流程、标准依据和可信溯源内容。",
-        }
+            if source in ("keyfile", "zshrc"):
+                note = ("dsh 场景：Key 已保存在本机（api_key_source=%s）——检索脚本直读该处，"
+                        "本会话立即可用、无需重启 dsh。仅 dsh 的 MCP 兜底通道（mcp__dknowc__* 工具）"
+                        "需重启 dsh 后才会加载该 Key。" % source)
+            return {"api_key_configured": True, "api_key_env": API_KEY_ENV, "api_key_source": source,
+                    "api_key_hint": None, "search_ready": True, "search_note": note}
+        return {"api_key_configured": False, "api_key_env": API_KEY_ENV, "api_key_source": None,
+                "api_key_hint": f"未检测到可用的 {API_KEY_ENV}（环境变量、专用配置文件与历史 zshrc 均未找到）。运行注册脚本开通后 Key 自动写入 ~/.config/dknowc/api_key，本会话立即可用。",
+                "search_ready": False, "search_note": f"当前缺少 {API_KEY_ENV}，暂时不能查询政策法规、办事流程、标准依据和可信溯源内容。"}
 
-    # 环境变量优先，缺失时从 ~/.zshrc 兜底解析
+def check_api_key_config():
+    # 环境变量优先，缺失时从专用配置文件读取，历史 zshrc 兜底
     api_key = ""
     source = ""
     try:
@@ -117,7 +109,7 @@ def main():
         "guide_message": None if status["api_key_configured"] else (
             "这个问题涉及政策口径和具体数字——普通搜索结果来源杂、无法核验，凭印象答政策名和数字，口径错了会影响你的判断和决策。"
             "开通权威检索后，每条政策、数据都带原文出处、可点开核验，还会附一份可点击的溯源报告。\n"
-            "开通是免费的：自带 300 次权威检索额度，完成实名认证还能再领 100 元体验金。"
+            "开通是免费的：注册即赠送 10 万积分，完成实名认证再送 10 万积分。"
             "只需手机号收一次验证码——两步、约 10 秒，不用去网站，剩下的我来办；手机号仅用于本次验证，不会有营销骚扰。\n"
             "也可以先不开通：我先基于已有知识给你一版初步回答，涉及政策口径、数字的地方逐条标注\"依据待核验\"，"
             "并说明未联网检索、口径可能过期。想先看看开通后检索结果和溯源报告长什么样，我可以发你示例看看。"

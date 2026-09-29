@@ -6,6 +6,7 @@
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import List, Dict
@@ -84,10 +85,13 @@ def merge_results(result_files: List[str]) -> Dict:
     """
     all_articles = []
     seen_titles = set()
+    by_key = {}
     duplicates_count = 0
     regions_searched = []
     searches = []
     knowledge_bases = []
+    all_policy_files = []
+    seen_policies = set()
     
     for file_path in result_files:
         try:
@@ -110,10 +114,14 @@ def merge_results(result_files: List[str]) -> Dict:
         search_meta = data.get("search_meta", {})
         region = search_meta.get("area") or infer_region_from_filename(str(safe_file_path))
         regions_searched.append(region)
+        # 搜索目的兜底（3.7.6 修复）：该路 --purpose 为空时用该路 query 兜底——
+        # 若留空，文章"搜索目的"缺失，溯源报告分组键（search_key）会退化成
+        # "中国"/"浙江省"等地域碎片，材料面板筛选胶囊失去意义（杭州实测 75/295 篇退化）。
+        purpose_val = search_meta.get("purpose") or search_meta.get("query") or ""
         searches.append({
             "file": str(safe_file_path),
             "query": search_meta.get("query", ""),
-            "purpose": search_meta.get("purpose", ""),
+            "purpose": purpose_val,
             "area": region,
             "time": search_meta.get("time", ""),
             "policy": search_meta.get("policy", False),
@@ -125,24 +133,79 @@ def merge_results(result_files: List[str]) -> Dict:
             knowledge_bases.append({
                 "file": str(safe_file_path),
                 "query": search_meta.get("query", ""),
-                "purpose": search_meta.get("purpose", ""),
+                "purpose": purpose_val,
                 "area": region,
                 "knowledgeBase": data.get("knowledgeBase", ""),
             })
         
-        # 去重合并
+        # 规范性文件清单（policyFiles，含发文字号）：可信搜索补搜产物携带，
+        # 是溯源核验报告匹配"文号"的唯一来源，合并时必须带下去（此前被整体丢弃，
+        # 导致合并产物 policyFiles 恒为空、政策文件无法显示发文字号）。
+        for pf in (data.get("policyFiles") or []):
+            if not isinstance(pf, dict):
+                continue
+            key = (pf.get("writtenText") or "", pf.get("title") or "")
+            if key in seen_policies:
+                continue
+            seen_policies.add(key)
+            all_policy_files.append(pf)
+        
+        # 去重合并（3.7.5 修复：合并式去重，禁止按标题整体丢弃后篇）
+        # 同一材料多次搜索返回时，标题相同但召回段落可能不同（各次搜索命中不同相关段落）——
+        # 按标题丢弃会丢掉其他搜索带来的段落；标题微小差异（空格/全半角/赘词）又可能漏去重。
+        # 正确做法：按"规范化标题 + 源网址"双键判同一材料，同一材料合并段落、字段取并集。
         for article in articles:
             title = article.get("文章标题", "")
-            if title in seen_titles:
-                duplicates_count += 1
+            url = article.get("源网址") or article.get("sourceUrl") or article.get("原文链接") or ""
+            # 规范化标题：去空白、全角转半角、去公文开头（关于印发/关于）与结尾赘词后缀，
+            # 使"…管理办法" / "…管理办法的通知" / "关于印发…管理办法的通知" 判为同一材料（去重键，不改原文）
+            title_key = re.sub(r"\s+", "", title or "").replace("　", "")
+            title_key = re.sub(r"^(关于印发|关于)", "", title_key)
+            title_key = re.sub(r"(的通知|的公告|的意见|的方案|的办法|的规定|的细则|的批复|的规划|的纲要)$", "", title_key)
+            url_key = re.sub(r"\s+", "", url or "").rstrip("/")
+            key = title_key if title_key else url_key
+            if not key:
+                all_articles.append(article)
                 continue
-            
-            seen_titles.add(title)
+
+            if key in seen_titles:
+                # 同一材料：合并段落（保留两篇的段落合集，段落级去重），字段取并集（保留非空者）
+                duplicates_count += 1
+                existing = by_key[key]
+                # 合并段落：按内容去重合并，保留各自 id（后续统一重编号）
+                seen_para = set()
+                merged_paras = list(existing.get("段落") or [])
+                for p in merged_paras:
+                    pc = p.get("内容") or p.get("content") or ""
+                    if pc:
+                        seen_para.add(re.sub(r"\s+", "", str(pc)))
+                for p in (article.get("段落") or []):
+                    pc = p.get("内容") or p.get("content") or ""
+                    if pc and re.sub(r"\s+", "", str(pc)) not in seen_para:
+                        merged_paras.append(p)
+                existing["段落"] = merged_paras
+                # 字段取并集：已有字段非空则保留，空字段用后篇补
+                for f, v in article.items():
+                    if f == "段落":
+                        continue
+                    if not existing.get(f) and v:
+                        existing[f] = v
+                # 追加本次搜索的来源标记（搜索地域/搜索词/搜索目的）
+                if region and region not in (existing.get("搜索地域") or ""):
+                    existing["搜索地域"] = (existing.get("搜索地域") or "") + (("、" + region) if existing.get("搜索地域") else region)
+                if search_meta.get("query") and not existing.get("搜索词"):
+                    existing["搜索词"] = search_meta.get("query")
+                if purpose_val and not existing.get("搜索目的"):
+                    existing["搜索目的"] = purpose_val
+                continue
+
+            seen_titles.add(key)
+            by_key[key] = article
             article.setdefault("搜索地域", region)
             if search_meta.get("query"):
                 article.setdefault("搜索词", search_meta.get("query"))
-            if search_meta.get("purpose"):
-                article.setdefault("搜索目的", search_meta.get("purpose"))
+            if purpose_val:
+                article.setdefault("搜索目的", purpose_val)
             if article.get("源网址") and not article.get("原文链接"):
                 article["原文链接"] = article["源网址"]
             if article.get("sourceUrl") and not article.get("原文链接"):
@@ -165,6 +228,7 @@ def merge_results(result_files: List[str]) -> Dict:
     return {
         "cleaned": True,
         "articles": all_articles,
+        "policyFiles": all_policy_files,
         "search_summary": {
             "total_searches": len(result_files),
             "regions": list(set(regions_searched)),

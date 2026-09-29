@@ -89,12 +89,22 @@ def validate_query(query: str) -> str:
 
 def call_outline_api(query: str, api_key: str, timeout: int) -> tuple[int, dict | str, float]:
     start = time.time()
+    _headers = {
+        "api-key": api_key,
+        "Content-Type": "application/json",
+    }
+    # 来源声明（X-Dknowc-Attribution，仅统计用、不参与鉴权）：
+    # 读包根 attribution.json + SKILL.md 的 version；读取失败不加头、不阻断请求。
+    try:
+        from attribution import build_attribution_header, ATTRIBUTION_HEADER
+        _attr = build_attribution_header()
+        if _attr:
+            _headers[ATTRIBUTION_HEADER] = _attr
+    except Exception:
+        pass
     response = requests.post(
         OUTLINE_API_URL,
-        headers={
-            "api-key": api_key,
-            "Content-Type": "application/json",
-        },
+        headers=_headers,
         json={"query": query},
         timeout=timeout,
     )

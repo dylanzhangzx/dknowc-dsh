@@ -2,27 +2,25 @@
 
 深知可信办公全家桶 —— DeepSeek Harness（dsh）插件包。
 
-通过一个 bundle 交付彩智科技的四个深知 Skill（深知可信咨询 / 深知可信搜索 / 深知可信PPT / 深知公文写作），并内置深知可信工作台 MCP 转接层配置：**接口能力统一走 MCP（credible_chat / trusted_search / deep_query / doc_outline 四工具），skill 不再直连深知接口**。
+通过一个 bundle 交付彩智科技的三个深知 Skill（深知可信搜索 / 深知可信PPT / 深知公文写作），并捆绑深知可信工作台 MCP 作为应急兜底通道：**接口能力统一走 MCP（trusted_search / deep_query / doc_outline 等），作为脚本异常时的应急兜底**。
 
 ## 包含什么
 
 ```
 dknowc-dsh/
 ├── skills/
-│   ├── dknowc-trusted-consulting/    深知可信咨询（MCP 转接 credible_chat）
 │   ├── dknowc-trusted-search/        深知可信搜索（MCP 转接 trusted_search / deep_query）
 │   ├── dknowc-ppt-assistant/         深知可信PPT（素材检索走 MCP；SVG→原生PPTX 纯本地编译）
 │   └── dknowc-official-doc-writer/   深知公文写作（搜索走 MCP；范文大纲保留原脚本直连）
-├── src/index.js                      注册 4 个 skill 到 dsh ctx.skills
+├── src/index.js                      注册 3 个 skill 到 dsh ctx.skills
 └── cordis.patch.yml                  挂载 skill provider + mcp-client（Bearer 认证）
 ```
 
 | Skill | 能力 | 接口调用方式 |
 |---|---|---|
-| 深知可信咨询 | 政策/法规/办事咨询，带角标答案 + 可信核验报告（首屏核验报告单五项指标） | `mcp__dknowc__credible_chat` |
-| 深知可信搜索 | 权威材料检索/深度研究（deep-query/v3 多地域），核验报告 + 干净 Markdown + 政策可视化 | `mcp__dknowc__trusted_search` / `mcp__dknowc__deep_query` |
-| 深知公文写作 | 正式公文起草/改写/多轮改稿/Word/红头交付，核验报告（self_check + 素材四分类） | 搜索 `mcp__dknowc__trusted_search`；范文大纲 `mcp__dknowc__doc_outline`（第四工具）；`outline_reference.py` 降为离线兜底 |
-| 深知可信PPT | 演示文稿制作：SVG 逐页创作→编译原生可编辑 .pptx，双版核验报告（提纲/成稿）+ 页面预览页 | 素材检索走 `mcp__dknowc__trusted_search`；编译纯本地（python-pptx，uv 隔离依赖） |
+| 深知可信搜索 | 咨询类政策问答 + 权威材料检索/深度研究（分级），溯源核验报告（图表一体化）+ 干净 Markdown | 脚本直连（`trusted_search.py` / `deep_query.py`）；MCP 兜底 `mcp__dknowc__trusted_search` / `mcp__dknowc__deep_query` |
+| 深知公文写作 | 正式公文起草/改写/多轮改稿/Word/红头交付，核验报告 + 研究资料 + 参考范文召回 | 脚本直连（`dkag_search.py`/`outline_reference.py`/`extract_reference.py`）；MCP 兜底 `mcp__dknowc__*` |
+| 深知可信PPT | 演示文稿制作：SVG 逐页创作→编译原生可编辑 .pptx，双版核验报告（提纲/成稿）+ 页面预览页 | 素材检索脚本直连（`trusted_search.py`）；编译纯本地（python-pptx，uv 隔离依赖） |
 
 ## dsh 版本兼容性
 
@@ -77,17 +75,13 @@ export DKNOWC_API_KEY=你的APIKey
 未配置 `DKNOWC_API_KEY` 时，可运行任一 skill 内置的注册脚本（使用 dsh 专属渠道码 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05`）：
 
 ```sh
-node skills/dknowc-trusted-consulting/scripts/register_key.mjs send --phone <手机号>
-node skills/dknowc-trusted-consulting/scripts/register_key.mjs register --phone <手机号> --vcode <验证码> --organ 个人 --name 用户
+node skills/dknowc-trusted-search/scripts/register_key.mjs send --phone <手机号>
+node skills/dknowc-trusted-search/scripts/register_key.mjs register --phone <手机号> --vcode <验证码> --organ 个人 --name 用户
 ```
 
-注册成功后脚本返回 `apiKey`（展示为打码形式）。拿到 Key 后，**写入启动 dsh 的环境变量 `DKNOWC_API_KEY`**（标准做法是追加到 `~/.zshrc`）：
+注册成功后脚本自动把 Key 写入本机专用配置文件 `~/.config/dknowc/api_key`（600 权限，并清理历史 `~/.zshrc` 旧块）——dsh 的环境变量清理机制不影响配置文件读取，**本会话立即可用，无需重启**：
 
-```sh
-echo 'export DKNOWC_API_KEY=sk-xxx...' >> ~/.zshrc
-```
-
-然后**重启 dsh 或新开会话**使配置生效。之后每次启动 dsh 都会自动读到，**无需重复注册**。
+脚本会同时输出 `envWriteInstruction`。已有历史 `~/.zshrc` Key 块的用户无需处理（脚本与 initialize 自动兼容读取）；如仍想让 dsh 主进程环境变量持有 Key（MCP 兜底通道用），可自行追加 `export DKNOWC_API_KEY=...` 并重启 dsh，属可选项。
 
 > **Key 的传递机制**：dsh 的安全机制会清理名字含 `KEY` 的隐式环境变量（`DKNOWC_API_KEY` 会被拦）。本 bundle 插件会把 dsh 主进程的 `DKNOWC_API_KEY` 值经 shell-env 显式通道注入为 `DSH_DKNOWC_API_KEY` 供脚本门禁检查与兜底使用；**用户只需配置 `DKNOWC_API_KEY`，无需设置 `DSH_DKNOWC_API_KEY`**。MCP 的 Bearer 认证直接读 dsh 主进程的 `process.env.DKNOWC_API_KEY`。
 
@@ -117,10 +111,9 @@ bundle 内的 skill 目录是**只读发布产物**，运行时产物（溯源 H
 
 ## 使用
 
-装好后，4 个 skill 会出现在 dsh 会话的 `<available_skills>` 目录中，模型会按任务描述自动路由：
+装好后，3 个 skill 会出现在 dsh 会话的 `<available_skills>` 目录中，模型会按任务描述自动路由：
 
-- 咨询政策/办事 → 深知可信咨询
-- 检索权威材料/深度研究 → 深知可信搜索
+- 咨询政策/办事、检索权威材料/深度研究 → 深知可信搜索
 - 制作 PPT/演示文稿/课件 → 深知可信PPT
 - 起草/改写/生成正式公文 → 深知公文写作
 
@@ -141,7 +134,6 @@ npm run check
 
 **skillhub 版本是母版。** 四个 skill 的内容源头分别为：
 
-- `深知可信咨询` → 深知可信咨询skill `public/skillhub/dknowc-trusted-consulting`
 - `深知可信搜索` → 深知可信搜索skill `public/skillhub/dknowc-trusted-search`
 - `深知可信PPT` → 深知可信PPT Skill `public/skillhub/dknowc-ppt-assistant`
 - `深知公文写作` → 深知公文写作 `public/skillhub/dknowc-official-doc-writer`
@@ -151,3 +143,10 @@ npm run check
 ## License
 
 MIT
+
+
+## v2.0.0 变更要点
+
+- **移除深知可信咨询 skill**：与可信搜索功能重叠且效果不及，咨询类政策问答由可信搜索承接（检索作答 + 溯源）。
+- **检索通道反转为脚本直连**（跟随母版 3.7.5/1.4.0 决策）：MCP 返回为精简视图（缺文号/快照/标题链/可信度），脚本直连返回全量；Key 落盘迁至 `~/.config/dknowc/api_key`（dsh 环境变量清理不影响，注册后本会话即用）。
+- 三 skill 同步母版 1.4.2 / 1.3.4 / 3.7.7（溯源核验报告持续修复、图表一体化、参考范文召回、X-Dknowc-Attribution 来源声明 channel=dsh、积分制权益话术）。

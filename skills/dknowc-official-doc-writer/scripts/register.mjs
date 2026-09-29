@@ -2,26 +2,62 @@
 // 国内 MaaS headless 注册助手（供 skillhub skill 调用；纯 node，内置 fetch，无三方依赖）。
 //   node register.mjs [--base URL] send     --phone <p>
 //   node register.mjs [--base URL] register --phone <p> --vcode <c> [--type 6] [--organ ..] [--name ..] [--channel ..] [--source ..] [--password ..] [--new-key]
+//   node register.mjs save-key     # 3.7.7：把 MCP create_api_key 拿到的密钥落盘（stdin 优先，或 --api-key）
 // 无需 cookie / 加密 / 登录态。默认打生产，--base 可切测试环境。
 
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const DEFAULT_BASE = "https://platform.dknowc.cn/auth/home/userAuto";
 const DEFAULT_OPEN_BASE = "https://open.dknowc.cn";
 const DEFAULT_CHANNEL = "46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05";
 const DEFAULT_TYPE = "6";
-const DEFAULT_SOURCE = "agent";
+// 2026-09-29 调整：与统一来源声明（X-Dknowc-Attribution）的 source 对齐，
+// 不再用旧值 "agent"（与"来源统计最终方案 V1.0"的字段语义冲突）。
+const DEFAULT_SOURCE = "dknowc-official-doc-writer";
 const API_KEY_ENV = "DKNOWC_API_KEY";
 const MAAS_PLATFORM_URL = "https://platform.dknowc.cn/auth/#/login";
 const FALLBACK_REGISTER_URL = MAAS_PLATFORM_URL;
-const ZSHRC_START = "# >>> dknowc api key >>>";
-const ZSHRC_END = "# <<< dknowc api key <<<";
-// 早期版本遗留的标记块名（无 export 也一并清理，避免 ~/.zshrc 残留）
+// Key 持久化目标：本机专用配置文件（XDG 规范路径），不再写 ~/.zshrc。
+// 3.7.5 迁移：写入新文件成功后，清理 ~/.zshrc 中的历史 Key 块。
+const KEY_FILE_NAME = "api_key";
+const ZSHRC_START = "# >>> dknowc official doc writer api key >>>";
+const ZSHRC_END = "# <<< dknowc official doc writer api key <<<";
+// 历史 ~/.zshrc 标记块（含旧名），迁移期统一清理
 const LEGACY_BLOCKS = [
+  [ZSHRC_START, ZSHRC_END],
   ["# >>> dknowc api key >>>", "# <<< dknowc api key <<<"],
 ];
+
+function apiKeyFilePath() {
+  const home = os.homedir();
+  if (process.platform === "win32") {
+    const appdata = process.env.APPDATA || home;
+    return path.join(appdata, "dknowc", KEY_FILE_NAME);
+  }
+  const xdg = process.env.XDG_CONFIG_HOME || path.join(home, ".config");
+  return path.join(xdg, "dknowc", KEY_FILE_NAME);
+}
+
+function removeLegacyZshrcBlocks() {
+  // 迁移：从 ~/.zshrc 移除历史 Key 标记块（避免污染 shell 配置）
+  const zshrcPath = path.join(os.homedir(), ".zshrc");
+  try {
+    let existing = fs.existsSync(zshrcPath) ? fs.readFileSync(zshrcPath, "utf8") : "";
+    if (!existing) return;
+    let changed = false;
+    for (const [start, end] of LEGACY_BLOCKS) {
+      const re = new RegExp(`${escapeRegExp(start)}[\\s\\S]*?${escapeRegExp(end)}\\n?`, "m");
+      if (re.test(existing)) { existing = existing.replace(re, ""); changed = true; }
+    }
+    if (changed) fs.writeFileSync(zshrcPath, existing, { encoding: "utf8", mode: 0o600 });
+  } catch (e) { /* 清理失败不阻断写入流程 */ }
+}
 
 function maskPhone(phone) {
   const p = String(phone || "");
@@ -42,13 +78,35 @@ function parseArgs(argv) {
   return out;
 }
 
+// —— 统一来源声明（X-Dknowc-Attribution，2026-09-29 与开发定稿《来源统计最终方案 V1.0》）——
+// 读包根 attribution.json（kind/source/channel）+ SKILL.md 的 version；仅统计用、
+// 不参与鉴权；读取失败返回 null（不加头、不阻断请求）。
+function buildAttributionHeader() {
+  try {
+    const root = path.resolve(__dirname, "..");
+    const meta = JSON.parse(fs.readFileSync(path.join(root, "attribution.json"), "utf-8"));
+    if (!meta.source) return null;
+    const parts = [`kind=${meta.kind || "skill"}`, `source=${meta.source}`];
+    try {
+      const m = fs.readFileSync(path.join(root, "SKILL.md"), "utf-8").match(/^version:\s*"?([^"\n]+)"?/m);
+      if (m) parts.push(`version=${m[1].trim()}`);
+    } catch {}
+    if (meta.channel) parts.push(`channel=${meta.channel}`);
+    return parts.join(";");
+  } catch { return null; }
+}
+function withAttribution(headers) {
+  const attr = buildAttributionHeader();
+  return attr ? { ...headers, "X-Dknowc-Attribution": attr } : headers;
+}
+
 async function post(url, payload) {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 30000);
   try {
     const r = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: withAttribution({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
       signal: ctl.signal,
     });
@@ -66,10 +124,10 @@ async function postWithBearer(url, apiKey, payload) {
   try {
     const r = await fetch(url, {
       method: "POST",
-      headers: {
+      headers: withAttribution({
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-      },
+      }),
       body: JSON.stringify(payload),
       signal: ctl.signal,
     });
@@ -105,41 +163,16 @@ async function createNewApiKey(openBase, existingApiKey, name, remark) {
   return { result, apiKey };
 }
 
-function shellSingleQuote(value) {
-  return `'${String(value).replace(/'/g, `'\\''`)}'`;
-}
-
-function writeApiKeyToZshrc(apiKey) {
-  const zshrcPath = path.join(os.homedir(), ".zshrc");
-  const block = [
-    ZSHRC_START,
-    `export ${API_KEY_ENV}=${shellSingleQuote(apiKey)}`,
-    ZSHRC_END,
-    "",
-  ].join("\n");
-  let existing = "";
+function writeApiKeyToConfigFile(apiKey) {
+  // 写本机专用配置文件（纯文本一行 Key，600 权限）；成功后清理历史 ~/.zshrc 块
+  const filePath = apiKeyFilePath();
   try {
-    existing = fs.existsSync(zshrcPath) ? fs.readFileSync(zshrcPath, "utf8") : "";
+    fs.mkdirSync(path.dirname(filePath), { recursive: true, mode: 0o700 });
+    fs.writeFileSync(filePath, `${String(apiKey).trim()}\n`, { encoding: "utf8", mode: 0o600 });
+    removeLegacyZshrcBlocks();
+    return { written: true, path: filePath, error: null };
   } catch (e) {
-    return { written: false, path: zshrcPath, error: e && e.message ? e.message : String(e) };
-  }
-
-  // 清理早期版本遗留的标记块（含空块），再写入当前标准块
-  for (const [start, end] of LEGACY_BLOCKS) {
-    const legacy = new RegExp(`${escapeRegExp(start)}[\\s\\S]*?${escapeRegExp(end)}\\n?`, "m");
-    existing = existing.replace(legacy, "");
-  }
-
-  const pattern = new RegExp(`${escapeRegExp(ZSHRC_START)}[\\s\\S]*?${escapeRegExp(ZSHRC_END)}\\n?`, "m");
-  const next = pattern.test(existing)
-    ? existing.replace(pattern, block)
-    : `${existing}${existing && !existing.endsWith("\n") ? "\n" : ""}${block}`;
-
-  try {
-    fs.writeFileSync(zshrcPath, next, { encoding: "utf8", mode: 0o600 });
-    return { written: true, path: zshrcPath, error: null };
-  } catch (e) {
-    return { written: false, path: zshrcPath, error: e && e.message ? e.message : String(e) };
+    return { written: false, path: filePath, error: e && e.message ? e.message : String(e) };
   }
 }
 
@@ -151,6 +184,43 @@ async function main() {
   const a = parseArgs(process.argv.slice(2));
   const base = a.base || DEFAULT_BASE;
   const cmd = a._[0];
+
+  if (cmd === "save-key") {
+    // 3.7.7：MCP 取 Key 路径的落盘子命令。宿主提供 dknowc-mcp 的 create_api_key 且调用
+    // 成功（返回顶层 JSON {"apiKey": "..."}）后，用本命令落盘，用户无需手机号验证码。
+    // 密钥来源优先 stdin（printf '%s' "<密钥>" | node register.mjs save-key，避免出现在
+    // 命令行参数里），其次 --api-key；仅接受 sk- 开头。落盘复用 writeApiKeyToConfigFile
+    // （600 权限 + 清理历史 ~/.zshrc 块），与手机号注册路径同一份持久化逻辑。
+    let apiKey = "";
+    try {
+      if (!process.stdin.isTTY) {
+        const chunks = [];
+        for await (const c of process.stdin) chunks.push(c);
+        apiKey = Buffer.concat(chunks).toString("utf-8");
+      }
+    } catch { /* stdin 读取失败时回退 --api-key */ }
+    if (!apiKey.trim() && a["api-key"] && a["api-key"] !== true) apiKey = String(a["api-key"]);
+    apiKey = apiKey.trim();
+    if (!apiKey.startsWith("sk-") || apiKey.length < 20) {
+      console.log(JSON.stringify({
+        status: false,
+        msg: "密钥格式不符（应为 sk- 开头的 MaaS API Key），请确认调用的是 create_api_key 的返回值",
+      }));
+      process.exit(1);
+    }
+    const w = writeApiKeyToConfigFile(apiKey);
+    console.log(JSON.stringify({
+      status: w.written,
+      envWriteSucceeded: w.written,
+      envWriteTarget: w.path,
+      error: w.error || null,
+      // user_message：给用户的固定话术，Agent 必须原样转述，不得改写后发挥
+      user_message: w.written
+        ? "已通过你的深知可信工作台授权直接开通搜索功能，无需手机号验证，马上开始检索。"
+        : "密钥保存到本机时出现问题，需要改用手机号验证码方式开通。",
+    }));
+    process.exit(w.written ? 0 : 1);
+  }
 
   if (cmd === "send") {
     if (!a.phone) { console.error("缺少 --phone"); process.exit(2); }
@@ -210,16 +280,16 @@ async function main() {
       }
     }
     const zshrcWrite = ok && apiKeyToSave && !a["no-zshrc"]
-      ? writeApiKeyToZshrc(apiKeyToSave)
-      : { written: false, path: path.join(os.homedir(), ".zshrc"), error: null };
+      ? writeApiKeyToConfigFile(apiKeyToSave)
+      : { written: false, path: apiKeyFilePath(), error: null };
     // user_message：给用户的固定话术，Agent 必须原样转述，不得改写后发挥。
-    // 权益告知（300 次额度 + 实名认证赠金）已前移到开通引导（initialize.guide_message / onboarding_scripts S1），
-    // 此处只做轻确认，避免成功节点信息过重导致转述截断。
+    // 权益告知（注册赠送 10 万积分 + 实名认证再送 10 万积分）已前移到开通引导
+    // （initialize.guide_message / onboarding_scripts S1），此处只做轻确认，避免成功节点信息过重导致转述截断。
     let userMessage;
     if (ok && apiKeyToSave) {
       userMessage = Boolean(data.existed)
-        ? `这个手机号之前开通过，已直接找回原来的密钥和额度，不用重新注册。我马上开始检索。`
-        : `开通成功，访问密钥已写入本机，300 次免费检索额度已生效。我马上开始检索。`;
+        ? `这个手机号之前开通过，已直接找回原来的密钥和积分，不用重新注册。我马上开始检索。`
+        : `开通成功，访问密钥已写入本机，注册赠送的 10 万积分已到账。我马上开始检索。`;
       if (newKeyError) {
         userMessage += ` 另外你要求的新密钥生成失败（${newKeyError}），已先沿用现有密钥继续，不影响使用；需要的话稍后再重新生成。`;
       }
@@ -238,15 +308,17 @@ async function main() {
       newKeyCreated,
       user_message: userMessage,
       envName: API_KEY_ENV,
-      apiKey: apiKeyToSave,
+      // 明文 Key 只在"未写入本机配置文件、必须靠它临时注入环境变量"时才输出，其余情况
+      // 只给掩码——脚本输出可能被宿主 UI 回显或模型贴进对话（2026-09-21 修复）
+      apiKey: (apiKeyToSave && !zshrcWrite.written && !a["no-zshrc"]) ? apiKeyToSave : null,
       apiKeyMasked: apiKeyToSave ? `${apiKeyToSave.slice(0, 7)}...${apiKeyToSave.slice(-4)}` : null,
-      envWriteRequired: false,
+      envWriteRequired: Boolean(apiKeyToSave) && !zshrcWrite.written,
       envWriteTarget: zshrcWrite.path,
       envWriteSucceeded: Boolean(zshrcWrite.written),
       envWriteError: zshrcWrite.error,
       envWriteInstruction: zshrcWrite.written
-        ? `已写入 ${zshrcWrite.path}；脚本直读该文件，无需重启宿主。当前任务可继续使用返回的 apiKey。`
-        : `未能写入 ${zshrcWrite.path}，请由 Agent 或平台密钥配置将返回的 apiKey 写入环境变量 ${API_KEY_ENV}。`,
+        ? `已写入 ${zshrcWrite.path}；脚本直读该文件，无需重启宿主，本次不再返回明文密钥。`
+        : `未能写入 ${zshrcWrite.path}，本次已在 apiKey 字段返回明文，请由 Agent 临时注入环境变量 ${API_KEY_ENV}（不得展示给用户、不得写入公开文件）。`,
       currentSessionInstruction: `当前任务继续执行初始化时，请用本次返回的 apiKey 临时注入环境变量 ${API_KEY_ENV}，不得向用户展示完整 Key。`,
       newKeyError,
       fallbackRegisterUrl: FALLBACK_REGISTER_URL,

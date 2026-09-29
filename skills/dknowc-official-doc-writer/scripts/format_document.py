@@ -215,6 +215,21 @@ def resolve_input_text_path(input_path):
     return resolved
 
 
+def _looks_like_path(text):
+    """判断 --text 的取值是否"看起来是文件路径"。
+
+    用于路径解析失败时的兜底判定：含路径分隔符，或以常见正文扩展名结尾时
+    视为路径——此时若文件读不到，宁可报错也不要把路径字符串当成正文写进 Word
+    （2026-09-21 修复：此前会静默生成一份正文只有一行路径的"正式公文"）。
+    """
+    value = (text or "").strip()
+    if not value or "\n" in value:
+        return False
+    if "/" in value or "\\" in value:
+        return True
+    return value.lower().endswith((".md", ".txt", ".markdown", ".text"))
+
+
 def resolve_output_path(output_path):
     """解析输出路径：只允许写入固定 Word 输出目录。"""
     if not output_path:
@@ -710,31 +725,66 @@ def add_page_break_if_needed(doc, line_spacing=None):
         set_paragraph_format(para, first_line_indent=False, line_spacing=line_spacing)
 
 
-def is_signing_entity(line):
+def _only_signature_tail(lines, index):
+    """落款位置约束：其后到文末只允许空行、成文日期、分页符与版记/附件类行。
+
+    正文中间的"牵头单位为省教育厅"这类行即使以机构名结尾也不是落款——
+    它们后面还有正文，据此排除（2026-09-21 修复：方案/总结的责任分工段
+    曾被整段排成落款样式）。
+    """
+    tail_prefixes = ('附件', '抄送', '印发', '主题词', '签发')
+    for line in lines[index + 1:]:
+        s = line.strip()
+        if not s or s == '[分页符]' or s.startswith('<!--'):
+            continue
+        if is_date_line(s) or s.startswith(tail_prefixes):
+            continue
+        return False
+    return True
+
+
+def is_signing_entity(line, lines=None, index=None):
     """判断是否为落款单位
-    
+
     落款单位特征：
     - 长度小于30
     - 以机构名结尾（局、厅、委、办、中心等）
     - 不包含具体场所（会议室、办公室等）
     - 不以句号结尾
+    - 不含冒号（含冒号的是"责任单位：××委"这类正文说明）
+    - 传入 lines/index 时还需满足位置约束：其后到文末只允许日期与版记（见 _only_signature_tail）
     """
     stripped = line.strip()
-    
+
     if len(stripped) >= 30:
+        return False
+
+    # 含冒号的不是落款：正文里的责任分工/承办说明高频出现"XX单位：XX委"
+    if '：' in stripped or ':' in stripped:
+        return False
+
+    # 位置约束（可选，调用方提供上下文时才生效）
+    if lines is not None and index is not None and not _only_signature_tail(lines, index):
         return False
     
     # 排除以句号结尾的（不是落款单位）
     if stripped.endswith('。'):
         return False
     
-    # 排除包含具体场所的（会议室、服务中心等）
-    exclude_keywords = ['会议室', '服务中心', '办事大厅', '窗口']
-    if any(kw in stripped for kw in exclude_keywords):
-        return False
-    
+    # 场所类排除只在无法判断位置时生效：有位置约束时，文末的
+    # "XX市政务服务中心"确实是落款单位，不应因含"服务中心"被排除
+    if lines is None or index is None:
+        exclude_keywords = ['会议室', '服务中心', '办事大厅', '窗口']
+        if any(kw in stripped for kw in exclude_keywords):
+            return False
+
     # 必须以机构名结尾
-    agency_suffixes = ['局', '厅', '委', '办', '办公室', '中心', '院', '会', '组委会', '协会', '站', '所', '部', '处', '司', '署', '公司', '集团', '单位']
+    # 2026-09-21 补全：原表末含"政府"，导致"北京市人民政府"这类最常见落款主体
+    # 反而不被识别（连带成文日期也不右对齐）
+    agency_suffixes = ['局', '厅', '委', '办', '办公室', '中心', '院', '会', '组委会', '协会',
+                       '站', '所', '部', '处', '司', '署', '公司', '集团', '单位',
+                       '政府', '管委会', '指挥部', '管理局', '分局', '总队', '支队',
+                       '大学', '学院', '学校', '医院', '银行', '社', '署', '组']
     if not any(stripped.endswith(suffix) for suffix in agency_suffixes):
         return False
     
@@ -929,6 +979,22 @@ def fix_reference_format(content_text: str) -> str:
     content_text = re.sub(r'\[\^(\d+)\](?!\^)', replace_ref, content_text)
     content_text = re.sub(r'\[\^(\d+)\](?=\[\^\d+\])', replace_ref, content_text)
     return content_text
+
+
+def strip_citation_markers(content_text: str) -> str:
+    """剥离正文中的 [n] / 【n】 引用角标（生成 Word 前统一清理）。
+
+    背景：素材清单先行要求写作时边写边标 [n] 角标——但角标只服务于
+    build_trace_json 装配溯源 JSON、在溯源核验报告 HTML 中变成可点击跳转；
+    **正式 Word 交付的正文不应内嵌来源角标**（SKILL.md 搜索规则第 10 条）。
+    此前模型常把同一份带角标正文直接交给本脚本，导致 Word 交付物残留
+    [1]…[23] 角标（2026-09-28 北京任务实测 86 个、渝沪任务 141 个）。
+    本函数作为兜底，在排版前统一剥离半角 [n] 与全角 【n】 形式。
+    """
+    if not content_text:
+        return content_text
+    # 连同角标前紧邻的空格一起删除，避免"…环境 [1]。"清理后留下"…环境 。"
+    return re.sub(r'[ \t]*[\[【]\s*\d+\s*[\]】]', '', content_text)
 
 
 LANDSCAPE_TABLE_MARKER = "<!-- landscape-table -->"
@@ -1344,7 +1410,8 @@ def create_document(content_text, output_path=None):
     content_text = normalize_content_text(content_text)
     validate_input(content_text)
     content_text = fix_reference_format(content_text)
-    
+    content_text = strip_citation_markers(content_text)
+
     doc = Document()
     
     # 设置 A4 纸张和页边距（公文格式规范）
@@ -1443,7 +1510,7 @@ def create_document(content_text, output_path=None):
             and not is_attachment_line(stripped)
             and not is_attachment_continuation(stripped)
         ):
-            if is_signing_entity(stripped):
+            if is_signing_entity(stripped, lines, i):
                 add_blank_paragraphs(doc, 3, body_line_spacing, body_font, body_size)
             elif is_date_line(stripped):
                 add_blank_paragraphs(doc, 3, body_line_spacing, body_font, body_size)
@@ -1629,7 +1696,7 @@ def create_document(content_text, output_path=None):
             continue
 
         # 落款单位：右对齐并右空两字（单位最后一字内缩两字）
-        if is_signing_entity(stripped):
+        if is_signing_entity(stripped, lines, i):
             last_signing_entity = stripped
             para = doc.add_paragraph()
             para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
@@ -1648,17 +1715,21 @@ def create_document(content_text, output_path=None):
                   f"已按正文段落渲染；建议将联系人信息并入对应事项段后重新生成。", file=sys.stderr)
 
         # 落款日期（GB/T 9704-2012 7.3.5.2）：首字比署名首字右移二字；日期长于署名时改为日期右空二字、
-        # 署名右空相应增加——两分支均满足"日期首字=署名首字+2字"，日期长时右端固定空二字更贴版心右缘
+        # 署名右空相应增加——两分支均满足"日期首字=署名首字右移2字"。
+        # 右缩进是"距右缘的字数"，右移=更靠右=字数更小：设日期首字距右缘为 date_len+date_indent、
+        # 署名首字为 unit_len+unit_indent，右移二字即 date_len+date_indent = unit_len+unit_indent-2。
+        # 2026-09-21 修正：两分支此前均少算 4 字（写成 unit_len+4-date_len 与 date_len-unit_len），
+        # 导致每份稿子的成文日期都比规则要求偏左。
         if should_right_align_date(lines, i):
             last_sign_date = stripped
             date_text = re.sub(r'\s+', '', stripped)
             unit_len = len(re.sub(r'\s+', '', last_signing_entity))
             if len(date_text) > unit_len:
                 date_indent = 2
-                unit_indent = len(date_text) - unit_len
+                unit_indent = len(date_text) - unit_len + 4
             else:
                 unit_indent = 2
-                date_indent = max(2, unit_len + 4 - len(date_text))
+                date_indent = max(2, unit_len - len(date_text))
             if last_signing_para is not None and last_signing_para._p.getparent() is not None:
                 last_signing_para.paragraph_format.right_indent = Pt(body_size * unit_indent)
             para = doc.add_paragraph()
@@ -1722,10 +1793,12 @@ def main():
     parser = argparse.ArgumentParser(description='公文排版工具 v2.0.0 - 只支持普通格式')
     parser.add_argument('input', nargs='?', help='输入文件路径')
     parser.add_argument('--output', help='输出文件路径')
-    parser.add_argument('--text', help='直接输入公文文本（如果是文件路径会自动读取）')
-    
+    parser.add_argument('--text', help='直接输入公文文本（仅限一句话以内的极短文本）')
+    parser.add_argument('--allow-multiline-text', action='store_true',
+                        help='显式允许 --text 携带多行内容（默认拒绝，正文请写入文件后传路径）')
+
     args = parser.parse_args()
-    
+
     if args.text:
         # 智能检测：如果 --text 是文件路径，自动读取文件内容
         try:
@@ -1736,8 +1809,20 @@ def main():
             print(f'⚠ 检测到 --text 参数是文件路径，自动读取文件内容: {text_path}')
             with open(text_path, 'r', encoding='utf-8') as f:
                 content = f.read()
+        elif _looks_like_path(args.text):
+            # 2026-09-21 修复：路径解析失败时不得把路径字符串当正文——此前会生成一份
+            # 正文只有一行路径的"正式公文"，且打印成功、退出码 0，用户与模型都无从察觉
+            raise SystemExit(
+                f'错误：--text 收到的是文件路径而非正文（{args.text}），且该文件无法读取。\n'
+                f'      请确认路径正确，或改用位置参数：python3 scripts/format_document.py <文件路径>\n'
+                f'      正文文件必须位于本 Skill 的 official-docs/input/ 目录内。')
         else:
             content = args.text
+        if not args.allow_multiline_text and ('\n' in content or '\\n' in content):
+            raise SystemExit(
+                '错误：--text 只允许一句话以内的极短文本，检测到多行内容。\n'
+                '      请先把正文写入 official-docs/input/ 下的 .txt/.md 文件，'
+                '再把文件路径传给脚本（多行正文经命令行参数传入会被破坏）。')
     elif args.input:
         input_path = resolve_input_text_path(args.input)
         if os.path.exists(input_path):
@@ -1760,6 +1845,9 @@ def main():
         print(f'✗ 生成失败: {e}')
         import traceback
         traceback.print_exc()
+        # 2026-09-21 修复：此前失败分支不设退出码，宿主按退出码判断成败时会把
+        # 失败当成功继续走交付话术，用户收到不存在的路径
+        sys.exit(1)
 
 
 if __name__ == '__main__':

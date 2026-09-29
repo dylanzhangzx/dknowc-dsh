@@ -954,6 +954,13 @@ def main():
         output_path = args.output
     else:
         output_path = str(OUTPUT_DIR / f"{input_path.stem}_红头{input_path.suffix}")
+        # 同名红头已存在时追加 _v1/_v2，避免改稿后重出红头把上一版静默覆盖
+        base = Path(output_path)
+        version = 0
+        while base.exists():
+            version += 1
+            base = Path(output_path).with_name(f"{Path(output_path).stem}_v{version}{Path(output_path).suffix}")
+        output_path = str(base)
 
     now = datetime.now()
     today = f"{now.year}年{now.month}月{now.day}日"
@@ -971,6 +978,12 @@ def main():
         "印发日期": args.print_date if args.print_date else today,
         "抄送": args.cc,
     }
+
+    # 2026-09-21 修复：文种写错时原本静默落到"下行文"模板，产出格式错误的红头而不报错
+    supported_types = UPWARD_TYPES | DOWNWARD_TYPES | LETTER_TYPES | MINUTES_TYPES
+    if args.type not in supported_types:
+        raise SystemExit(
+            f"错误：不支持的红头文种「{args.type}」。可选值：{'、'.join(sorted(supported_types))}")
 
     output = generate_red_header_document(args.type, input_path, replacements, output_path)
     print(f"✅ 红头文件已生成: {display_path(Path(output))}")

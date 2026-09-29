@@ -1,7 +1,7 @@
 /**
  * dknowc-dsh —— 深知可信办公全家桶 skill provider
  *
- * 把 4 个内嵌 skill（dknowc-trusted-consulting / dknowc-trusted-search /
+ * 把 3 个内嵌 skill（dknowc-trusted-search /
  * dknowc-ppt-assistant / dknowc-official-doc-writer）注册进 dsh 的 `ctx.skills`，使它们出现在
  * 会话的 <available_skills> 目录中，可被模型的 `skill` 工具加载。
  *
@@ -18,14 +18,9 @@ const PROVIDER_NAME = 'dknowc-dsh'
 /** 内嵌 skill 清单：目录名必须与 frontmatter 的 kebab-case name 一致。 */
 const SKILLS = [
   {
-    name: 'dknowc-trusted-consulting',
-    description:
-      '当用户咨询政策法规、政务办事、税务社保、公积金、企业补贴、资质证照、行业标准、公共服务、合规义务、企业经营政策，或要求权威依据、可信溯源、带角标答案时，使用深知可信咨询。输出带真实来源角标的咨询答案并默认生成本轮可信核验报告 HTML（首屏核验报告单五项指标）。',
-  },
-  {
     name: 'dknowc-trusted-search',
     description:
-      '当用户需要检索权威材料、政策法规/标准原文、政策清单、可点击溯源、知识专库、多地域政策素材收集与对比核验、企业补贴与税惠材料核验、合规依据核验，或明确要求深度搜索、深度分析、全面查找、多轮核验、完整调研方案时，使用深知可信搜索。本 skill 负责检索与核验材料，交付直接答案、溯源核验报告 HTML 与干净 Markdown；如用户要求把素材写成正式报告、调研报告、分析报告或公文（如"帮我写一份××报告"），应改用深知公文写作。',
+      '当用户咨询政策法规、政务办事、税务社保等政策问题，或需要检索权威材料、政策法规/标准原文、政策清单、可点击溯源、知识专库、多地域政策素材收集与对比核验、企业补贴与税惠材料核验、合规依据核验，或明确要求深度搜索、深度分析、全面查找、多轮核验、完整调研方案时，使用深知可信搜索。本 skill 负责检索与核验材料，交付直接答案、溯源核验报告 HTML 与干净 Markdown；如用户要求把素材写成正式报告、调研报告、分析报告或公文（如"帮我写一份××报告"），应改用深知公文写作。',
   },
   {
     name: 'dknowc-ppt-assistant',

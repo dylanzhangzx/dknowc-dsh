@@ -1,24 +1,45 @@
 #!/usr/bin/env node
 // 国内 MaaS headless 注册助手（供 skillhub skill 调用；纯 node，内置 fetch，无三方依赖）。
 //   node register_key.mjs [--base URL] send     --phone <p>
-//   node register_key.mjs [--base URL] register --phone <p> --vcode <c> [--type 11] [--organ ..] [--name ..] [--channel ..] [--source ..] [--password ..] [--new-key] [--no-zshrc]
-// 无需 cookie / 加密 / 登录态。注册成功后自动把 API Key 写入 ~/.zshrc 标记块（--no-zshrc 跳过）；
-// 业务脚本从 ~/.zshrc 直读，无需重启宿主。默认打生产，--base 可切测试环境。
+//   node register_key.mjs [--base URL] register --phone <p> --vcode <c> [--type 11] [--organ ..] [--name ..] [--channel ..] [--source ..] [--password ..] [--new-key] [--no-persist]
+//   node register_key.mjs save-key   （MCP 取 Key 路径落盘：密钥经 stdin 或 --api-key 传入，随公文写作 3.7.7 移植）
+// 无需 cookie / 加密 / 登录态。注册成功自动把 API Key 写入本机专用配置文件
+// ~/.config/dknowc/api_key（XDG，600 权限；Windows %APPDATA%\dknowc\api_key），
+// 并清理历史 ~/.zshrc Key 标记块；业务脚本从配置文件直读，无需重启宿主；
+// persist 命令可事后手动补持久化。默认打生产，--base 可切测试环境。
 
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const DEFAULT_BASE = "https://platform.dknowc.cn/auth/home/userAuto";
 const DEFAULT_OPEN_BASE = "https://open.dknowc.cn";
 const DEFAULT_CHANNEL = "46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05";
 const DEFAULT_TYPE = "11";
-const DEFAULT_SOURCE = "agent";
+// 3.7.7 对齐（2026-09-29 用户决策）：source 由 "agent" 改为 skill 名，与 X-Dknowc-Attribution
+// 声明的 source 字段同名同义；body 里的 channel 渠道码（UUID 埋点）保持不变，同名不同义、互不影响。
+const DEFAULT_SOURCE = "dknowc-trusted-search";
 const API_KEY_ENV = "DKNOWC_API_KEY";
 const MAAS_PLATFORM_URL = "https://platform.dknowc.cn/auth/#/login";
 const FALLBACK_REGISTER_URL = MAAS_PLATFORM_URL;
-const ZSHRC_START = "# >>> dknowc api key >>>";
-const ZSHRC_END = "# <<< dknowc api key <<<";
+const KEY_FILE_NAME = "api_key";
+// 历史 ~/.zshrc 标记块（1.3.5 迁移：写入配置文件后清理，避免污染 shell 配置）
+const ZSHRC_START = "# >>> dknowc trusted search api key >>>";
+const ZSHRC_END = "# <<< dknowc trusted search api key <<<";
+
+function apiKeyFilePath() {
+  const home = os.homedir();
+  if (process.platform === "win32") {
+    const appdata = process.env.APPDATA || home;
+    return path.join(appdata, "dknowc", KEY_FILE_NAME);
+  }
+  const xdg = process.env.XDG_CONFIG_HOME || path.join(home, ".config");
+  return path.join(xdg, "dknowc", KEY_FILE_NAME);
+}
 
 function maskPhone(phone) {
   const p = String(phone || "");
@@ -51,13 +72,34 @@ function parseArgs(argv) {
   return out;
 }
 
+// 来源声明（X-Dknowc-Attribution，仅统计用、不参与鉴权；随公文写作 3.7.7 移植）：
+// 读包根 attribution.json + SKILL.md 的 version；读取失败不加头、不阻断请求。
+function buildAttributionHeader() {
+  try {
+    const root = path.resolve(__dirname, "..");
+    const meta = JSON.parse(fs.readFileSync(path.join(root, "attribution.json"), "utf-8"));
+    if (!meta.source) return null;
+    const parts = [`kind=${meta.kind || "skill"}`, `source=${meta.source}`];
+    try {
+      const m = fs.readFileSync(path.join(root, "SKILL.md"), "utf-8").match(/^version:\s*"?([^"\n]+)"?/m);
+      if (m) parts.push(`version=${m[1].trim()}`);
+    } catch {}
+    if (meta.channel) parts.push(`channel=${meta.channel}`);
+    return parts.join(";");
+  } catch { return null; }
+}
+function withAttribution(headers) {
+  const attr = buildAttributionHeader();
+  return attr ? { ...headers, "X-Dknowc-Attribution": attr } : headers;
+}
+
 async function postJson(url, payload, headers = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   try {
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
+      headers: withAttribution({ "Content-Type": "application/json", ...headers }),
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
@@ -104,41 +146,40 @@ async function createNewApiKey(openBase, existingApiKey, name, remark) {
   return { result, apiKey };
 }
 
-function shellSingleQuote(value) {
-  return `'${String(value).replace(/'/g, `'\\''`)}'`;
-}
-
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function writeApiKeyToZshrc(apiKey) {
+function removeLegacyZshrcBlocks() {
+  // 迁移：写入配置文件后从 ~/.zshrc 移除历史 Key 标记块（避免污染 shell 配置）
   const zshrcPath = path.join(os.homedir(), ".zshrc");
-  const block = [
-    ZSHRC_START,
-    `export ${API_KEY_ENV}=${shellSingleQuote(apiKey)}`,
-    ZSHRC_END,
-    "",
-  ].join("\n");
-  let existing = "";
   try {
-    existing = fs.existsSync(zshrcPath) ? fs.readFileSync(zshrcPath, "utf8") : "";
-  } catch (error) {
-    const msg = error && error.message ? error.message : String(error);
-    return { written: false, path: zshrcPath, error: msg };
+    let existing = fs.existsSync(zshrcPath) ? fs.readFileSync(zshrcPath, "utf8") : "";
+    if (!existing) return;
+    const re = new RegExp(`${escapeRegExp(ZSHRC_START)}[\\s\\S]*?${escapeRegExp(ZSHRC_END)}\\n?`, "m");
+    if (re.test(existing)) {
+      existing = existing.replace(re, "");
+      // 保留 zshrc 原有权限，不强制改 600（2026-09-28 审查修复）
+      let mode;
+      try { mode = fs.statSync(zshrcPath).mode & 0o777; } catch { mode = 0o600; }
+      fs.writeFileSync(zshrcPath, existing, { encoding: "utf8", mode });
+    }
+  } catch {
+    /* 清理失败不阻断：遗留块仍由 api_key.py 的 zshrc 兜底读到 */
   }
+}
 
-  const pattern = new RegExp(`${escapeRegExp(ZSHRC_START)}[\\s\\S]*?${escapeRegExp(ZSHRC_END)}\\n?`, "m");
-  const next = pattern.test(existing)
-    ? existing.replace(pattern, block)
-    : `${existing}${existing && !existing.endsWith("\n") ? "\n" : ""}${block}`;
-
+function writeApiKeyToConfigFile(apiKey) {
+  // 写本机专用配置文件（纯文本一行 Key，600 权限）；成功后清理历史 ~/.zshrc 块
+  const filePath = apiKeyFilePath();
   try {
-    fs.writeFileSync(zshrcPath, next, { encoding: "utf8", mode: 0o600 });
-    return { written: true, path: zshrcPath, error: null };
+    fs.mkdirSync(path.dirname(filePath), { recursive: true, mode: 0o700 });
+    fs.writeFileSync(filePath, `${String(apiKey).trim()}\n`, { encoding: "utf8", mode: 0o600 });
+    removeLegacyZshrcBlocks();
+    return { written: true, path: filePath, error: null };
   } catch (error) {
     const msg = error && error.message ? error.message : String(error);
-    return { written: false, path: zshrcPath, error: msg };
+    return { written: false, path: filePath, error: msg };
   }
 }
 
@@ -146,6 +187,43 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const cmd = args._[0];
   const base = args.base || DEFAULT_BASE;
+
+  if (cmd === "save-key") {
+    // 3.7.7 移植：MCP 取 Key 路径的落盘子命令。宿主提供 dknowc-mcp 的 create_api_key 且调用
+    // 成功（返回顶层 JSON {"apiKey": "..."}）后，用本命令落盘，用户无需手机号验证码。
+    // 密钥来源优先 stdin（printf '%s' "<密钥>" | node register_key.mjs save-key，避免出现在
+    // 命令行参数里），其次 --api-key；仅接受 sk- 开头。落盘复用 writeApiKeyToConfigFile
+    // （600 权限 + 清理历史 ~/.zshrc 块），与手机号注册路径同一份持久化逻辑。
+    let apiKey = "";
+    try {
+      if (!process.stdin.isTTY) {
+        const chunks = [];
+        for await (const c of process.stdin) chunks.push(c);
+        apiKey = Buffer.concat(chunks).toString("utf-8");
+      }
+    } catch { /* stdin 读取失败时回退 --api-key */ }
+    if (!apiKey.trim() && args["api-key"] && args["api-key"] !== true) apiKey = String(args["api-key"]);
+    apiKey = apiKey.trim();
+    if (!apiKey.startsWith("sk-") || apiKey.length < 20) {
+      console.log(JSON.stringify({
+        status: false,
+        msg: "密钥格式不符（应为 sk- 开头的 MaaS API Key），请确认调用的是 create_api_key 的返回值",
+      }));
+      process.exit(1);
+    }
+    const w = writeApiKeyToConfigFile(apiKey);
+    console.log(JSON.stringify({
+      status: w.written,
+      envWriteSucceeded: w.written,
+      envWriteTarget: w.path,
+      error: w.error || null,
+      // user_message：给用户的固定话术，Agent 必须原样转述，不得改写后发挥
+      user_message: w.written
+        ? "已通过你的深知可信工作台授权直接开通搜索功能，无需手机号验证，马上开始检索。"
+        : "密钥保存到本机时出现问题，需要改用手机号验证码方式开通。",
+    }));
+    process.exit(w.written ? 0 : 1);
+  }
 
   if (cmd === "send") {
     if (!args.phone) {
@@ -217,17 +295,20 @@ async function main() {
         newKeyError = created.result.errmsg || created.result.msg || "新 API Key 创建失败";
       }
     }
-    const zshrcWrite = ok && apiKeyToSave && !args["no-zshrc"]
-      ? writeApiKeyToZshrc(apiKeyToSave)
-      : { written: false, path: path.join(os.homedir(), ".zshrc"), error: null };
+    // 注册成功自动持久化到本机专用配置文件 ~/.config/dknowc/api_key（1.3.5 起，对齐公文写作
+    // 3.7.5：不再写 ~/.zshrc，避免污染 shell 配置；读取顺序 env→配置文件→历史 zshrc 兜底）。
+    // --no-persist 可跳过；persist 命令保留用于事后手动补持久化。
     // user_message：给用户的固定话术，Agent 必须原样转述，不得改写后发挥。
-    // 权益告知（300 次额度 + 实名认证赠金）已前移到开通引导（initialize.guide_message / onboarding_scripts S1），
+    // 权益告知（注册赠送 10 万积分 + 实名认证再送 10 万积分）已前移到开通引导（initialize.guide_message / onboarding_scripts S1），
     // 此处只做轻确认，避免成功节点信息过重导致转述截断。
+    const cfgWrite = ok && apiKeyToSave && !args["no-persist"]
+      ? writeApiKeyToConfigFile(apiKeyToSave)
+      : { written: false, path: apiKeyFilePath(), error: null };
     let userMessage;
     if (ok && apiKeyToSave) {
       userMessage = Boolean(data.existed)
         ? `这个手机号之前开通过，已直接找回原来的密钥和额度，不用重新注册。我马上开始检索。`
-        : `开通成功，访问密钥已写入本机，300 次免费检索额度已生效。我马上开始检索。`;
+        : `开通成功，访问密钥已写入本机，注册赠送的 10 万积分已到账。我马上开始检索。`;
       if (newKeyError) {
         userMessage += ` 另外你要求的新密钥生成失败（${newKeyError}），已先沿用现有密钥继续，不影响使用；需要的话稍后再重新生成。`;
       }
@@ -246,23 +327,48 @@ async function main() {
       newKeyCreated,
       user_message: userMessage,
       envName: API_KEY_ENV,
-      apiKey: apiKeyToSave,
+      // 防明文泄漏（对齐公文写作 3.7.4）：注册成功且已持久化时不输出明文 apiKey，
+      // 只输出掩码与写入路径——业务脚本从配置文件直读，无需明文；仅写入失败时回退明文供临时注入。
+      apiKey: cfgWrite.written ? null : apiKeyToSave,
       apiKeyMasked: maskKey(apiKeyToSave),
       envWriteRequired: false,
-      envWriteTarget: zshrcWrite.path,
-      envWriteSucceeded: Boolean(zshrcWrite.written),
-      envWriteError: zshrcWrite.error,
-      envWriteInstruction: zshrcWrite.written
-        ? `已写入 ${zshrcWrite.path}；脚本直读该文件，无需重启宿主。当前任务可继续使用返回的 apiKey。`
-        : `未能写入 ${zshrcWrite.path}，请由 Agent 或平台密钥配置将返回的 apiKey 写入环境变量 ${API_KEY_ENV}。`,
-      currentSessionInstruction: `当前任务继续执行初始化时，请用本次返回的 apiKey 临时注入环境变量 ${API_KEY_ENV}，不得向用户展示完整 Key。`,
+      envWriteTarget: cfgWrite.path,
+      envWriteSucceeded: Boolean(cfgWrite.written),
+      envWriteError: cfgWrite.error,
+      envWriteInstruction: cfgWrite.written
+        ? `已写入 ${cfgWrite.path}；业务脚本直读该文件，无需重启宿主。`
+        : `未能写入 ${cfgWrite.path}，可运行 persist 命令补写，或由 Agent / 平台密钥配置将返回的 apiKey 写入环境变量 ${API_KEY_ENV}。`,
+      currentSessionInstruction: `已持久化时初始化会从配置文件直读 Key，无需手动注入；未持久化时用本次返回的 apiKey 临时注入环境变量 ${API_KEY_ENV}，不得向用户展示完整 Key。`,
       newKeyError,
       fallbackRegisterUrl: FALLBACK_REGISTER_URL,
     }));
     process.exit(ok && Boolean(apiKeyToSave) ? 0 : 1);
   }
 
-  console.error("用法: node register_key.mjs <send|register> ...");
+  if (cmd === "persist") {
+    // 手动补持久化：从当前任务临时注入的环境变量（或 --api-key）读取 Key 写入专用配置文件。
+    const apiKey = (args["api-key"] && args["api-key"] !== true)
+      ? args["api-key"]
+      : process.env[API_KEY_ENV] || "";
+    if (!apiKey) {
+      console.error(`缺少 ${API_KEY_ENV} 环境变量或 --api-key`);
+      process.exit(2);
+    }
+    const cfgWrite = writeApiKeyToConfigFile(apiKey);
+    console.log(JSON.stringify({
+      status: Boolean(cfgWrite.written),
+      envName: API_KEY_ENV,
+      envWriteTarget: cfgWrite.path,
+      envWriteSucceeded: Boolean(cfgWrite.written),
+      envWriteError: cfgWrite.error,
+      envWriteInstruction: cfgWrite.written
+        ? `已写入 ${cfgWrite.path}；脚本直读该文件，无需重启宿主。`
+        : `未能写入 ${cfgWrite.path}，请由 Agent 或平台密钥配置将返回的 apiKey 写入环境变量 ${API_KEY_ENV}。`,
+    }));
+    process.exit(cfgWrite.written ? 0 : 1);
+  }
+
+  console.error("用法: node register_key.mjs <send|register|persist> ...");
   process.exit(2);
 }
 

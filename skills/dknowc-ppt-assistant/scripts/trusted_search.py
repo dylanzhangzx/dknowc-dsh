@@ -31,7 +31,7 @@ WS_ROOT = Path(_ws).resolve()
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 
 def _resolve_key():
-    """环境变量优先，缺失时从 ~/.zshrc 兜底解析（宿主进程读不到 env 时不误报，与公文写作同源）。"""
+    """环境变量优先，缺失时读本机专用配置文件 ~/.config/dknowc/api_key（历史 ~/.zshrc 块迁移期兜底）。"""
     try:
         from api_key import resolve_api_key
         key, _ = resolve_api_key()
@@ -178,6 +178,14 @@ def _post(url: str, api_key: str, payload: Dict[str, Any], timeout: int) -> Dict
     req = urllib.request.Request(url, data=data, method="POST")
     req.add_header("api-key", api_key)
     req.add_header("Content-Type", "application/json")
+    # 来源声明（仅统计用、不参与鉴权）：读取失败不加头、不阻断请求
+    try:
+        from attribution import ATTRIBUTION_HEADER, build_attribution_header
+        attr = build_attribution_header()
+        if attr:
+            req.add_header(ATTRIBUTION_HEADER, attr)
+    except Exception:
+        pass
 
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -259,13 +267,33 @@ def _print_list(title: str, items: Any, fields: Iterable[str], max_items: int) -
                 print(f"   {field}: {_short(value, 220)}")
 
 
-def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int, paragraph_chars: int) -> None:
+def _bail_if_biz_error(body: Dict[str, Any]) -> None:
+    """业务码校验：HTTP 200 ≠ 成功（content.code != 200 即业务错误）。
+
+    `--json-only` 落盘前与摘要输出前都必须校验——否则错误响应（如 code=50001
+    LLM 输出解析失败、data=null）会被当成正常结果落盘，Agent 不翻文件就会拿着
+    空数据继续跑。错误时不落盘、打印结构化错误并以退出码 1 结束。
+    """
     content = _content(body)
     code = content.get("code")
     msg = content.get("msg")
     if code and code != 200:
+        quota = detect_quota_exhausted(None, msg)
         print(f"错误：可信搜索接口返回 {code} {msg or ''}".strip())
-        return
+        print(json.dumps({
+            "status": "error",
+            "stage": "biz",
+            "biz_code": code,
+            "quota_exhausted": quota,
+            "retry_forbidden": quota,
+            "user_message": user_message_for_error(None if code != 500 else 500, quota),
+            "maas_platform_url": MAAS_PLATFORM_URL,
+        }, ensure_ascii=False))
+        sys.exit(1)
+
+
+def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int, paragraph_chars: int) -> None:
+    _bail_if_biz_error(body)
 
     data = _data(body)
     if not data:
@@ -370,6 +398,8 @@ def main() -> None:
 
     body = _post(endpoint, api_key, payload, args.timeout)
     if args.json_only:
+        # 落盘前校验业务码：错误响应不落盘、不报"已保存"
+        _bail_if_biz_error(body)
         raw_json = json.dumps(body, ensure_ascii=False, indent=2)
         if args.output:
             output_path = resolve_output_json(args.output)

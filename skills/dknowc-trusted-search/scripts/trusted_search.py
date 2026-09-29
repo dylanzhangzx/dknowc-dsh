@@ -57,8 +57,8 @@ def detect_quota_exhausted(status_code=None, errmsg=None):
 def user_message_for_error(status_code=None, quota_exhausted=False):
     """按错误类型返回给用户的固定话术（Agent 必须原样转述，不得改写后发挥）。"""
     if quota_exhausted:
-        return (f"检索调不动，很可能是额度用完了：到 {MAAS_PLATFORM_URL} 看一下额度，"
-                "完成实名认证可以领 100 元体验金。")
+        return (f"检索调不动，很可能是积分用完了：到 {MAAS_PLATFORM_URL} 看一下积分，"
+                "完成实名认证可以再领 10 万积分。")
     if status_code == 401:
         return "访问密钥校验没通过（密钥可能已失效），我重新获取一下密钥；还不行的话需要重新验证手机号。"
     if status_code == 403:
@@ -178,6 +178,15 @@ def _post(url: str, api_key: str, payload: Dict[str, Any], timeout: int) -> Dict
     req = urllib.request.Request(url, data=data, method="POST")
     req.add_header("api-key", api_key)
     req.add_header("Content-Type", "application/json")
+    # 来源声明（X-Dknowc-Attribution，仅统计用、不参与鉴权；随公文写作 3.7.7 移植）：
+    # 读包根 attribution.json + SKILL.md 的 version；读取失败不加头、不阻断请求。
+    try:
+        from attribution import build_attribution_header, ATTRIBUTION_HEADER
+        _attr = build_attribution_header()
+        if _attr:
+            req.add_header(ATTRIBUTION_HEADER, _attr)
+    except Exception:
+        pass
 
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -214,19 +223,6 @@ def _data(body: Dict[str, Any]) -> Dict[str, Any]:
     return {}
 
 
-def _knowledge_base_url(body: Dict[str, Any], data: Dict[str, Any]) -> str:
-    content = _content(body)
-    candidates = [
-        content.get("knowledgeBase"),
-        body.get("knowledgeBase"),
-        data.get("knowledgeBase"),
-    ]
-    for candidate in candidates:
-        if isinstance(candidate, str) and candidate.strip():
-            return candidate.strip()
-    return ""
-
-
 def _articles(data: Dict[str, Any]) -> List[Dict[str, Any]]:
     articles = data.get("检索文章")
     if isinstance(articles, list):
@@ -259,7 +255,12 @@ def _print_list(title: str, items: Any, fields: Iterable[str], max_items: int) -
                 print(f"   {field}: {_short(value, 220)}")
 
 
-def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int, paragraph_chars: int) -> None:
+def _bail_if_biz_error(body: Dict[str, Any]) -> None:
+    """业务码校验：HTTP 200 ≠ 成功（content.code != 200 即业务错误）。
+
+    1.4.0 修复：`--json-only` 落盘前与摘要输出前都必须校验——此前 `--json-only` 分支
+    直接保存并打印"已保存"，错误响应被当成正常结果落盘（对齐 deep_query.py 同步修复）。
+    """
     content = _content(body)
     code = content.get("code")
     msg = content.get("msg")
@@ -277,6 +278,10 @@ def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int,
         }, ensure_ascii=False))
         sys.exit(1)
 
+
+def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int, paragraph_chars: int) -> None:
+    _bail_if_biz_error(body)
+
     data = _data(body)
     if not data:
         print(json.dumps(body, ensure_ascii=False, indent=2))
@@ -291,11 +296,6 @@ def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int,
     articles = _articles(data)
     total_articles = len(articles)
     display_count = min(max_articles, total_articles)
-    knowledge_base_url = _knowledge_base_url(body, data)
-    if knowledge_base_url:
-        print(f"\n知识专库链接：{knowledge_base_url}")
-    elif total_articles > max_articles:
-        print(f"\n知识专库链接：接口未返回")
 
     if total_articles:
         print(f"\n召回材料：共 {total_articles} 条，聊天窗口展示前 {display_count} 条材料")
@@ -326,9 +326,6 @@ def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int,
         print(f"相关段落：{_short(paragraph_text, paragraph_chars) or '接口未返回'}")
         print(f"原文：{url}")
 
-    if knowledge_base_url and total_articles > max_articles:
-        print(f"\n完整召回内容可通过上方知识专库链接查看。")
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="深知可信搜索可信搜索调用脚本")
@@ -340,8 +337,8 @@ def main() -> None:
     parser.add_argument("--no-policy", action="store_true", help="不返回规范性文件清单")
     parser.add_argument("--item", action="store_true", help="返回公共事项在线办理清单")
     parser.add_argument("--no-item", action="store_true", help="不返回公共事项在线办理清单")
-    parser.add_argument("--know-base", action="store_true", help="返回知识专库链接")
-    parser.add_argument("--no-know-base", action="store_true", help="不返回知识专库链接")
+    parser.add_argument("--know-base", action="store_true", help="请求体携带 knowBase（默认即开；链接不再向用户展示，2026-09-29 移除老能力）")
+    parser.add_argument("--no-know-base", action="store_true", help="请求体不携带 knowBase")
     parser.add_argument("--return-full-content", action="store_true", help="返回资料全文")
     parser.add_argument("--segment-count", type=int, help="每篇材料最多返回段落数")
     parser.add_argument("--simplified", action="store_true",
@@ -366,7 +363,7 @@ def main() -> None:
         os.environ.get("DKNOWC_API_KEY"),
     )
     if not api_key:
-        # 宿主进程读不到 shell 环境变量时，从 ~/.zshrc 兜底解析已持久化的 Key
+        # 宿主进程读不到 shell 环境变量时，从专用配置文件兜底解析已持久化的 Key（历史 zshrc 兜底）
         try:
             from api_key import resolve_api_key
             api_key, _source = resolve_api_key()
@@ -387,12 +384,15 @@ def main() -> None:
 
     body = _post(endpoint, api_key, payload, args.timeout)
     if args.json_only:
+        _bail_if_biz_error(body)  # 落盘前校验：错误响应不落盘、不报"已保存"（1.4.0 修复）
         raw_json = json.dumps(body, ensure_ascii=False, indent=2)
         if args.output:
             output_path = resolve_output_json(args.output)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(raw_json, encoding="utf-8")
-            print(f"已保存搜索结果 JSON：{output_path.relative_to(SKILL_ROOT)}")
+            # 绝对路径输出（2026-09-28 修复）：只打相对路径时 Agent 会到工作区 cwd 下找、
+            # 找不到就全盘 find（实测触发宿主 ~/.ssh 读取询问）——落盘位置在 skill 目录，直接给绝对路径
+            print(f"已保存搜索结果 JSON（位于 skill 工作区，绝对路径）：{output_path}")
         else:
             print(raw_json)
         return

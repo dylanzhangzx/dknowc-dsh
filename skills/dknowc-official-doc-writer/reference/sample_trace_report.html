@@ -205,7 +205,7 @@ a.jb-quote{text-decoration:none}
 .sc-links a{display:inline-flex;align-items:center;min-height:24px;padding:3px 9px;border-radius:6px;
   background:var(--brand-soft);color:var(--brand);font-weight:700;text-decoration:none;font-size:12px}
 
-/* ===== 材料专库视图 ===== */
+/* ===== 知识专库视图 ===== */
 #view-library{padding:26px 0 30px}
 .lib-head{max-width:860px;margin:0 auto 16px;text-align:center}
 .lib-title{margin-bottom:14px}
@@ -283,6 +283,8 @@ a.jb-quote{text-decoration:none}
 .toc a{color:var(--muted);text-decoration:none;padding:4px 10px;border-left:2px solid var(--line);
   line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toc a.on{color:var(--brand);border-left-color:var(--brand);font-weight:700}
+/* 切到知识专库视图时隐藏章节目录（.toc 渲染在 .app 之后，用兄弟选择器；括号内为兼容写法） */
+.app[data-view="library"] ~ .toc,.app[data-view="library"] .toc{display:none}
 @media (max-width:1460px){.toc{display:none}}
 
 .foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
@@ -417,7 +419,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   <div class="tb-right">
     <div class="view-switch" role="tablist" aria-label="视图切换">
       <button class="on" data-view="report" type="button">核验报告</button>
-      <button data-view="library" type="button">材料专库</button>
+      <button data-view="library" type="button">知识专库</button>
     </div>
     <div class="tb-tools">
       <button id="btn-reading" type="button" aria-pressed="false" title="隐藏核验元素，纯阅读正文">只看正文</button>
@@ -426,7 +428,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
         <button id="btn-print" type="button" aria-haspopup="true" title="浏览器打印／另存为 PDF">打印归档 ▾</button>
         <span class="print-drop" id="print-drop" hidden>
           <button id="print-body" type="button">只打印正文</button>
-          <button id="print-full" type="button">完整归档（含核验材料）</button>
+          <button id="print-full" type="button">完整归档（含来源文章）</button>
         </span>
       </span>
     </div>
@@ -437,11 +439,11 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
 <div class="hero">
   <div class="r-badge">溯源核验报告</div>
   <h1>关于北京市养老产业发展情况的调研报告</h1>
-  <div class="meta">深知检索 4 次 · 召回材料 22 条 · 正文引用 25 处 · 生成于 2026-09-16 15:29 ｜ 素材来源：深知可信搜索</div>
+  <div class="meta">深知检索 4 次 · 来源文章 22 篇 · 正文引用 25 处 · 生成于 2026-09-16 15:29 ｜ 来源：深知可信搜索</div>
   <div class="hero-switch">
     <div class="view-switch" role="tablist" aria-label="视图切换">
       <button class="on" data-view="report" type="button">核验报告</button>
-      <button data-view="library" type="button">材料专库（22）</button>
+      <button data-view="library" type="button">知识专库（22）</button>
     </div>
   </div>
 </div>
@@ -458,7 +460,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
         <li class="p-arrow" aria-hidden="true">›</li>
         <li class="p-step">
           <span class="p-no">2</span>
-          <div class="p-txt"><b>材料入库 22 条</b><i>正文采用 14 · 召回未采用 8</i></div>
+          <div class="p-txt"><b>来源文章入库 22 篇</b><i>正文采用 14 · 召回未采用 8</i></div>
         </li>
         <li class="p-arrow" aria-hidden="true">›</li>
         <li class="p-step">
@@ -481,7 +483,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
       <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据逐条对过原文<span class="v-stamp">已核验</span></div>
       
       <div class="v-grid">
-        <div class="vi"><span class="s ok">✓ 依据溯源 14/14</span><span class="d">每条素材摘录可比对，原文或存档快照可回看</span></div><div class="vi"><span class="s ok">✓ 引用对应 25/25</span><span class="d">正文每处 [n] 都能找到对应材料</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2025-03～2026-09</span></div><div class="vi"><span class="s ok">✓ 材料构成</span><span class="d">政策依据 7 · 数据支撑 4 · 参考案例 3</span></div><div class="vi"><span class="s ok" title="正文数字与结论逐条对应素材摘录，未使用检索结果以外的数据；调研报告四段式（基本情况、做法成效、存在问题、对策建议）完整；全文无&quot;待补&quot;等占位残留；已按公文语体行文，调研报告口吻；符合调研报告文种格式">✓ 交付前检查 5/5</span><span class="d">事实有据、结构完整、无占位残留、无 AI 味、格式合规 · 悬停查看说明</span></div><div class="vi"><span class="s man">◐ 现行效力</span><span class="d">7 份政策文件建议按官方发布确认是否现行有效</span></div>
+        <div class="vi"><span class="s ok">✓ 依据溯源 14/14</span><span class="d">每篇来源文章的摘录可比对，原文或存档快照可回看</span></div><div class="vi"><span class="s ok">✓ 引用对应 25/25</span><span class="d">正文每处 [n] 都能找到对应来源文章</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2025-03～2026-09</span></div><div class="vi"><span class="s ok">✓ 材料构成</span><span class="d">政策依据 7 · 数据支撑 4 · 参考案例 3</span></div><div class="vi"><span class="s ok" title="正文数字与结论逐条对应素材摘录，未使用检索结果以外的数据；调研报告四段式（基本情况、做法成效、存在问题、对策建议）完整；全文无&quot;待补&quot;等占位残留；已按公文语体行文，调研报告口吻；符合调研报告文种格式">✓ 交付前检查 5/5</span><span class="d">事实有据、结构完整、无占位残留、无 AI 味、格式合规 · 悬停查看说明</span></div><div class="vi"><span class="s man">◐ 现行效力</span><span class="d">7 份政策文件建议按官方发布确认是否现行有效</span></div>
       </div>
       <div class="v-note">核验方式：先用深知可信搜索找权威来源，再把正文每处依据和原文逐条比对（都能点开原文回看），最后做了交付前五项检查。政策是否现行有效，以官方发布为准。</div>
     </div>
@@ -608,14 +610,14 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   </main>
 
   
-    <section class="view" id="view-library" aria-label="材料专库">
+    <section class="view" id="view-library" aria-label="知识专库">
       <div class="lib-head">
-        <div class="lib-title"><b>材料专库</b>
+        <div class="lib-title"><b>知识专库</b>
           <span>共 22 条 · 已引用 14 · 全部已核验</span>
         </div>
         <div class="lib-searchWrap">
           <span class="lib-searchIcon" aria-hidden="true">⌕</span>
-          <input class="lib-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索材料">
+          <input class="lib-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源文章">
         </div>
         <div class="hot-terms" aria-label="热门搜索词"><span class="hot-label">大家都在搜</span><button class="hot-term" type="button">养老</button><button class="hot-term" type="button">北京</button><button class="hot-term" type="button">老服务</button><button class="hot-term" type="button">养老服务</button><button class="hot-term" type="button">经济</button><button class="hot-term" type="button">北京市</button><button class="hot-term" type="button">银发</button><button class="hot-term" type="button">银发经济</button></div>
         <div class="lib-tabs" role="tablist" aria-label="按检索分组筛选"><button class="on" data-cond="" type="button">全部（22）</button><button data-cond="北京·政策法规" type="button">北京·政策法规（9）</button><button data-cond="北京·模式创新" type="button">北京·模式创新（4）</button><button data-cond="全国·产业数据" type="button">全国·产业数据（6）</button><button data-cond="北京·要素保障" type="button">北京·要素保障（3）</button><button data-cond="__unused__" type="button">未引用（8）</button></div>
@@ -705,10 +707,10 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
 在设施与设备部分，明确了养老机构在设施、设备等2方面8条具体要求。重点对养老机构消防设施和消防器材、安全疏散辅助器材、电气线路敷设、无障碍设计等设施设备配置作出规定。
 在入院出院管理部分，明确了养老机构在评估、入院、出院等3方面8条要求。重点从老年人能力评估、制定照护计划、签订服务合同、新入住老年人适应情况、材料归档等方面，加强入院出院规范管理。
 在基础服务部分，明确了养老机构在生活照料服务、健康服务、膳食服务、清洁卫生和洗涤服务等4方面21条基本要求。重点对服务巡查频次、药品管理、膳食质量与安全、情绪疏导等作了细化规定。</div></div><div class="sc-links"><span><a href="http://www.scio.gov.cn/xwfb/bwxwfb/gbwfbh/gjscjgzj/202609/t20260907_1007126.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/a4/92/a492104476843367dfd77df67a66905e.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article></div>
-      <div class="lib-empty hide" id="lib-empty">没有符合当前筛选的材料。</div>
-      <div class="lib-foot">材料来源：深知可信搜索 · 每条摘录均取自原文原段</div>
+      <div class="lib-empty hide" id="lib-empty">没有符合当前筛选的来源文章。</div>
+      <div class="lib-foot">来源：深知可信搜索 · 每段摘录均取自原文原段</div>
     </section>
-  <section class="print-appendix" aria-label="核验材料附录（打印归档）"><h3>核验材料（全 22 条）</h3><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="条例支持保障和产业促进专章内容取自条文原文">✓ 已核验</span></div><h4>北京市养老服务条例</h4><div class="sc-meta">北京妇女网门户网站 | 2026年07月01日</div><div class="sc-vnote">条例支持保障和产业促进专章内容取自条文原文</div><div class="seg-block"><span class="crumb">北京市养老服务条例 <i>›</i> 第六章　支持保障和产业促进第五十九条</span><div class="sc-excerpt plain">第五十九条　本市推动养老金融发展，支持在京金融机构开发涉老金融产品，提供养老财务规划、资金管理、风险保障等服务，开发适合居家、社区、机构等多样化护理需求的护理保险等产品。
+  <section class="print-appendix" aria-label="来源文章附录（打印归档）"><h3>来源文章（全 22 篇）</h3><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">政策依据</span><span class="sc-vk ok" title="条例支持保障和产业促进专章内容取自条文原文">✓ 已核验</span></div><h4>北京市养老服务条例</h4><div class="sc-meta">北京妇女网门户网站 | 2026年07月01日</div><div class="sc-vnote">条例支持保障和产业促进专章内容取自条文原文</div><div class="seg-block"><span class="crumb">北京市养老服务条例 <i>›</i> 第六章　支持保障和产业促进第五十九条</span><div class="sc-excerpt plain">第五十九条　本市推动养老金融发展，支持在京金融机构开发涉老金融产品，提供养老财务规划、资金管理、风险保障等服务，开发适合居家、社区、机构等多样化护理需求的护理保险等产品。
 　　鼓励金融机构向养老机构、养老用品生产企业、养老科技企业提供投融资支持，降低养老服务经营主体融资成本。</div></div><div class="sc-links"><span><a href="http://www.bjwomen.gov.cn/fnw_2nd_web/static/articles/catalog_ff8080818e5bf6330192d25417ae5120/article_400df1849c8aade901a064ceb6f844c3/400df1849c8aade901a064ceb6f844c3.html" target="_blank" rel="noopener">查看全文 ↗</a></span><span><a class="snap" href="https://attach.dknowc.cn/snapshot/A/1c/3a/1c3ad7fe2601039b620d4d7fa6def279.jpg" target="_blank" rel="noopener">查看存档全文 ↗</a></span></div></article><article class="scard print-only pol"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">政策依据</span><span class="sc-conf" title="发布日期可信度：高。内容经模型治理入库，标题为模型从原文动态抽取，非规则提取">高可信</span><span class="sc-vk ok" title="任务清单第223条内容取自原文">✓ 已核验</span></div><h4>北京市人民政府关于印发《2026年市政府工作报告重点任务清单》的通知</h4><div class="sc-meta">京政发〔2026〕1号 | 2026年02月10日</div><div class="sc-vnote">任务清单第223条内容取自原文</div><div class="seg-block"><span class="crumb">北京市人民政府关于印发《2026年市政府工作报告重点任务清单》的通知 <i>›</i> 完善多层次社会保障223</span><div class="sc-excerpt plain">223.加强“老老人”服务保障，实施好养老服务相关法律法规，不断丰富居家社区养老服务，整合各类养老服务资源，在“老老人”数量较多的区域新建20个街道（乡镇）区域养老服务中心，进一步加强运营监测评估，提升区域养老服务中心统筹资源和居家养老专业服务能力，优化提升已有养老服务设施使用效能。
 　　主责单位：市民政局
 　　224.加快推进建立全市统一的长期护理保险制度。优化家庭养老床位服务，新增5000张家庭养老床位。优化养老助餐服务，引导社会餐饮企业参与养老助餐服务。激发养老事业和养老产业发展活力，更好满足老年人多层次多样化养老需求。
@@ -799,7 +801,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
 
 <div class="ev-panel" id="ev-pop" hidden></div>
 <div class="sheet-mask" aria-hidden="true"></div>
-<div class="sheet" role="dialog" aria-label="核验材料">
+<div class="sheet" role="dialog" aria-label="来源文章">
   <div class="sheet-grab"></div>
   <div class="sheet-head"><b>依据对照</b><button class="sheet-close" type="button">收起</button></div>
   <div class="sheet-body"></div>
@@ -847,7 +849,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
       var on = document.body.classList.toggle("reading");
       readBtn.setAttribute("aria-pressed", on ? "true" : "false");
       readBtn.textContent = on ? "显示核验" : "只看正文";
-      /* 只看正文只作用于核验报告视图：正在材料专库时切回报告，专库不受影响 */
+      /* 只看正文只作用于核验报告视图：正在知识专库时切回报告，专库不受影响 */
       if (on && app && app.getAttribute("data-view") !== "report") setView("report");
     });
   }
@@ -1002,7 +1004,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     name.addEventListener("click", function () { toggleJb(name.closest(".jb")); });
   });
 
-  /* 引文条目点击 → 材料专库定位对应卡：库内导航看完整材料；
+  /* 引文条目点击 → 知识专库定位对应卡：库内导航看完整材料；
      外部原文跳转只保留 jb-head 的"查看全文"按钮，动线分离 */
   function jumpToLibrary(id) {
     var card = byId[id];
@@ -1048,7 +1050,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     });
   });
 
-  /* ===== 7. 材料专库：tabs + 搜索 + 热词 ===== */
+  /* ===== 7. 知识专库：tabs + 搜索 + 热词 ===== */
   var cond = "";
   var kw = "";
   function applyFilter() {
@@ -1105,7 +1107,13 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
       a.addEventListener("click", function (e) {
         e.preventDefault();
         var target = document.querySelector(a.getAttribute("href"));
-        if (target) target.scrollIntoView({ block: "start", behavior: "smooth" });
+        if (!target) return;
+        /* 手动定位而非 scrollIntoView({block:"start"})：后者把标题顶到视口 y=0，会被 sticky 顶栏盖住。
+           偏移量与目录吸顶位置同一基准（顶栏高 + 20px）。 */
+        var bar = document.querySelector(".topbar");
+        var offset = (bar ? bar.offsetHeight : 0) + 20;
+        var y = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
       });
     });
     function spy() {
@@ -1116,6 +1124,18 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     }
     window.addEventListener("scroll", spy, { passive: true });
     spy();
+    /* 目录纵向定位：初始与正文首节对齐，滚动时吸附在顶栏下方；不再按视口高度压缩位置。 */
+    var topbar = document.querySelector(".topbar");
+    function placeToc() {
+      var first = secs[0];
+      if (!first) return;
+      var stick = (topbar ? topbar.offsetHeight : 0) + 20;
+      var want = Math.round(first.getBoundingClientRect().top);
+      toc.style.top = Math.max(stick, want) + "px";
+    }
+    window.addEventListener("scroll", placeToc, { passive: true });
+    window.addEventListener("resize", placeToc);
+    placeToc();
   }
 })();
 </script>
