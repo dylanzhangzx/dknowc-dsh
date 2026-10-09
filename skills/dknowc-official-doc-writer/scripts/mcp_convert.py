@@ -7,7 +7,7 @@
 （免 API Key）。模型在对话层调用 MCP 工具后，把完整返回 JSON 保存到
 official-docs/search-results/，再运行本脚本转换。
 
-为什么必须与 `--clean` 同构（2026-09-21 修复）：脚本通道的下游（模型整理溯源
+为什么必须与 `--clean` 同构：脚本通道的下游（模型整理溯源
 JSON、`merge_search_results.py`、`source_note_html.py` 的历史索引回填）都按
 `--clean` 的字段名读取——文章在**顶层 `articles`**、快照字段名是**`快照链接`**、
 段落带自增 `id`。此前本脚本输出的是 REST 原始形态（`content.data.检索文章`），

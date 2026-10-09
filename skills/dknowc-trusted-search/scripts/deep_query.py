@@ -37,7 +37,7 @@ SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 # 命中后返回 quota_exhausted=true，Agent 必须停止重试并引导用户到 MaaS 处理，不得反复调用。
 # 错误码语义按接口文档区分：401=密钥校验失败（可能失效，需重新获取）；403=接口无权限（密钥类型不符）；
 # 402=余额类。429 接口文案为"繁忙/限流/余额不足"三义混合、无法归因——现阶段全部按额度用尽处理
-# （2026-09-10 产品决策），待后端把服务端问题与余额拆分为不同错误码后再调整回区分逻辑。
+# （2026-09-10 起），待后端把服务端问题与余额拆分为不同错误码后再调整回区分逻辑。
 MAAS_PLATFORM_URL = "https://platform.dknowc.cn/auth/#/login"
 QUOTA_EXHAUSTED_HTTP_CODES = {402, 429}
 QUOTA_EXHAUSTED_KEYWORDS = (
@@ -147,7 +147,7 @@ def _post(url: str, api_key: str, payload: Dict[str, Any], timeout: int) -> Dict
     req = urllib.request.Request(url, data=data, method="POST")
     req.add_header("api-key", api_key)
     req.add_header("Content-Type", "application/json")
-    # 来源声明（X-Dknowc-Attribution，仅统计用、不参与鉴权；随公文写作 3.7.7 移植）：
+    # 来源声明（X-Dknowc-Attribution，仅统计用、不参与鉴权）：
     # 读包根 attribution.json + SKILL.md 的 version；读取失败不加头、不阻断请求。
     try:
         from attribution import build_attribution_header, ATTRIBUTION_HEADER

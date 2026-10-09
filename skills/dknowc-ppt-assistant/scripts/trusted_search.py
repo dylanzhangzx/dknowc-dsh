@@ -146,8 +146,8 @@ def detect_quota_exhausted(status_code=None, errmsg=None, biz_status=None):
 def user_message_for_error(status_code=None, quota_exhausted=False):
     """给用户的固定话术（Agent 必须原样转述），按错误类型区分。"""
     if quota_exhausted:
-        return ("检索调不动，很可能是额度用完了：到 " + MAAS_PLATFORM_URL +
-                " 看一下额度，完成实名认证可以领 100 元体验金。")
+        return ("检索调不动，很可能是积分用完了：到 " + MAAS_PLATFORM_URL +
+                " 看一下积分，完成实名认证可以再领 10 万积分。")
     if status_code == 401:
         return ("访问密钥校验没通过（密钥可能已失效），我重新获取一下密钥；"
                 "还不行的话需要重新验证手机号。")

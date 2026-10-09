@@ -979,7 +979,7 @@ def main():
         "抄送": args.cc,
     }
 
-    # 2026-09-21 修复：文种写错时原本静默落到"下行文"模板，产出格式错误的红头而不报错
+    # 文种写错时原本静默落到"下行文"模板，产出格式错误的红头而不报错
     supported_types = UPWARD_TYPES | DOWNWARD_TYPES | LETTER_TYPES | MINUTES_TYPES
     if args.type not in supported_types:
         raise SystemExit(

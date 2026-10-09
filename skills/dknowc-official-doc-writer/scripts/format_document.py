@@ -220,7 +220,7 @@ def _looks_like_path(text):
 
     用于路径解析失败时的兜底判定：含路径分隔符，或以常见正文扩展名结尾时
     视为路径——此时若文件读不到，宁可报错也不要把路径字符串当成正文写进 Word
-    （2026-09-21 修复：此前会静默生成一份正文只有一行路径的"正式公文"）。
+    （此前会静默生成一份正文只有一行路径的"正式公文"）。
     """
     value = (text or "").strip()
     if not value or "\n" in value:
@@ -729,7 +729,7 @@ def _only_signature_tail(lines, index):
     """落款位置约束：其后到文末只允许空行、成文日期、分页符与版记/附件类行。
 
     正文中间的"牵头单位为省教育厅"这类行即使以机构名结尾也不是落款——
-    它们后面还有正文，据此排除（2026-09-21 修复：方案/总结的责任分工段
+    它们后面还有正文，据此排除（方案/总结的责任分工段
     曾被整段排成落款样式）。
     """
     tail_prefixes = ('附件', '抄送', '印发', '主题词', '签发')
@@ -779,7 +779,7 @@ def is_signing_entity(line, lines=None, index=None):
             return False
 
     # 必须以机构名结尾
-    # 2026-09-21 补全：原表末含"政府"，导致"北京市人民政府"这类最常见落款主体
+    # 补全：原表末含"政府"，导致"北京市人民政府"这类最常见落款主体
     # 反而不被识别（连带成文日期也不右对齐）
     agency_suffixes = ['局', '厅', '委', '办', '办公室', '中心', '院', '会', '组委会', '协会',
                        '站', '所', '部', '处', '司', '署', '公司', '集团', '单位',
@@ -988,7 +988,7 @@ def strip_citation_markers(content_text: str) -> str:
     build_trace_json 装配溯源 JSON、在溯源核验报告 HTML 中变成可点击跳转；
     **正式 Word 交付的正文不应内嵌来源角标**（SKILL.md 搜索规则第 10 条）。
     此前模型常把同一份带角标正文直接交给本脚本，导致 Word 交付物残留
-    [1]…[23] 角标（2026-09-28 北京任务实测 86 个、渝沪任务 141 个）。
+    [1]…[23] 角标（带角标正文两用时，交付物曾残留 86～141 个角标）。
     本函数作为兜底，在排版前统一剥离半角 [n] 与全角 【n】 形式。
     """
     if not content_text:
@@ -1718,7 +1718,7 @@ def create_document(content_text, output_path=None):
         # 署名右空相应增加——两分支均满足"日期首字=署名首字右移2字"。
         # 右缩进是"距右缘的字数"，右移=更靠右=字数更小：设日期首字距右缘为 date_len+date_indent、
         # 署名首字为 unit_len+unit_indent，右移二字即 date_len+date_indent = unit_len+unit_indent-2。
-        # 2026-09-21 修正：两分支此前均少算 4 字（写成 unit_len+4-date_len 与 date_len-unit_len），
+        # 修正：两分支此前均少算 4 字（写成 unit_len+4-date_len 与 date_len-unit_len），
         # 导致每份稿子的成文日期都比规则要求偏左。
         if should_right_align_date(lines, i):
             last_sign_date = stripped
@@ -1810,7 +1810,7 @@ def main():
             with open(text_path, 'r', encoding='utf-8') as f:
                 content = f.read()
         elif _looks_like_path(args.text):
-            # 2026-09-21 修复：路径解析失败时不得把路径字符串当正文——此前会生成一份
+            # 路径解析失败时不得把路径字符串当正文——此前会生成一份
             # 正文只有一行路径的"正式公文"，且打印成功、退出码 0，用户与模型都无从察觉
             raise SystemExit(
                 f'错误：--text 收到的是文件路径而非正文（{args.text}），且该文件无法读取。\n'
@@ -1845,7 +1845,7 @@ def main():
         print(f'✗ 生成失败: {e}')
         import traceback
         traceback.print_exc()
-        # 2026-09-21 修复：此前失败分支不设退出码，宿主按退出码判断成败时会把
+        # 此前失败分支不设退出码，宿主按退出码判断成败时会把
         # 失败当成功继续走交付话术，用户收到不存在的路径
         sys.exit(1)
 

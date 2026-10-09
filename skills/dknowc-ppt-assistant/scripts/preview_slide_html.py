@@ -9,7 +9,7 @@ svg_output/ 下全部（或指定）页面以 data URI 内嵌到单个 HTML—�
 用法：
   python3 scripts/preview_slide_html.py <项目名> [--output <文件名>] [--title <标题>]
   项目须位于 projects/<项目名>/svg_output/；输出默认 official-docs/output/<项目名>_pages_preview.html，
-  dsh 场景预览页落会话工作区产物目录，直接向用户展示该路径即可。
+  生成后用 deliver_outputs.py 复制到宿主工作区再向用户展示。
 """
 
 from __future__ import annotations
@@ -92,7 +92,7 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(_page_html(title, len(svgs), "\n".join(sections)), encoding="utf-8")
     print(f"已生成预览页（{len(svgs)} 页）：{out}")
-    print("提示：dsh 场景预览页已在会话工作区内，向用户展示上述路径即可（浏览器打开确认首页）。")
+    print("提示：宿主环境请接着运行 deliver_outputs.py 把预览页复制到工作区再向用户展示。")
     return 0
 
 

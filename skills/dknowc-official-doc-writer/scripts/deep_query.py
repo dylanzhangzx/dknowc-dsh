@@ -37,7 +37,7 @@ SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 # 命中后返回 quota_exhausted=true，Agent 必须停止重试并引导用户到 MaaS 处理，不得反复调用。
 # 错误码语义按接口文档区分：401=密钥校验失败（可能失效，需重新获取）；403=接口无权限（密钥类型不符）；
 # 402=余额类。429 接口文案为"繁忙/限流/余额不足"三义混合、无法归因——现阶段全部按额度用尽处理
-# （2026-09-10 产品决策），待后端把服务端问题与余额拆分为不同错误码后再调整回区分逻辑。
+# （现阶段约定），待后端把服务端问题与余额拆分为不同错误码后再调整回区分逻辑。
 MAAS_PLATFORM_URL = "https://platform.dknowc.cn/auth/#/login"
 QUOTA_EXHAUSTED_HTTP_CODES = {402, 429}
 QUOTA_EXHAUSTED_KEYWORDS = (

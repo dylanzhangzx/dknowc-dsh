@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """校验溯源核验报告 JSON 的完整性，防止"素材脱离检索结果、字段残缺、核验单失真"。
 
-背景（3.7.5 修复）：2026-09-24 WorkBuddy 实测——模型手写脚本人工挑拣 25 条材料、
-脱离 82 篇合并产物，且手写溯源 JSON 缺 self_check / recalled_materials / 标准字段，
-导致核验报告单三项"未记录"、依据溯源 0/24。本脚本在生成 HTML 前强制校验：
+背景：曾出现模型手写脚本人工挑拣材料、脱离合并产物，且手写溯源 JSON 缺
+self_check / recalled_materials / 标准字段，导致核验报告单多项"未记录"。本脚本在生成 HTML 前强制校验：
 
   1. 材料来源可回溯：每条 materials / recalled_materials 的标题/源网址能在
      合并产物（merged_all.json 或等价 --clean 同构文件）中找到对应；
@@ -118,9 +117,8 @@ def check_citations(content: str, materials: list) -> list[str]:
     会移入 recalled_materials，因此 `build_trace_json.py` 产出的 materials **只装配被引用
     的那些，id 天然是稀疏的**（如清单 65 篇中未引用第 30 篇，则 id = 1..29、31..65）。
     故此处不能用 `len(materials)` 当上界、也不能要求 id 从 1 连续。
-    （2026-09-29 修复：此前按 `len(materials)` + `range(1, n+1)` 校验，只要素材清单里存在
-    未被正文引用的条目，就必然误报"角标越界"且校验永远无法通过——成都实测踩到，绕行方案
-    是裁清单、重编号角标，属被迫绕过。）
+    （修复：此前按 `len(materials)` + `range(1, n+1)` 校验，只要素材清单里存在
+    未被正文引用的条目，就必然误报"角标越界"且校验永远无法通过，只能被迫裁清单、重编号角标。）
     """
     errors = []
     if not content:
@@ -228,8 +226,8 @@ def main() -> int:
 
     # ② 字段完整性
     # 注：source_url **允许缺省** —— search_guide.md 明确"接口未返回原网址时不填、不猜测"，
-    # 此处若强制报错就与规则直接冲突（2026-09-29 修复：成都实测中《2025年成都市提振消费
-    # 专项行动实施方案》接口未返回源网址，一旦被正文引用就必然校验失败，只能移出正文清单）。
+    # 此处若强制报错就与规则直接冲突（曾出现接口未返回源网址、材料被正文引用后
+    # 校验必然失败、只能移出正文清单的情况）。
     # 来源可回溯性由上面的 check_material_source 用"合并产物标题/URL 反查"保证；报告端对
     # 无源网址的材料会在卡片上如实标注"待补链接"。
     for i, mat in enumerate(materials, 1):

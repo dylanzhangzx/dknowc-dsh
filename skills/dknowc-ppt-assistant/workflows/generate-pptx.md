@@ -50,7 +50,7 @@ python3 {skillDir}/scripts/trusted_search.py "检索问题" --service-area 单�
 
 把提纲固化为**带角标的答案文件**并生成提纲版报告——与成稿版同一脚本（`render_trace_html.py`）、同一形式，让用户在确认结构方案的同时逐条核验事实依据。编制规范见 [`references/material_usage.md`](../references/material_usage.md) 第三节。
 
-1. 编制提纲答案文件 `official-docs/search-results/<项目短名>_outline.md`，三部分：
+1. 编制提纲答案文件 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/<项目短名>_outline.md`，三部分：
    - **演示元信息**：受众与场合、叙事模式、风格预设、画布、页数；
    - **页面规划表**：页 | 类型 | 标题 | 事实要点（四列，不设单独「依据」列——依据由要点内 `[N]` 角标直接承载，单独罗列属冗余）。**每条事实性要点（政策名、数字、案例、时间点）后标 `[N]` 角标**，N 为素材清单检索编号；结构页/观点页要点写「无」；
    - **口径事项清单**：需用户留意的问题（统计口径差异、外省材料定位、待补检索项），逐条带角标——这是提纲版的核心价值，把「待确认」变成可点击核验的书面记录。
@@ -58,15 +58,16 @@ python3 {skillDir}/scripts/trusted_search.py "检索问题" --service-area 单�
 
 ```bash
 python3 {skillDir}/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/NN_语义名.json \
+  --question "<用户原始需求全文>" \
   --title "<演示标题>" \
   --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/<项目短名>_outline.md \
   --question "用户原始需求" \
   --stage outline
 ```
 
-报告首屏为**核验报告单**：依据溯源、引用绑定、时效检查、类型覆盖、提纲自检五项指标 + 建议人工复核项，全部由脚本真实计算（缺链接显示待补、未绑定标红、自检未记录不装通过）；正文为连续文档流，句后引文胶囊点击原地展开溯源卡；生成时会**自动检测原文链接活性**（404/410 与软 404，属正常耗时，如需跳过加 `--skip-link-check`）。**生成前硬校验**：答案正文没有任何 `[N]` 角标时脚本拒绝生成并报错——修正答案文件后重跑，不得绕过。
+报告首屏为**核验报告单**：依据溯源、引用绑定、时效检查、类型覆盖、提纲自检五项指标 + 建议人工复核项，全部由脚本真实计算（缺链接显示待补、未绑定标红、自检未记录不装通过）；正文为连续文档流，句后引文胶囊点击原地展开溯源卡；接口返回的原文链接**原样给出**（不做连通性检测），接口提供存档快照时作为附加回看入口。**生成前硬校验**：答案正文没有任何 `[N]` 角标时脚本拒绝生成并报错——修正答案文件后重跑，不得绕过。
 
-3. **多轮检索**（多个 NN JSON）：先手工合并为一个 JSON 供本步与成稿版使用——**推荐顶层结构** `{"检索文章": [...], "self_check": {...}?, "verification_checks": [...]?}`（渲染器同时兼容原始接口的 `content.data.检索文章` 嵌套形态，两种都认）。把各 JSON 的 `检索文章` 数组按素材清单 `[M]` 编号顺序合并（数组合并顺序即角标顺序，答案文件角标按此顺序书写）、`角标` 字段重排为清单编号，并按素材清单给每条材料加 `类型` 字段（政策依据/数据支撑/参考案例/表述参考，供核验报告单「类型覆盖」指标与来源卡色系使用）；可选在顶层写 `self_check`（提纲自检 5 项如实结果，键可用中文，值支持 `pass`/`通过：说明`/`✓`）与 `verification_checks`（需人工复核事项清单，逐条透传展示）。素材清单编号是角标唯一基准。渲染器兜底：若合并 JSON 未带 `角标` 字段，`render_trace_html.py` 按数组位置 1..N 自动编号（一条材料一张来源卡），因此**合并顺序必须与素材清单编号顺序一致**。合并时逐条检查原文链接：接口偶有材料不带 `源网址`，**交付前必须先尝试人工补链**（经权威官方入口核实后把真实 URL 填入 `源网址` 或 `policyUrl` 字段）；确实无法补到的（材料下线、无公开 URL）才保留提醒交付，**禁止伪造链接**。
+3. **多轮检索**（多个 NN JSON）：先手工合并为一个 JSON 供本步与成稿版使用——**推荐顶层结构** `{"检索文章": [...], "self_check": {...}?, "verification_checks": [...]?}`（渲染器同时兼容原始接口的 `content.data.检索文章` 嵌套形态，两种都认）。把各 JSON 的 `检索文章` 数组按素材清单 `[M]` 编号顺序合并（数组合并顺序即角标顺序，答案文件角标按此顺序书写）、`角标` 字段重排为清单编号，并按素材清单给每条材料加 `类型` 字段（政策依据/数据支撑/参考案例/表述参考，供核验报告单「类型覆盖」指标与来源卡色系使用）；可选在顶层写 `self_check`（提纲自检 5 项如实结果，键可用中文，值支持 `pass`/`通过：说明`/`✓`）与 `verification_checks`（需人工复核事项清单，逐条透传展示）。素材清单编号是角标唯一基准。**合并时同一篇文章只留一条**（按标题+源网址去重；多路召回常带重复片段，重复录入会让报告出现成批同名卡）；渲染器侧也按归一化「标题+来源网址」去重兜底——同一篇文章只出一张卡，若它在清单里占多个编号（同文异号），卡上会并列显示全部编号（如 `[8][13]`），正文引用任一编号都能定位。渲染器兜底：若合并 JSON 未带 `角标` 字段，`render_trace_html.py` 按数组位置 1..N 自动编号，因此**合并顺序必须与素材清单编号顺序一致**。合并时逐条检查原文链接：接口偶有材料不带 `源网址`，**交付前必须先尝试人工补链**（经权威官方入口核实后把真实 URL 填入 `源网址` 或 `policyUrl` 字段）；确实无法补到的（材料下线、无公开 URL）才保留提醒交付，**禁止伪造链接**。
 4. **编制纪律**：提纲中每个数字、政策名、案例必须能通过角标回溯到来源原文；挂不上角标的事实要点删除表述、降为概括表述、或列入口径事项清单标注「待补检索」，不得裸写。**角标只能指向合并 JSON 中真实存在的素材编号**——用户提供的不可核验素材禁止挂角标（幽灵角标会被核验报告单判为「未绑定」红色警示，导致核验不通过），以文字标注「用户提供 · 未经权威核验」并写入口径事项清单即可。
 5. **模式差异**：材料模式下，检索覆盖部分正常角标，纯用户材料要点在口径事项清单标注「用户提供 · 未经权威核验」；免检索模式不生成本报告，Step 5 确认门如实说明「提纲未经权威核验」。
 
@@ -90,7 +91,7 @@ dknowc-projects/<项目名>/            # 项目名用主题短名（拼音或�
 └── exports/                  # 最终 .pptx 与两版溯源核验报告
 ```
 
-项目创建后，把 Step 4 生成的提纲版报告从 `official-docs/output/` 复制归档到 `dknowc-projects/<项目名>/exports/<演示名>_提纲核验报告.html`。
+项目创建后，把 Step 4 生成的提纲版报告从 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 复制归档到 `dknowc-projects/<项目名>/exports/<演示名>_提纲核验报告.html`。
 
 SVG 创作严格遵循 [`references/svg-authoring.md`](../references/svg-authoring.md)（元素契约、排版纪律、图表画法、禁止清单）与已确认风格预设。
 
@@ -124,6 +125,7 @@ uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pp
 
 ```bash
 python3 {skillDir}/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/NN_xxx.json \
+  --question "<用户原始需求全文>" \
   --title "<演示标题>" \
   --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/<项目短名>_answer.txt \
   --question "用户原始需求" \
@@ -146,6 +148,11 @@ python3 {skillDir}/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0
   "dknowc-projects/<项目名>/exports/<演示名>_提纲核验报告.html" \
   "dknowc-projects/<项目名>/exports/<演示名>_成稿核验报告.html"
 ```
+
+**交付命令三条纪律**（WorkBuddy 多会话下交付落错会话的根治）：
+1. **绝对路径调用、命令前不得 `cd`**——WorkBuddy 为会话拉起的命令行，默认工作目录就是当前会话工作区（`~/Workbuddy/<时间戳>/`）；一旦先 cd 到 skill 目录，脚本就丢了这条线索，只能退回「取最新时间戳工作区」的猜测，并发会话时会把产物交付到别的会话。
+2. **交付后核对 `dest_source`**：以 `workbuddy-cwd:` 开头＝精确命中当前会话；不确定时先 `pwd` 确认。
+3. **`dest_source` 非该前缀（或返回 `need_dest=true`）时**，用 `--dest <本次任务工作区目录>` 重跑，不得声称已交付。
 
   按返回 JSON 处理：全部 `copied=true` → 向用户展示 `delivered` 路径；`need_dest=true` → 用 `--dest <宿主工作区目录>` 重跑后再交付。非宿主环境（本地直用）同样运行无害——探测不到宿主时如实用 `need_dest` 提示，直接展示 skill 内路径即可。
 - 不发送 SVG 源文件、内容包草稿、质检报告等中间产物，除非用户明确要看。

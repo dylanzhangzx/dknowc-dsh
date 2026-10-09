@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """统一来源声明：构造 `X-Dknowc-Attribution` 请求头值。
 
-依据《Skill 与 MCP 调用来源统计 · 最终方案 V1.0》（2026-09-14，与开发李楠定稿）：
+依据与 MaaS 平台方约定的调用来源统计方案：
 
-- 声明格式（单行纯 ASCII）：`kind=skill;source=dknowc-ppt-assistant;version=1.3.3;channel=skillhub`
+- 声明格式（单行纯 ASCII）：`kind=skill;agentSource=dknowc-ppt-assistant;version=1.3.6;channel=skillhub`
+  （头内键名为 agentSource——2026-10-09 平台方改名，区别于注册 body 的 `source="agent"` 合同标记）
 - kind/source/channel 读自**包根 `attribution.json`**（渠道差异由打包期改这一个文件表达）；
 - **version 运行时从 SKILL.md frontmatter 解析**（单一事实源，不硬编码）；
 - 声明为调用方自报，**仅用于统计、不参与鉴权、不作安全凭证**；
@@ -47,7 +48,7 @@ def build_attribution_header() -> str | None:
     if not source:
         return None
     channel = str(meta.get("channel") or "").strip()
-    parts = [f"kind={kind}", f"source={source}"]
+    parts = [f"kind={kind}", f"agentSource={source}"]
     version = _read_skill_version()
     if version:
         parts.append(f"version={version}")

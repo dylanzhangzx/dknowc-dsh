@@ -6,7 +6,7 @@ data.searches[] 形态）多路 + 可信搜索补搜（trusted_search.py，conte
 形态）多路。渲染脚本 render_trace_html.py 只接受单个 input_json，此前需 Agent 手工
 合并（实测易错）。本脚本把任意多路、跨通道产物程序化合并为渲染器可直接消费的单 JSON：
 
-- **合并式去重**（对齐公文写作 3.7.5）：按"规范化标题 + 源网址"双键判同一材料——
+- **合并式去重**：按"规范化标题 + 源网址"双键判同一材料——
   标题去空白/全角/开头"关于印发/关于"/结尾公文后缀词；同一材料**合并段落**（段落级
   去重，保留各检索召回的不同段落）与**字段取并集**（保留非空字段、合并搜索条件标记）；
   不再按标题整体丢弃后篇。
@@ -80,15 +80,22 @@ def _first_value(item: Dict[str, Any], *keys: str) -> str:
 
 
 def _dedupe_paragraphs(paragraphs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """段落级去重：按 id 或内容（归一后）去重，保留顺序。"""
+    """段落级去重：**按归一化内容判重**，id 仅无语料时兜底，保留顺序。
+
+    1.4.3 修复（WB 实测暴露）：原实现优先按 `id` 判重，而段落实为**篇内局部编号**
+    （同一篇材料被多路召回时，各路 id 都从 1 起编）——两路带回的段落只要 id 相同，
+    后一路的**不同内容**会被当作重复整段丢弃（静默丢条款，且结果依赖 --input 顺序）。
+    实测：杭州门诊待遇条款一度在合并环节丢失，Agent 靠调整 --input 顺序才找回。
+    改为内容主键后：多路召回的不同段落全部并集保留，与输入顺序无关、结果可复现。
+    """
     seen: set = set()
     out: List[Dict[str, Any]] = []
     for p in paragraphs:
         if not isinstance(p, dict):
             continue
         pid = str(p.get("id") or "")
-        content = str(p.get("内容") or p.get("content") or "").strip()
-        key = f"id:{pid}" if pid else f"c:{re.sub(r'\\s+', '', content)}"
+        content = re.sub(r"\s+", "", str(p.get("内容") or p.get("content") or ""))
+        key = f"c:{content}" if content else (f"id:{pid}" if pid else "")
         if key and key in seen:
             continue
         if key:
@@ -260,12 +267,68 @@ def main() -> None:
         "search_meta": {"merged": True, "input_routes": len(args.input), "merged_from": [str(Path(x).name) for x in args.input]},
         "content": {"data": {"检索文章": merged, "policyFiles": pf_out}},
     }
+
+    # 材料池清单（1.4.3 证据侧覆盖）：写答案大纲前先扫描——识别与用户情形相关、
+    # 但问题字面未覆盖的主题。清单 = 机构分布 + 文号 + 涉及金额 + 全量标题，
+    # 同时写入 search_meta.pool_summary（供程序复用）并打印到 stdout（供 Agent 扫描）。
+    def _art_org(a: Dict[str, Any]) -> str:
+        return str(a.get("数据源") or a.get("发布或实施机构") or "").strip() or "（未标注机构）"
+
+    org_counts: Dict[str, int] = {}
+    for a in merged:
+        key = _art_org(a)[:24]
+        org_counts[key] = org_counts.get(key, 0) + 1
+    doc_numbers: List[str] = []
+    for p in pf_out:
+        w = str(p.get("writtenText") or "").strip()
+        if w and w not in doc_numbers:
+            doc_numbers.append(w)
+    amounts: List[str] = []
+    for a in merged:
+        for seg in (a.get("段落") or []):
+            if not isinstance(seg, dict):
+                continue
+            for m2 in re.finditer(r"\d+(?:\.\d+)?(?:\s*[万亿])?元", str(seg.get("内容") or "")):
+                v = m2.group(0)
+                if v not in amounts:
+                    amounts.append(v)
+        if len(amounts) >= 30:
+            break
+    pool_summary = {
+        "articles": len(merged),
+        "orgs": dict(sorted(org_counts.items(), key=lambda kv: -kv[1])[:20]),
+        "doc_numbers": doc_numbers[:40],
+        "amounts": amounts[:30],
+        "titles": [
+            {"编号": a.get("编号", i + 1), "标题": str(a.get("文章标题") or "")[:60],
+             "机构": _art_org(a)[:24], "日期": str(a.get("发布日期") or "")[:10],
+             # 摘要 = 首个非空段落前 60 字：主题藏在正文里（标题看不出）的材料同样能被扫到
+             "摘要": next((re.sub(r"\s+", " ", str(seg.get("内容") or "")).strip()[:60]
+                           for seg in (a.get("段落") or [])
+                           if isinstance(seg, dict) and str(seg.get("内容") or "").strip()), "")}
+            for i, a in enumerate(merged)
+        ],
+    }
+    result["search_meta"]["pool_summary"] = pool_summary
+
     # official-docs/ 不随发布包携带（平台不接受 .gitkeep，目录由脚本运行期自动创建）
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"✓ 合并完成：{len(args.input)} 路 / 输入 {total_in} 篇 → 合并去重后 {len(merged)} 篇"
           f"（policyFiles {len(pf_out)} 条）→ {out}")
     print("  合并产物与 trusted_search.py 单路输出同构，可直接作为 render_trace_html.py 的 input_json。")
+    print("── 材料池清单（证据侧覆盖：写答案大纲前先扫描，识别与用户情形相关、但问题字面未覆盖的主题）──")
+    print("  机构分布：" + "；".join(f"{k}×{v}" for k, v in list(pool_summary["orgs"].items())[:12]))
+    if doc_numbers:
+        print(f"  文号 {len(doc_numbers)} 个：{'、'.join(doc_numbers[:12])}{'…' if len(doc_numbers) > 12 else ''}")
+    if amounts:
+        print("  涉及金额样例：" + "、".join(amounts[:15]))
+    print(f"  标题清单（{len(merged)} 篇；含首段摘要，便于识别标题看不出的主题）：")
+    for t in pool_summary["titles"]:
+        line = f"    {t['编号']:>3}. {t['标题']}｜{t['机构']}｜{t['日期']}"
+        if t.get("摘要"):
+            line += f"｜{t['摘要']}"
+        print(line)
 
 
 if __name__ == "__main__":

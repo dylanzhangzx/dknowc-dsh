@@ -58,7 +58,7 @@ SEL_TYPE_FIELDS = ("type", "素材类型", "类型")
 SEL_TITLE_FIELDS = ("标题", "文章标题", "title", "material_name")
 SEL_URL_FIELDS = ("源网址", "source_url", "sourceUrl", "原文链接", "url")
 # 分组键兜底链不含"搜索地域"（3.7.6 修复）：地域名（"中国"/"浙江省"）做分组键无意义，
-# 杭州实测 75/295 篇因"搜索目的"为空退化成地域胶囊；全部落空时归"其他检索"。
+# "搜索目的"为空的篇目会退化成地域胶囊（曾出现 75/295 篇退化）；全部落空时归"其他检索"。
 SEL_SEARCH_KEY_FIELDS = ("search_key", "搜索条件", "deep_group")
 
 SELF_CHECK_ITEMS = ["事实有据", "结构完整", "无占位残留", "无AI味", "格式合规"]
@@ -112,7 +112,7 @@ def map_article_fields(art: dict) -> dict:
         "快照链接": first_value(art, ART_SNAPSHOT_FIELDS),
         # search_key：知识专库分组胶囊的依据，必须用"搜索目的"（真实搜索路数，如
         # "查找两地现行人才落户政策…"），不能用 deep_group/搜索地域（那是服务端子查询
-        # 或地域组合，会把 7 路真实搜索展成几十个碎片胶囊，2026-09-24 渝沪实测 29 个）。
+        # 或地域组合，会把 7 路真实搜索展成几十个碎片胶囊）。
         "search_key": (first_value(art, ("搜索目的", "purpose"))
                        or first_value(art, SEL_SEARCH_KEY_FIELDS)
                        or "其他检索"),
@@ -160,6 +160,8 @@ def main() -> int:
     parser.add_argument("body_file", nargs="?", help="正文文件（带 [n] 角标）")
     parser.add_argument("merged_json", nargs="?", help="合并产物 JSON（merged_all.json 或 --clean 同构）")
     parser.add_argument("--title", default="", help="报告标题（用于溯源 JSON 的 title 字段）")
+    parser.add_argument("--question", default="", help="用户原始问题全文（写入溯源 JSON 顶层 question；"
+                                                      "溯源报告顶部展示完整原问题，供报告独立使用）")
     parser.add_argument("--output", "-o", help="输出溯源 JSON 文件名（写入 official-docs/input/）")
     parser.add_argument("--sample", action="store_true", help="打印素材清单示例结构")
     args = parser.parse_args()
@@ -254,6 +256,9 @@ def main() -> int:
 
     trace = {
         "title": args.title or (materials_list.get("task") or "溯源核验报告"),
+        # 2026-10-08：完整原问题（溯源报告须能独立使用）。
+        # 传用户原话全文，不传则留空（渲染层退回报告标题）。
+        "question": (args.question or "").strip(),
         "doc_type": materials_list.get("doc_type", ""),
         "issue_org": materials_list.get("issue_org", ""),
         "publish_date": materials_list.get("publish_date", ""),

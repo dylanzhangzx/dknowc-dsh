@@ -116,7 +116,7 @@ def merge_results(result_files: List[str]) -> Dict:
         regions_searched.append(region)
         # 搜索目的兜底（3.7.6 修复）：该路 --purpose 为空时用该路 query 兜底——
         # 若留空，文章"搜索目的"缺失，溯源报告分组键（search_key）会退化成
-        # "中国"/"浙江省"等地域碎片，材料面板筛选胶囊失去意义（杭州实测 75/295 篇退化）。
+        # "中国"/"浙江省"等地域碎片，材料面板筛选胶囊失去意义（曾出现 75/295 篇退化）。
         purpose_val = search_meta.get("purpose") or search_meta.get("query") or ""
         searches.append({
             "file": str(safe_file_path),

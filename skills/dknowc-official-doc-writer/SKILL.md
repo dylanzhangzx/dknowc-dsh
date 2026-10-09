@@ -7,7 +7,7 @@ description: "深知公文写作，是面向单位办公室、综合岗、文秘
 description_zh: "深知公文写作，是由北京彩智科技有限公司旗下“深知可信智能”提供的正式材料写作助手，准确、规范地完成企事业单位与政府机关等场景下的文档编写需求，所有依据或参考材料，都全程可溯源到权威部门发布的规范性文件。本技能用于公文写作、正式文书起草、汇报材料整理、讲话稿撰写、工作总结和方案报告生成，帮助用户把零散想法、会议记录、工作素材、调研资料或初稿整理成结构清楚、表达稳妥、逻辑完整、可直接修改使用的正式文稿。本技能还能严格按公文相关国家标准，支持通知、请示、报告、函、复函、批复、会议纪要、通报、通告、公告、意见、方案、总结、管理办法、汇报材料、发言稿、讲话稿、调研报告、经验材料等常见文种和工作材料。依托深知可信搜索，获取准确有效的法规政策依据、行业信息与数据、标准规范和案例参考，并单独生成所有材料的溯源说明与原文清单，帮助用户写得有依据、能复核、可交付。正式交付时支持生成 Word 文档；并可按用户明确要求自动生成红头文件。"
 description_en: "dknowc official doc writer is a formal-document writing Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It helps users draft, rewrite, polish, review and generate structured workplace documents, including official documents, formal letters, reports, meeting minutes, summaries, plans, speeches, research reports and other business materials. When evidence, data, standards or reference cases are needed, it can use dknowc Trusted Search to retrieve traceable materials from authoritative sources and generate a separate source-reference report. Final outputs can be generated as Word documents, and red-head document formatting is supported when explicitly requested by the user."
 category: "office-efficiency"
-version: "3.7.7-dsh"
+version: "3.7.9-dsh"
 author: "彩智科技"
 permissions:
   network:
@@ -68,7 +68,7 @@ python3 <skillDir>/scripts/initialize.py
 
 只有任务确实需要深知搜索（需要政策依据、数据支撑、案例参考，或用户明确要求查最新政策、最新情况、权威数据）时，API Key 才是前置条件。初始化结果显示 `api_key_configured=false`、`search_ready=false` 或 `search_blocking_issues` 包含 `api_key_missing` 时，暂停原任务，按引导规则向用户说明并引导开通。
 
-引导与注册各环节的固定话术（S1 引导开通 / 索要手机号 / 验证码错误 / 开通成功含积分 / 报错 / FAQ）统一见 `reference/onboarding_scripts.md`，按场景取用、要素不可删改。脚本输出含 `user_message` 字段时**必须原样转述**。
+引导与注册各环节的固定话术（S1 引导开通 / 索要手机号 / 验证码已发送与验证链接两分支 / "验证好了"追问 / 验证码错误 / 开通成功含积分与密钥准备中 / 报错 / FAQ）统一见 `reference/onboarding_scripts.md`，按场景取用、要素不可删改。脚本输出含 `user_message` 字段时**必须原样转述**。
 
 硬规则：
 
@@ -91,19 +91,25 @@ python3 <skillDir>/scripts/initialize.py
   成功后转述脚本 `user_message`（固定话术见 `reference/onboarding_scripts.md` S0），再用已写入的 Key 重跑 `python3 <skillDir>/scripts/initialize.py` 确认 `api_key_configured=true`，继续原任务。密钥不得在对话正文中展示。
 - **工具不存在，或调用返回"请先完成 MCP OAuth 授权"等错误**：视为该宿主未安装/未授权该 MCP，**直接回落到下面的手机号验证码注册流程**（流程不变），不向用户提及 MCP 内部细节、不反复重试取 Key。
 
-MaaS 注册两步执行（初始化输出 `guide_message` 已含引导话术）：
+MaaS 注册两步执行（初始化输出 `guide_message` 已含引导话术；2026-10-09 注册链路改造起，发码分两个分支，都必须支持）：
 
 ```bash
 node <skillDir>/scripts/register.mjs send --phone <手机号>
 ```
 
-成功后转述脚本 `user_message`（含脱敏号码与"最新一条"提示），等待用户提供 6 位验证码，不得自行编造。
+send 只调用一次、不自动重试，按退出码与 JSON 分流处理：
+
+- **退出 0（`status:true`，短信直发分支）**：转述脚本 `user_message`（含脱敏号码与"最新一条"提示），等待用户提供 6 位验证码，不得自行编造。
+- **退出 2（`code:"CAPTCHA_REQUIRED"`，验证链接分支——短信尚未发送）**：转述脚本 `user_message` 并原样给出其中经校验的验证链接（脚本已做同源与格式校验，不得自行拼改、不得转发他人），暂停等待用户在页面完成验证并回复短信验证码。**用户在页面完成验证后不得再调 send**（页面验证完成时短信已由页面发出）；用户只说"验证好了"却未给码时按 S3c 只追问短信码、不重新发送。链接一次性、约 10 分钟有效，过期或已用需用户同意后重新 send 申请新链接。注意：退出 2 也可能是参数错误（stderr 提示"缺少 --phone"），必须结合 JSON 的 `code` 字段判断。
+- **退出 1（错误）**：按脚本 `user_message` 处理——限频、验证链接过期/已用、验证未通过、短信供应商失败、发送结果未确认各有专门话术与停点（见 `reference/onboarding_scripts.md` 报错表）；`resultUnknown=true`（超时/网络异常）时先等用户确认是否收到短信，未确认前不补发；不循环重试、不自动换手机号、不代用户做任何验证。
 
 ```bash
 node <skillDir>/scripts/register.mjs register --phone <手机号> --vcode <验证码> --organ 个人 --name 用户
 ```
 
-成功后转述脚本 `user_message`（额度到账轻确认；`existed=true` 时为老用户找回话术），并按 `envWriteSucceeded` 处理：**为 true** 时脚本已把 Key 写入本机专用配置文件（`~/.config/dknowc/api_key`），直接用返回的 Key 重跑初始化确认后继续原任务；**为 false** 时以脚本返回的 `apiKey` 临时注入环境变量（`DKNOWC_API_KEY=<key> python3 <skillDir>/scripts/initialize.py`）完成本次任务，不得据此判定注册失败、不得重复走手机号流程。不得向用户展示完整 Key。默认不重新生成 Key，仅用户明确要求时追加 `--new-key`。注册失败按脚本 `user_message` 处理；连续失败降级引导 `https://platform.dknowc.cn/auth/#/login`。
+成功后转述脚本 `user_message`（积分到账轻确认；`existed=true` 时为老用户找回话术；`pending=true` 时为密钥准备中话术——非错误，不重新注册、不重新发码，等用户示意后用同一手机号与同一验证码重试一次，短信码 5 分钟内有效），并按 `envWriteSucceeded` 处理：**为 true** 时脚本已把 Key 写入本机专用配置文件（`~/.config/dknowc/api_key`），直接用返回的 Key 重跑初始化确认后继续原任务；**为 false** 时以脚本返回的 `apiKey` 临时注入环境变量（`DKNOWC_API_KEY=<key> python3 <skillDir>/scripts/initialize.py`）完成本次任务，不得据此判定注册失败、不得重复走手机号流程。不得向用户展示完整 Key。默认不重新生成 Key，仅用户明确要求时追加 `--new-key`。注册失败按脚本 `user_message` 处理；连续失败降级引导 `https://platform.dknowc.cn/auth/#/login`。
+
+验证链路安全红线（2026-10-09 注册链路改造）：验证链接、短信验证码、密码与密钥不写入公共日志、群聊或长期记忆；不代用户打开验证页、不模拟或绕过任何验证、不伪造验证凭据；对用户只说"验证链接/验证页面"，不出现验证码组件、滑条、行为验证等内部术语。
 
 ## 参考资料（渐进式读取）
 
@@ -235,19 +241,19 @@ python3 <skillDir>/scripts/outline_reference.py "用户写作需求" --output ou
    - **即时落盘（并行前提）**：每路返回后立即把完整 JSON 原样落盘并校验通过才发下一路；禁止"先攒在对话里、整批完成后统一落盘"——宿主对工具结果有清理机制，延迟落盘会"过期"丢失，路数越多越容易整批拿不到结果。
    - **深度搜索失败回退（3.7.5 修复）**：阶段一某一路深度搜索失败（接口报错/超时/返回 0 篇/JSON 非法，已串行重试一次仍失败）时，**仅该路回退用可信搜索 `dkag_search.py` 重新搜索该路素材类型**（query 仍按该路关注方向构造，产出视为该路召回进入合并），**其他路不受影响、不整批回退**。回退后该路产物与未回退路产物一并 `merge_search_results.py` 合并，进入素材分类。所有路都失败才如实告知用户并暂停等待确认。
    - 任一路额度用尽（`quota_exhausted=true`）整批停止，按额度规则处理；平台或接口明显限流（多路同时报错）时回退为逐路串行执行。
-   - **参考范文召回（执行时机：第 5 条素材分类时逐篇判断；取全文须先经用户同意）**：判断时发现有文章**与用户要写的材料高度相似**（同文种、同场景、体例接近）、对其结构或论述逻辑有明显参考价值时，按 `reference/search_guide.md` 第四节先向用户推荐并**取得明确同意**——**用户未回复、未同意或拒绝时，不得调用 `--full`**，按无参考范文继续写作。同意后用 `python3 <skillDir>/scripts/dkag_search.py "<目标范文完整标题>" --full --output ref_full_<任务>.json` 召回，再用 `python3 <skillDir>/scripts/extract_reference.py` 按标题匹配**只提取目标那一篇**全文落盘为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/参考范文_<任务>.md`（`--full` 全量返回含全部命中篇，不得作为参考范文留存）。**它与范文大纲并存、互不替代**：大纲给通用结构建议，参考范文给同类成文的实际写法。参考范文只学结构与表达、不照搬内容，**不进溯源核验报告**。`--full` 仅用于此场景，不得用于补全政策全文。**注意其覆盖边界（2026-09-29 实测）**：`--full` 只是在可信搜索**命中集内**返回全文，**不扩大召回集**，而该接口对**地方人大公报、地方政府公报类站点**覆盖有限（上海实测：来源上海人大的目标范文，以完整标题召回 31 篇命中集里 0 篇来自该站，同一篇在深度搜索里却可召回）——**地方公文类范文取不到全文属接口覆盖问题，不是标题没写对**；此时按无参考范文继续写作——**能搜到就用、搜不到就跳过，不要重试**（换 query 也扩大不了命中集）。
+   - **参考范文召回（执行时机：第 5 条素材分类时逐篇判断；取全文须先经用户同意）**：判断时发现有文章**与用户要写的材料高度相似**（同文种、同场景、体例接近）、对其结构或论述逻辑有明显参考价值时，按 `reference/search_guide.md` 第四节先向用户推荐并**取得明确同意**——**用户未回复、未同意或拒绝时，不得调用 `--full`**，按无参考范文继续写作。同意后用 `python3 <skillDir>/scripts/dkag_search.py "<目标范文完整标题>" --full --output ref_full_<任务>.json` 召回，再用 `python3 <skillDir>/scripts/extract_reference.py` 按标题匹配**只提取目标那一篇**全文落盘为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/参考范文_<任务>.md`（`--full` 全量返回含全部命中篇，不得作为参考范文留存）。**它与范文大纲并存、互不替代**：大纲给通用结构建议，参考范文给同类成文的实际写法。参考范文只学结构与表达、不照搬内容，**不进溯源核验报告**。`--full` 仅用于此场景，不得用于补全政策全文。**注意其覆盖边界**：`--full` 只是在可信搜索**命中集内**返回全文，**不扩大召回集**，而该接口对**地方人大公报、地方政府公报类站点**覆盖有限（典型情况：来源上海人大站点的目标范文，以完整标题召回 31 篇命中集里 0 篇来自该站，同一篇在深度搜索里却可召回）——**地方公文类范文取不到全文属接口覆盖问题，不是标题没写对**；此时按无参考范文继续写作——**能搜到就用、搜不到就跳过，不要重试**（换 query 也扩大不了命中集）。
 5. 将召回素材分为四类：政策依据型、数据支撑型、参考案例型、表述参考型；表述参考型只能从已召回材料中归纳，不单独搜索。**写法参考（素材分类时必做判断，主备两级）**：逐篇归类时**必须**检查是否有**与目标材料同文种、同场景、体例接近**的成文（尤其同地域、同主题的报告/总结/调研），并在素材分类输出中**写明结论**（见 `reference/search_guide.md` 第二节分类模板的"写法参考"必填项）：
 
 - **有 → 参考范文召回（首选）**：列出标题与推荐理由，按第 4 条子项与 `reference/search_guide.md` 第四节向用户推荐（**须经用户同意**方可取全文），取该篇**全文**作写法参考。
 - **无 → 文风体例参考兜底**：明写"未发现高度相似的成文范文"，再按 `reference/search_guide.md` 第六节以 **webSearch 搜同类文种的结构写法**兜底（须经用户确认后执行）——只学写法、不作依据、不进溯源报告，搜到什么算什么，不追求全文。
 
-两者是**同一目的的主备关系**（都只为学"怎么写"），不是并列的两种搜索：**先查官方库有没有同类成文，没有再用全网兜底**。2026-09-28 两次实测均因把二者当成并列/互斥关系而未触发（一次跳过 webSearch 未做、一次开了 webSearch 也未做）。**素材清单先行（3.7.5 修复，强制顺序）**：素材分类必须基于两阶段合并产物 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/merged_all.json`（或等价合并文件）的**全量 articles 逐篇归类**，分类结果与合并产物一一对应、不得遗漏。**分类完成后必须把“选中的素材清单”落盘为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/materials_<任务>.json`**——顶层结构固定为 `{"task": "<任务名>", "doc_type": "<文种>", "selected": [ {…}, … ]}`（**选中数组必须挂在顶层 `selected` 键下**，`build_trace_json.py` 按它读取，写成别的键会报"素材清单 selected 为空"；完整示例可运行 `python3 <skillDir>/scripts/build_trace_json.py --sample <合并产物JSON>` 查看），每篇含 `type`/`标题`/`源网址`/`段落`/`发布日期可信度`/`快照链接` 标准字段，该清单是后续写作与溯源 JSON 的唯一材料依据。**禁止手工挑拣后直接写正文、禁止写完正文再反查用了哪些素材、禁止手写脚本/手写 JSON 定义 materials**（2026-09-24 WorkBuddy 实测：模型写完正文才反查材料、手写 543 行脚本挑拣，写作时引用情况无保障，溯源核验沦为"事后圆场"）。按 `reference/material_usage_guidance.md` 逐篇映射标准字段，字段缺失的如实留空并在核验报告中标注，不得凭记忆补造。
+两者是**同一目的的主备关系**（都只为学"怎么写"），不是并列的两种搜索：**先查官方库有没有同类成文，没有再用全网兜底**（常见误用是把二者当成并列或互斥关系，导致两级都未执行——既不查官方库，也不做 webSearch 兜底）。**素材清单先行（3.7.5 修复，强制顺序）**：素材分类必须基于两阶段合并产物 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/merged_all.json`（或等价合并文件）的**全量 articles 逐篇归类**，分类结果与合并产物一一对应、不得遗漏。**分类完成后必须把“选中的素材清单”落盘为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/materials_<任务>.json`**——顶层结构固定为 `{"task": "<任务名>", "doc_type": "<文种>", "selected": [ {…}, … ]}`（**选中数组必须挂在顶层 `selected` 键下**，`build_trace_json.py` 按它读取，写成别的键会报"素材清单 selected 为空"；完整示例可运行 `python3 <skillDir>/scripts/build_trace_json.py --sample <合并产物JSON>` 查看），每篇含 `type`/`标题`/`源网址`/`段落`/`发布日期可信度`/`快照链接` 标准字段，该清单是后续写作与溯源 JSON 的唯一材料依据。**禁止手工挑拣后直接写正文、禁止写完正文再反查用了哪些素材、禁止手写脚本/手写 JSON 定义 materials**（写完正文才反查材料、手工挑拣素材，会使正文引用无依据、溯源核验沦为"事后圆场"）。按 `reference/material_usage_guidance.md` 逐篇映射标准字段，字段缺失的如实留空并在核验报告中标注，不得凭记忆补造。
 6. 按 `reference/material_usage_guidance.md` 判断清单内各类材料的正文用途，区分依据、数据、案例和表述参考。
 7. 严禁将外省政策作为本省政策依据；政策依据与数据信息严禁使用自由搜索（webSearch）召回的非官方材料，非官方范文与本地 `standards/` 文种标准冲突时以本地标准为准。
 8. 对政策依据、数据支撑、参考案例做充分性自检；研究资料的口径表/纠错记录出现信息缺口（未给出、未确认、多口径未裁决）必须触发补搜，补搜以关键事实闭环为目标、不设次数上限，在已确认方案边界内自动执行并记入研究资料；越界（新地域、换通道）或仍未闭环时停下向用户确认。
 9. **用户确认素材清单后，再基于该清单写作正文**（3.7.5 修复，强制顺序）：正文按 `material_usage_guidance.md` 逐条引用清单材料，**写作时每处引用即标注 `[n]` 角标，n 对应素材清单序号**（先确认清单、边写边标，**禁止写完正文再反查/补标角标**）。正式写作任务不得把正文初稿作为聊天消息发出，直接生成 Word（执行过搜索时另附 HTML 溯源核验报告）。
-10. 执行过搜索时，正式公文正文不再内嵌来源角标、知识专库链接或溯源卡片；必须另行生成 `标题_溯源核验报告.html`，将完整正文写入 HTML，并把正文中的 `[1]`/`【1】`角标变成可点击的来源跳转。报告首屏展示核验报告单（依据溯源、引用对应、材料新旧、材料构成、交付前检查）与过程回顾条；正文中每处依据在句后挂引文胶囊（同段同一材料只保留一次），点击胶囊可展开标题链（文章 › 章 › 节面包屑）、原文摘录与查看全文链接；来源文章按段落分块、各段带自己的标题链，政策文件显示发文字号（接口 policyFiles 匹配）；全部召回材料在知识专库视图按检索分组展示。生成时脚本自动检测原文链接可达性（含软 404 嗅探），失效链接改用接口存档快照（screenShotPath）回看。凡通过深知可信搜索召回并写入正文的依据，默认按已完成可信检索和可溯源处理，不得使用“建议核对”“需人工核验”等削弱可信度的措辞。
-11. 溯源核验报告必须按 `reference/search_guide.md` 的固定流程生成：**用 `scripts/build_trace_json.py` 从"素材清单 + 正文（带角标）"装配溯源 JSON 到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_溯源核验报告.json`**（3.7.5 修复：materials 按正文角标序对应素材清单、recalled_materials 自动取清单未引用部分 + 合并产物未选部分、self_check 骨架待填），再调用 `python3 <skillDir>/scripts/source_note_html.py ...` 输出 HTML。**字段契约（3.7.5 修复）**：溯源 JSON 必须包含 `document_content`（带 `[n]` 角标）、`materials`（全量引用材料，含标准字段）、`recalled_materials`（全部未引用召回材料，不得留空）、`self_check`（五项检查结果如实写入，**每项值写 `"通过：<说明>"` 或 `"未通过：<说明>"` 字符串**——渲染器按字符串解析，写成 dict 会导致核验单五项"未记录"，2026-09-24 实测）；生成 HTML 前必须运行 `python3 <skillDir>/scripts/check_materials.py <溯源JSON> <合并产物JSON>` 校验（材料来源可回溯、字段完整、角标一一对应、recalled 非空），**校验通过后才允许调用渲染脚本**。`document_content` 必须在关键结论后标注 `[1]`、`[2]` 等角标并逐条对应 `materials`——脚本会校验，正文无角标时拒绝生成并报错，必须修正 JSON 后重跑，不得省略角标直接交付。不得由模型手写完整 HTML，不得自行拼接 `<a>`、`onclick`、按钮、卡片或页面样式。
+10. 执行过搜索时，正式公文正文不再内嵌来源角标、知识专库链接或溯源卡片；必须另行生成 `标题_溯源核验报告.html`，将完整正文写入 HTML，并把正文中的 `[1]`/`【1】`角标变成可点击的来源跳转。报告顶部展示**用户原始问题全文**（`build_trace_json.py` 装配时用 `--question` 传入用户原话，写入溯源 JSON 顶层 `question`，使溯源报告可脱离对话独立使用）。报告首屏展示核验报告单（依据溯源、引用对应、材料新旧、材料构成、交付前检查）与过程回顾条；正文中每处依据在句后挂引文胶囊（同段同一材料只保留一次），点击胶囊可展开标题链（文章 › 章 › 节面包屑）、原文摘录与查看全文链接；来源文章按段落分块、各段带自己的标题链，政策文件显示发文字号（接口 policyFiles 匹配）；全部召回材料在知识专库视图按检索分组展示。接口返回的原文链接原样给出、不做连通性检测；接口附带的存档快照（screenShotPath）作为附加回看入口。凡通过深知可信搜索召回并写入正文的依据，默认按已完成可信检索和可溯源处理，不得使用“建议核对”“需人工核验”等削弱可信度的措辞。
+11. 溯源核验报告必须按 `reference/search_guide.md` 的固定流程生成：**用 `scripts/build_trace_json.py` 从"素材清单 + 正文（带角标）"装配溯源 JSON 到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_溯源核验报告.json`**（materials 按正文角标序对应素材清单、recalled_materials 自动取清单未引用部分 + 合并产物未选部分、self_check 骨架待填），再调用 `python3 <skillDir>/scripts/source_note_html.py ...` 输出 HTML。**字段契约**：溯源 JSON 必须包含 `document_content`（带 `[n]` 角标）、`materials`（全量引用材料，含标准字段）、`recalled_materials`（全部未引用召回材料，不得留空）、`self_check`（五项检查结果如实写入，**每项值写 `"通过：<说明>"` 或 `"未通过：<说明>"` 字符串**——渲染器按字符串解析，写成 dict 会导致核验单五项"未记录"）；生成 HTML 前必须运行 `python3 <skillDir>/scripts/check_materials.py <溯源JSON> <合并产物JSON>` 校验（材料来源可回溯、字段完整、角标一一对应、recalled 非空），**校验通过后才允许调用渲染脚本**。`document_content` 必须在关键结论后标注 `[1]`、`[2]` 等角标并逐条对应 `materials`——脚本会校验，正文无角标时拒绝生成并报错，必须修正 JSON 后重跑，不得省略角标直接交付。不得由模型手写完整 HTML，不得自行拼接 `<a>`、`onclick`、按钮、卡片或页面样式。
 12. 整理 `materials` 时，凡来自深知可信搜索的材料，必须将原始结果中的 `源网址` 原样写入 `source_url`；不得只写规范化后的文章标题，再依赖标题反查网址。若接口未返回 `源网址`，该材料不显示原文链接；不得猜测、补造或用搜索接口地址代替。
 
 搜索异常处理：
@@ -419,7 +425,6 @@ python3 <skillDir>/scripts/template_generator.py 通知 --input 普通Word文件
 
 生成成功后，优先返回正式 `.docx` 文件路径和一句简短说明。执行过搜索并生成溯源核验报告 HTML 时，可同时返回辅助文件路径，但必须明确主文件是正式成稿、溯源核验报告不是正文附件。不要发送 Markdown 草稿、正文初稿、完整正文或中间文件路径。
 
-**宿主环境交付（WorkBuddy、豆包）：** 产出物默认落在 skill 安装目录，宿主通常只展示其工作区文件。**每次交付前一律执行 `（dsh：无需交付复制） <产出物路径...>`**（不要自行判断是否宿主环境，判断不可靠），按返回 JSON 处理：`copied=true` 向用户展示 delivered 路径（`skipped=identical` 表示目标已有同一份文件；`renamed=true` 表示目标已有同名不同内容的文件，本次另存为"名字 (2)"）；`need_dest=true` 必须补 `--dest <宿主工作区>` 重跑，此前不得把 skill 内部路径当交付路径发给用户。脚本按宿主身份选择对应工作区：**WorkBuddy → `~/WorkBuddy/<时间戳工作区>/outputs/`，豆包 → `~/DoubaoWork/chats/<日期>/<会话>/`（3.7.5 简化决策：仅这两个宿主有明确工作区才复制，其余宿主不做猜测）**。**宿主未识别（非 WorkBuddy / 豆包）时不复制，交付物保留在 skill 输出目录**，向用户展示 skill output 路径。不得为省事手工把产物复制到 `~/WorkBuddy` 等工作区：2026-09-21 豆包任务曾因按"最新 WorkBuddy 工作区"兜底交付，把产物写进用户当天在 WorkBuddy 的测试工作区并同名覆盖其交付物。
 
 如需先把正文落为临时 Markdown 文件供脚本读取，必须在同一工作流中继续生成 `.docx`；不得停在 Markdown 草稿，也不得把 Markdown 文件作为阶段性成果发给用户。只有用户明确要求“先看草稿”“先发 Markdown”“不要生成 Word”时，才可以交付 Markdown 或正文预览。
 

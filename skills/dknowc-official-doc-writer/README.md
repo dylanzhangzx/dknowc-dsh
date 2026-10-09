@@ -52,13 +52,17 @@ SkillHub 版默认使用：
 - 渠道码 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05`。
 - 统一环境变量 `DKNOWC_API_KEY` 保存 API Key，由公文范文大纲接口和深知可信搜索接口共用。
 
-当任务需要搜索且当前环境变量 `DKNOWC_API_KEY` 未配置时，进入 MaaS 注册。第 1 步，发送短信验证码：
+当任务需要搜索且当前环境变量 `DKNOWC_API_KEY` 未配置时，进入 MaaS 注册。第 1 步，发送短信验证码（只调用一次、不自动重试）：
 
 ```bash
 node scripts/register.mjs send --phone 13812345678
 ```
 
-返回 `status=true` 后，转述脚本输出的 `user_message`（含脱敏手机号与"最新一条"提示），暂停并请用户提供收到的 6 位验证码。
+发码有两个分支，都必须支持（2026-10-09 注册链路改造，user-auth maas-1.1.6）：
+
+- **退出 0（`status=true`，短信直发）**：转述脚本输出的 `user_message`（含脱敏手机号与"最新一条"提示），暂停并请用户提供收到的 6 位验证码。
+- **退出 2（`code="CAPTCHA_REQUIRED"`，短信尚未发送）**：转述 `user_message` 并原样给出脚本返回、经安全校验的验证链接，暂停等待用户在页面完成验证并回复短信验证码。用户在页面完成验证后不得再调 send；只说"验证好了"时仅追问短信码。链接一次性、约 10 分钟有效。（退出 2 也可能是参数错误，需结合 JSON 的 `code` 字段判断。）
+- **退出 1（错误）**：按 `user_message` 处理；限频、验证链接过期、供应商失败、发送结果未确认等各有停点，不循环重试。
 
 第 2 步，注册并获取 API Key：
 
@@ -66,7 +70,7 @@ node scripts/register.mjs send --phone 13812345678
 node scripts/register.mjs register --phone 13812345678 --vcode 123456 --organ 个人 --name 用户
 ```
 
-注册第二步会固定携带 `source="agent"`，并继续使用 SkillHub 渠道码。手机号已注册时，默认查回该账号已有可用 API Key；手机号未注册时，按 MaaS 注册流程创建账号并获取 API Key。成功后，脚本会把 API Key 写入本机专用配置文件（`~/.config/dknowc/api_key`），并返回 `user_message`（含注册赠送 10 万积分与实名认证再送 10 万积分告知，Agent 必须转述）。返回的完整 Key 仅供 Agent 当前任务临时注入环境变量使用，不得向用户展示完整 API Key，不得要求用户手动复制 Key。
+注册第二步会固定携带 `source="agent"`（注册接口的合同标记，服务端按它放行老用户直接返 Key），并继续使用 SkillHub 渠道码；调用来源统计走 `X-Dknowc-Attribution` 请求头（`agentSource=` 为本 Skill 标识），两者互不影响。手机号已注册时，默认查回该账号已有可用 API Key；手机号未注册时，按 MaaS 注册流程创建账号并获取 API Key；账号已建但密钥仍在准备时返回 `pending=true`（非错误，稍后同参数重试一次）。成功后，脚本会把 API Key 写入本机专用配置文件（`~/.config/dknowc/api_key`），并返回 `user_message`（含注册赠送 10 万积分与实名认证再送 10 万积分告知，Agent 必须转述）。返回的完整 Key 仅供 Agent 当前任务临时注入环境变量使用，不得向用户展示完整 API Key，不得要求用户手动复制 Key。
 
 默认不重新生成 API Key。只有用户明确要求重新生成或新建 Key 时，才追加 `--new-key`：
 
@@ -90,7 +94,7 @@ API Key 只能通过环境变量 `DKNOWC_API_KEY` 注入或本机专用配置文
 
 ## 版本说明
 
-当前 SkillHub Public 版基于 `3.7.7`。
+当前 SkillHub Public 版基于 `3.7.9`。
 
 检索通道：统一走脚本通道（`deep_query.py` / `dkag_search.py` / `outline_reference.py`，需 API Key）。3.7.5 起不再走 MCP「深知可信工作台」通道——MCP 侧大结果落盘方案改造完成后另行加回。
 

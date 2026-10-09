@@ -2,7 +2,7 @@
 """可信溯源核验报告渲染器：把结构化正文/素材 JSON 渲染为单文件可核验 HTML。
 
 报告定位：不止展示"材料从哪来"（溯源），更要传达"我们查过了，可以交付"（核验）。
-3.7.0 架构（参考深知晓交互原型，数据口径保持自有与真实）：
+3.7.0 架构（交互形态参考自研原型，数据口径保持自有与真实）：
 - 顶栏：身份章 + 标题 + 工具组（只看正文 / 复制全文 / 打印归档）+ 阅读进度条
 - Hero：大标题 + 真实统计（N 次检索 · M 条材料 · K 处引用）+ 双视图切换
 - 过程回顾条：检索 → 入库 → 逐条比对 → 核验完成（静态回放，数字全部真实计算；
@@ -10,7 +10,7 @@
 - 核验报告视图（默认）：核验报告单 + 正文分节卡；角标点击跳知识专库定位
 - 知识专库视图（全屏）：大搜索 + 热词（标题/正文高频词真实计算）+ 检索分组 tabs + 材料卡
 三个核验层次：报告级（核验报告单）／材料级（来源卡核验链标记）／引用级（角标一一绑定）。
-诚实原则：脚本真实计算的结果才打勾；无法自动判定的项不虚构展示（"现行效力"人工复核提示行已按产品要求移除，2026-09-19）。
+诚实原则：脚本真实计算的结果才打勾；无法自动判定的项不虚构展示（"现行效力"人工复核提示行已按产品要求移除）。
 布局为单文件静态 HTML；打印归档模式单栏全展开并附材料附录。
 """
 
@@ -336,7 +336,18 @@ def extract_sources(payload: Dict[str, Any]) -> List[Dict[str, str]]:
         # 一篇材料一张卡：段落合并为摘录（paragraph_text 拼接全部段落），不按段落拆卡——
         # 溯源 JSON 的 materials 与正文角标按"材料"粒度一一对应，拆段会使编号错位。
         source = source_from_article(item, len(sources) + 1)
-        key = (source["id"], source["title"], source["url"], source["excerpt"][:80])
+        # 去重键（2026-10-08 修复）：按归一化「标题 + URL」判同一篇，不含 source["id"]——
+        # id 是递增序号、每条都不同，旧键含 id 等于从不去重；可信搜索对同一篇文章按段落
+        # 返回多条片段时会全部出卡（曾出现同一篇文章同名卡片重复十余张的情况）。
+        # 标题或 URL 单独可用时退用其一，均缺失退用摘录前缀。
+        _t = re.sub(r"\s+", "", source["title"] or "")
+        _u = (source["url"] or "").strip().rstrip("/")
+        if _t and _u:
+            key = ("tu", _t, _u)
+        elif _t:
+            key = ("t", _t)
+        else:
+            key = ("x", (source["excerpt"] or "")[:120])
         if key in seen:
             continue
         seen.add(key)
@@ -418,8 +429,7 @@ def classify_check_value(raw: Any) -> Tuple[str, str]:
     兼容多种写法：`pass` / `true` / `通过` / `通过：说明文字` / `✓` 等；
     值后面的说明文字保留下来供核验单展示。红项（fail）只给显式声明的
     "未通过"；无法识别的描述性文本按"未记录"（none）处理不判红——
-    自检书写格式走样不应被放大成核验红项（2026-09-20 可信搜索会话反馈，
-    实测模型写入"备注"等额外键导致交付前检查误判 5/7）。
+    自检书写格式走样不应被放大成核验红项（模型写入"备注"等额外键曾导致交付前检查误判）。
     """
     text = str(raw or "").strip()
     lowered = text.lower()
@@ -475,7 +485,7 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
     # ③ 时效检查：**正文依据**的日期范围与历史材料计数。
     # 核验单五项都应只针对正文依据；① 依据溯源、② 引用对应 本就按正文角标计算，而 ③④ 此前
     # 误用全部召回（sources 同时含未引用的 recalled_materials），口径不一致。
-    # 2026-09-29 修复（上海实测）：43 篇正文依据的日期范围是 2020-01～2026-09，却因未引用
+    # 修复：43 篇正文依据的日期范围是 2020-01～2026-09，却因未引用
     # 材料里有两篇接口标注 2027-09 的条目，核验单显示成 2016-03～2027-09 —— 把"未来日期"
     # 和 11 年跨度算进了交付物的时效说明里。
     dated = [parse_year_month(s.get("date")) for s in cited_sources]
@@ -506,7 +516,7 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
         # 状态由显式 fail 决定；none（描述性值/未记录）不判红也不拖垮通过
         status = "fail" if fails else ("pass" if passed else "missing")
         # 分母固定为五项标准检查项，不取"实际写入的键数"——否则只写 1 个键会显示
-        # "✓ 1/1"，把"只做了一项"显示成满通过（2026-09-21 修复）
+        # "✓ 1/1"，把"只做了一项"显示成满通过
         missing_items = [label for key, label in SELF_CHECK_ITEMS if label not in self_items]
         self_check = {"items": self_items, "passed": passed, "total": len(SELF_CHECK_ITEMS),
                       "missing_items": missing_items, "status": status}
@@ -520,7 +530,7 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
     trace_ok = cited_sources and not missing_excerpts
     binding_ok = (not unbound) and not no_citation
     # 成稿自检显式写"未通过"时必须否决报告级结论：自检发现未闭环（规则要求先补搜闭环，
-    # 补不到停下与用户确认），不得照样打「已核验」章（2026-09-21 修复）
+    # 补不到停下与用户确认），不得照样打「已核验」章
     self_check_ok = self_check["status"] != "fail"
     overall_passed = bool(trace_ok and binding_ok and self_check_ok)
 
@@ -798,9 +808,9 @@ def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str
             idx += 1
             continue
         # 引文胶囊位置规范：角标与后随标点换位——标点紧跟文字，胶囊放标点之后
-        # （避免胶囊把句号挤到下一行孤悬，对齐深知晓原型"…内容。～出处"形态）
+        # （避免胶囊把句号挤到下一行孤悬，保持"…内容。～出处"形态）
         # 注意：须把连续角标序列整体换位（如 [13][14]；），否则标点被夹在两个胶囊
-        # 中间——[13]；[14] 会让分号"跑到胶囊后边"（2026-09-24 渝沪实测截图）。
+        # 中间——[13]；[14] 会让分号"跑到胶囊后边"。
         block = re.sub(r"((?:\[\d+\])+)([。；，、！？：；,.])", r"\2\1", block)
         ids = citation_ids(block)
         repl = make_block_repl(block)
@@ -948,7 +958,7 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
                    f'<span class="d">每篇来源文章的摘录可比对，原文或存档快照可回看</span></div>')
     elif tr["passed"] == tr["total"]:
         # 摘录齐全但有材料没有回看通道：不得照写"原文或存档快照可回看"
-        # （2026-09-21 修复：此前 missing_links 算出却从未参与结论，属虚假背书）
+        # （此前 missing_links 算出却从未参与结论，属虚假背书）
         tr_html = (f'<div class="vi"><span class="s warn">◐ 依据溯源 {tr["passed"]}/{tr["total"]}</span>'
                    f'<span class="d">摘录可比对，其中 {n_no_link} 条没有原文链接或存档快照、无法回看</span></div>')
     else:
@@ -975,7 +985,7 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
     fr = v["freshness"]
     if fr:
         rng = f"{fr['min'][0]}-{fr['min'][1]:02d}～{fr['max'][0]}-{fr['max'][1]:02d}"
-        # 2026-09-29 决策：不再输出"N 条年头较久，按参考口径使用"——"年头较久"按
+        # 不再输出"N 条年头较久，按参考口径使用"——"年头较久"按
         # "发布日期年份 ≤ 生成年份 − 3"划线，对长期有效的政策法规偏严（如 2020 年出台、
         # 至今有效的条例会被判为"较久"），且"参考口径"一说读者无从理解。只保留日期范围。
         # old_count 仍在 freshness 中照常计算，留待后续需要时使用。
@@ -1016,7 +1026,7 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
     else:
         sc_html = '<div class="vi"><span class="s none">— 交付前检查 未记录</span><span class="d">本次溯源 JSON 没写入检查结果</span></div>'
 
-    # "现行效力"人工复核提示行已按产品要求移除（2026-09-19）：政策是否现行有效
+    # "现行效力"人工复核提示行已按产品要求移除：政策是否现行有效
     # 无法自动判定，此提示对用户无操作价值；policy_count 仅保留在计算层不再展示。
 
     return f"""
@@ -1135,7 +1145,7 @@ def strip_leading_chain(text: str, chain: List[str]) -> str:
 def render_crumb(chain: List[str]) -> str:
     """面包屑标题链：文章 › 章 › 节（标题链是模型生成的结构化位置，核验核心抓手）。
     段落本身无章节层级（链上只有文章名）时不显示——材料卡标题已是文章名，
-    单独一行重复文章名对定位无增量（徐总 2026-09-19 反馈）。"""
+    单独一行重复文章名对定位无增量。"""
     parts = [esc(level) for level in chain if level]
     if len(parts) < 2:
         return ""
@@ -1177,7 +1187,7 @@ def render_source_card(source: Dict[str, str], for_print: bool = False) -> str:
     _dn = source.get("doc_number") or ""
     # 只显示标准文号形式，拦掉模型自造的描述性文字（"中办、国办 2026 年印发"类）。
     # 除"〔年份〕序号"外，主席令/国务院令/部令等法定令号同样合规，一并放行
-    # （2026-09-21 修复：真实任务里《社会保险法》《国务院令第765号》曾被整条丢弃）
+    # （真实任务里《社会保险法》《国务院令第765号》曾被整条丢弃）
     _dn = _dn if re.search(r"〔\d{4}〕\s*\d+\s*号|第\s*(?:\d+|[〇零一二三四五六七八九十百千]+)\s*号", _dn) else ""
     meta_parts = [v for v in [_dn, source.get("agency"), source.get("date"), source.get("area")]
                   if v and v != "未知来源"]
@@ -1317,8 +1327,8 @@ def render_toc(sections: List[Dict[str, Any]]) -> str:
         title = (sec.get("title") or "").strip()
         if not title:
             # 无标题节＝正文开头的导语/摘要段（第一个章节标题之前的内容），不是正式章节。
-            # 2026-09-29 修复：此前会被兜底成「第 N 节」列进目录，页面上表现为一条灰色
-            # 占位项，读者不知道那是什么（成都实测目录首项即「第 1 节」）。内容仍照常
+            # 修复：此前会被兜底成「第 N 节」列进目录，页面上表现为一条灰色
+            # 占位项，读者不知道那是什么。内容仍照常
             # 在正文里展示，只是不占目录条目、不参与滚动高亮。
             continue
         number, title_text = split_heading_number(title)
@@ -1414,6 +1424,10 @@ a{color:var(--brand)}
   box-shadow:0 2px 8px rgba(101,18,173,.22)}
 .hero h1{margin:0 0 10px;font-size:24px;line-height:1.5;max-width:860px;margin-left:auto;margin-right:auto;color:var(--ink)}
 .hero .meta{color:var(--muted);font-size:13px;letter-spacing:.5px}
+/* 原问题行：报告须含完整原问题才能独立使用 */
+.hero .orig-q{margin-top:8px;padding:8px 14px;background:rgba(255,255,255,.72);border:1px solid var(--line);
+  border-radius:10px;color:var(--ink);font-size:13.5px;line-height:1.7;text-align:left}
+.hero .orig-q b{color:var(--brand);margin-right:2px}
 .hero-switch{margin-top:16px;display:flex;justify-content:center}
 .hero-switch .view-switch{border-color:#d9c9f4;background:#fff;box-shadow:0 1px 3px rgba(24,20,40,.04)}
 .hero-switch .view-switch button{color:#70678a;padding:6px 22px;font-size:13px}
@@ -1633,7 +1647,7 @@ a.jb-quote{text-decoration:none}
 .toc a{color:var(--muted);text-decoration:none;padding:4px 10px;border-left:2px solid var(--line);
   line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toc a.on{color:var(--brand);border-left-color:var(--brand);font-weight:700}
-/* 切到知识专库视图时隐藏章节目录（2026-09-29 修复徐总反馈：进入专库页后左侧仍残留目录栏）。
+/* 切到知识专库视图时隐藏章节目录（避免进入专库页后左侧仍残留目录栏）。
    目录节点渲染在 .app 之后（.app 的兄弟节点），故主规则用兄弟选择器；同时兼容其被移入 .app 内的情况。 */
 .app[data-view="library"] ~ .toc,.app[data-view="library"] .toc{display:none}
 @media (max-width:1460px){.toc{display:none}}
@@ -2062,7 +2076,7 @@ PAGE_JS = """
         var target = document.querySelector(a.getAttribute("href"));
         if (!target) return;
         /* 手动定位而非 scrollIntoView({block:"start"})：后者把标题顶到视口 y=0，
-           会被 sticky 顶栏盖住（2026-09-29 反馈：点"四、…"后一级标题看不见）。
+           会被 sticky 顶栏盖住（点"四、…"后一级标题看不见）。
            偏移量与目录吸顶位置同一基准（顶栏高 + 20px）。 */
         var bar = document.querySelector(".topbar");
         var offset = (bar ? bar.offsetHeight : 0) + 20;
@@ -2078,7 +2092,7 @@ PAGE_JS = """
     }
     window.addEventListener("scroll", spy, { passive: true });
     spy();
-    /* 目录纵向定位（2026-09-29）：此前 CSS 写死 top:120px，目录顶部与页头齐平、离正文很远。
+    /* 目录纵向定位：此前 CSS 写死 top:120px，目录顶部与页头齐平、离正文很远。
        改为——初始与正文首节对齐，滚动时吸附在顶栏下方。 */
     var topbar = document.querySelector(".topbar");
     function placeToc() {
@@ -2086,7 +2100,7 @@ PAGE_JS = """
       if (!first) return;
       var stick = (topbar ? topbar.offsetHeight : 0) + 20;
       var want = Math.round(first.getBoundingClientRect().top);
-      /* 不再按"视口内放不放得下"压缩位置（2026-09-29 二次修复）：正文首节上方还有页头、
+      /* 不再按"视口内放不放得下"压缩位置：正文首节上方还有页头、
          过程回顾和核验单，首屏内它常位于视口之外；若按 innerHeight 把目录上移，目录会被
          顶到页面中上部，反而显得"悬得过高"，与正文脱节。直接跟随正文首节——首屏看不到
          目录属正常，向下滚动后它自然吸附在顶栏下方。目录过长时由 CSS 的
@@ -2104,10 +2118,10 @@ PAGE_JS = """
 def normalize_body_quotes(text: str) -> str:
     """报告正文引号归一：复用 `format_document.normalize_chinese_quotes`，与 Word 同源。
 
-    2026-09-29 新增。背景：`format_document.py` 生成 Word 时会统一把 ASCII 直引号转为
+    背景：`format_document.py` 生成 Word 时会统一把 ASCII 直引号转为
     中文全角引号，但溯源报告直接读溯源 JSON 里的 document_content —— 模型落盘时若把
     中文引号写成半角，报告就会与 Word 交付物不一致，而这条路径此前没有兜底
-    （成都实测靠任务侧手工跑引号脚本规避，机制上没有保障）。取不到该函数时原样返回，
+    （此前靠任务侧手工跑引号脚本规避，机制上没有保障）。取不到该函数时原样返回，
     不阻断渲染。
     """
     if not text:
@@ -2152,6 +2166,14 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
             jb_tables[key] = html
     doc_title, sections = group_sections(blocks)
     display_title = doc_title or title
+    # 原问题行：溯源报告须含完整原问题才能独立使用。
+    # 只认调用方显式传入的 question_override（source_note_html 读溯源 JSON 顶层
+    # question，即 build_trace_json --question 写入的用户原话）——不取 payload 内的
+    # question 字段兜底（该字段历史上常被报告标题冒充，显示了反而误导）；为空或与
+    # 标题相同时不显示该行（历史 JSON 兼容）。
+    question_text = (question_override or "").strip()
+    orig_q_html = (f'<div class="orig-q"><b>原问题</b>：{esc(question_text)}</div>'
+                   if question_text and question_text != display_title else "")
 
     jb_tables_json = json.dumps(jb_tables, ensure_ascii=False).replace("</", "<\\/")
     jb_tables_script = (f'<script type="application/json" id="jb-tables">{jb_tables_json}</script>\n'
@@ -2206,6 +2228,7 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
   <div class="r-badge">溯源核验报告</div>
   <h1>{esc(display_title)}</h1>
   <div class="meta">{esc(meta_line)} ｜ 来源：深知可信搜索</div>
+  {orig_q_html}
   <div class="hero-switch">
     <div class="view-switch" role="tablist" aria-label="视图切换">
       <button class="on" data-view="report" type="button">核验报告</button>
@@ -2248,7 +2271,7 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
 def align_sources_to_answer(answer: str, sources: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """不再按位置给材料重编号。
 
-    2026-09-21 修复：原实现会在"正文角标与素材 id 完全不相交"时按顺序把素材改号
+    原实现会在"正文角标与素材 id 完全不相交"时按顺序把素材改号
     迎合角标——正文写 `[7]` 而只有 1 条材料时，会被洗成"✓ 引用对应 1/1"，与本文件
     "未绑定角标绝不按位置猜测"的设计原则相反。现如实返回原素材，由核验单报未绑定。
     """
@@ -2258,7 +2281,7 @@ def align_sources_to_answer(answer: str, sources: List[Dict[str, str]]) -> List[
 def _check_degraded_input(payload: Dict[str, Any], path: str) -> None:
     """渲染前硬校验：发现会产出"残缺核验报告"的输入直接报错，阻断静默降级。
 
-    2026-09-24 WorkBuddy 实测：手写溯源 JSON 缺 recalled_materials、self_check 结构
+    手写溯源 JSON 曾出现缺 recalled_materials、self_check 结构
     不完整，渲染器静默显示"依据溯源 0/24 / 材料新旧 未记录 / 交付前检查 未记录"。
     这里只拦截两个必然导致报告失真的情况；完整校验用 scripts/check_materials.py。
     """

@@ -2,7 +2,7 @@
 """把 MCP「深知可信工作台」trusted_search（include_details=true 形态）的返回
 转换成深知可信搜索 REST 接口的原始响应形态，供本 Skill 全部下游流程复用。
 
-背景（对齐公文写作 3.7.3，搜索版 1.3.4）：检测到宿主已连接 MCP「深知可信工作台」时，搜索走 MCP 通道
+背景（搜索版 1.3.4 起）：检测到宿主已连接 MCP「深知可信工作台」时，搜索走 MCP 通道
 （免 API Key）。模型在对话层调用 MCP 工具后，把完整返回 JSON 保存到
 official-docs/search-results/，再运行本脚本转换——转换产物与 trusted_search.py
 直调 REST 的输出同构（content.data.检索文章 / policyFiles / knowledgeBase /
@@ -33,7 +33,16 @@ import unicodedata
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-SEARCH_RESULTS_DIR = SKILL_ROOT / "official-docs" / "search-results"
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
+import os as _os
+_ws = _os.environ.get("DKNWOC_WS_ROOT")
+if not _ws:
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
+    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
+    _sid = _os.environ.get("DSH_SESSION_ID", "")
+    _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
+WS_ROOT = Path(_ws).resolve()
+SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 
 HTML_ENTITIES = (("＆lt;", "<"), ("＆gt;", ">"), ("＆amp;", "&"), ("＆quot;", '"'),
                  ("&lt;", "<"), ("&gt;", ">"), ("&amp;", "&"), ("&quot;", '"'))
