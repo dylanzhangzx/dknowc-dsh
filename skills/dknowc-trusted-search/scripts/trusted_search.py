@@ -385,6 +385,13 @@ def main() -> None:
     body = _post(endpoint, api_key, payload, args.timeout)
     if args.json_only:
         _bail_if_biz_error(body)  # 落盘前校验：错误响应不落盘、不报"已保存"（1.4.0 修复）
+        # 检索通道打标（1.5.0）：每篇检索文章注入 检索通道="深知可信搜索"，供 merge →
+        # 渲染按接口通道拆分计数与来源声明；字段随文章 dict 原样透传
+        _content = body.get("content") if isinstance(body.get("content"), dict) else {}
+        _data = _content.get("data") if isinstance(_content.get("data"), dict) else {}
+        for _a in (_data.get("检索文章") or []):
+            if isinstance(_a, dict) and not _a.get("检索通道"):
+                _a["检索通道"] = "深知可信搜索"
         raw_json = json.dumps(body, ensure_ascii=False, indent=2)
         if args.output:
             output_path = resolve_output_json(args.output)

@@ -70,6 +70,11 @@ python3 {skillDir}/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0
 3. **多轮检索**（多个 NN JSON）：先手工合并为一个 JSON 供本步与成稿版使用——**推荐顶层结构** `{"检索文章": [...], "self_check": {...}?, "verification_checks": [...]?}`（渲染器同时兼容原始接口的 `content.data.检索文章` 嵌套形态，两种都认）。把各 JSON 的 `检索文章` 数组按素材清单 `[M]` 编号顺序合并（数组合并顺序即角标顺序，答案文件角标按此顺序书写）、`角标` 字段重排为清单编号，并按素材清单给每条材料加 `类型` 字段（政策依据/数据支撑/参考案例/表述参考，供核验报告单「类型覆盖」指标与来源卡色系使用）；可选在顶层写 `self_check`（提纲自检 5 项如实结果，键可用中文，值支持 `pass`/`通过：说明`/`✓`）与 `verification_checks`（需人工复核事项清单，逐条透传展示）。素材清单编号是角标唯一基准。**合并时同一篇文章只留一条**（按标题+源网址去重；多路召回常带重复片段，重复录入会让报告出现成批同名卡）；渲染器侧也按归一化「标题+来源网址」去重兜底——同一篇文章只出一张卡，若它在清单里占多个编号（同文异号），卡上会并列显示全部编号（如 `[8][13]`），正文引用任一编号都能定位。渲染器兜底：若合并 JSON 未带 `角标` 字段，`render_trace_html.py` 按数组位置 1..N 自动编号，因此**合并顺序必须与素材清单编号顺序一致**。合并时逐条检查原文链接：接口偶有材料不带 `源网址`，**交付前必须先尝试人工补链**（经权威官方入口核实后把真实 URL 填入 `源网址` 或 `policyUrl` 字段）；确实无法补到的（材料下线、无公开 URL）才保留提醒交付，**禁止伪造链接**。
 4. **编制纪律**：提纲中每个数字、政策名、案例必须能通过角标回溯到来源原文；挂不上角标的事实要点删除表述、降为概括表述、或列入口径事项清单标注「待补检索」，不得裸写。**角标只能指向合并 JSON 中真实存在的素材编号**——用户提供的不可核验素材禁止挂角标（幽灵角标会被核验报告单判为「未绑定」红色警示，导致核验不通过），以文字标注「用户提供 · 未经权威核验」并写入口径事项清单即可。
 5. **模式差异**：材料模式下，检索覆盖部分正常角标，纯用户材料要点在口径事项清单标注「用户提供 · 未经权威核验」；免检索模式不生成本报告，Step 5 确认门如实说明「提纲未经权威核验」。
+6. **dsh 交付**：报告生成后落在会话工作区产物目录（脚本打印绝对路径），dsh 以工作区为文件视图、访达也可直达——直接向用户展示该路径，请用户点开确认提纲即可，无需交付复制。
+
+## Step 5 结构方案确认门 ⛔
+
+向用户展示（Markdown 分节，不塞长段落）：
 
 - 核心信息与叙事模式
 - 页面规划总览（页序 + 每页标题 + 页类型）
@@ -91,32 +96,32 @@ dknowc-projects/<项目名>/            # 项目名用主题短名（拼音或�
 └── exports/                  # 最终 .pptx 与两版溯源核验报告
 ```
 
-项目创建后，把 Step 4 生成的提纲版报告从 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 复制归档到 `dknowc-projects/<项目名>/exports/<演示名>_提纲核验报告.html`。
+项目创建后，把 Step 4 生成的提纲版报告从 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 复制归档到 `dknowc-dknowc-projects/<项目名>/exports/<演示名>_提纲核验报告.html`。
 
 SVG 创作严格遵循 [`references/svg-authoring.md`](../references/svg-authoring.md)（元素契约、排版纪律、图表画法、禁止清单）与已确认风格预设。
 
-节奏：**P01 完成后即请用户确认首页**——dsh 的 Web 界面无法直接预览 .svg 文件，用预览脚本生成 HTML 预览页（落会话产物目录，工作区可见），请用户在浏览器打开预览页确认：
+节奏：**P01 完成后即请用户确认首页**——需要给用户预览首页时，用预览脚本生成 HTML 预览页并直接展示路径（预览页落会话工作区产物目录，dsh 以工作区为文件视图）：
 
 ```bash
 python3 {skillDir}/scripts/preview_slide_html.py <项目名>
 ```
 
-预览页路径以脚本实际打印为准。也可以先跑一次首页质检。确认后其余页不间断写完；全部页面完成后可用同一脚本重新生成全页预览（覆盖旧文件）供用户快速翻阅。写完顺手把页面引用的素材ID核对一遍。
+本地环境可让用户直接打开 SVG 或预览页；也可以先跑一次首页质检。确认后其余页不间断写完；全部页面完成后可用同一脚本重新生成全页预览（覆盖旧文件）供用户快速翻阅。写完顺手把页面引用的素材ID核对一遍。
 
 ## Step 7 质检与编译导出
 
 ```bash
 # 质检（quick 无锁模式；--stage final --json 生成正式报告，导出的前置条件）
-python3 {skillDir}/scripts/svg_quality_checker.py dknowc-projects/<项目名> --quick-generate --stage final --json
+python3 {skillDir}/scripts/svg_quality_checker.py projects/<项目名> --quick-generate --stage final --json
 
 # 编译导出（原生 DrawingML）
-uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pptx.py dknowc-projects/<项目名> --quick-generate
+uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pptx.py projects/<项目名> --quick-generate
 ```
 
 注意：导出脚本要求先存在**通过的 final 质检报告**（`validation/svg_quality_report.json`），所以质检必须带 `--stage final --json` 且退出码为 0，再执行导出。首页确认阶段可用不带 `--stage final` 的快速检查。
 
 - 质检 exit 1（errors）：逐条修复 SVG 后重跑；warnings 评估后可放行。
-- 导出成功后 `.pptx` 位于 `dknowc-projects/<项目名>/exports/`。
+- 导出成功后 `.pptx` 位于 `dknowc-dknowc-dknowc-projects/<项目名>/exports/`。
 - 可选转场：`-t fade` 等参数仅用户明确要求动效时使用；默认不传。
 
 ## Step 8 成稿版溯源核验报告（执行过检索时必做）
@@ -132,28 +137,19 @@ python3 {skillDir}/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0
   --stage final
 ```
 
-输出 HTML 复制到 `dknowc-projects/<项目名>/exports/<演示名>_成稿核验报告.html`。规则见 [`references/material_usage.md`](../references/material_usage.md)。
+输出 HTML 复制到 `dknowc-dknowc-projects/<项目名>/exports/<演示名>_成稿核验报告.html`。规则见 [`references/material_usage.md`](../references/material_usage.md)。
 
 ## Step 9 交付（三件套）
 
 - **交付干净原则（先修后交）**：交付给用户的两份核验报告必须处于「核验完成」状态——可修复问题（角标未绑定、JSON 结构不符、可补的原文链接、`self_check` 未写入）一律先修复重渲再交付，不得带着可修复问题交给用户；只有不可抗力缺口（官方入口确实无法补链）允许保留提醒，且交付时说明原因。
-- 主交付物：`dknowc-projects/<项目名>/exports/<演示名>.pptx` 路径 + 一句简短说明。
+- 主交付物：`dknowc-dknowc-projects/<项目名>/exports/<演示名>.pptx` 路径 + 一句简短说明。
 - 执行过检索时附两份报告路径并说明其为辅助核验文件、不是正文附件：
   - `<演示名>_提纲核验报告.html`（提纲阶段事前核验）；
   - `<演示名>_成稿核验报告.html`（交付阶段事后溯源）。
-- **宿主环境交付（WorkBuddy 等）：交付前一律运行交付复制**（宿主只展示工作区文件，**不得向用户展示 skill 内部路径**）：
-
-```bash
-  "dknowc-projects/<项目名>/exports/<演示名>.pptx" \
-  "dknowc-projects/<项目名>/exports/<演示名>_提纲核验报告.html" \
-  "dknowc-projects/<项目名>/exports/<演示名>_成稿核验报告.html"
-```
-
-**交付命令三条纪律**（WorkBuddy 多会话下交付落错会话的根治）：
-1. **绝对路径调用、命令前不得 `cd`**——WorkBuddy 为会话拉起的命令行，默认工作目录就是当前会话工作区（`~/Workbuddy/<时间戳>/`）；一旦先 cd 到 skill 目录，脚本就丢了这条线索，只能退回「取最新时间戳工作区」的猜测，并发会话时会把产物交付到别的会话。
-2. **交付后核对 `dest_source`**：以 `workbuddy-cwd:` 开头＝精确命中当前会话；不确定时先 `pwd` 确认。
-3. **`dest_source` 非该前缀（或返回 `need_dest=true`）时**，用 `--dest <本次任务工作区目录>` 重跑，不得声称已交付。
-
-  按返回 JSON 处理：全部 `copied=true` → 向用户展示 `delivered` 路径；`need_dest=true` → 用 `--dest <宿主工作区目录>` 重跑后再交付。非宿主环境（本地直用）同样运行无害——探测不到宿主时如实用 `need_dest` 提示，直接展示 skill 内路径即可。
-- 不发送 SVG 源文件、内容包草稿、质检报告等中间产物，除非用户明确要看。
+- **交付清单只含上面这三件**（`dknowc-dknowc-dknowc-projects/<项目名>/exports/` 下；P01 预览页按需可选）：
+  - **每个产物只交付一份**——不得把 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 的中转报告与 `exports/` 归档件同时交付（同一份报告两个文件名＝交付事故，实测发生过：渲染器先按标题/提示词名输出中转件、归档时又按规范名复制一份，两版同内容却都进了工作区，用户不知道该看哪份）；
+  - **所有中间产物一律不交付**：检索 JSON、提纲/成稿答案文件、内容包、SVG 源文件、质检报告、`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 中转件（与公文写作、可信搜索同口径：「交付物只有最终产物」）；
+  - 交付清单**逐个显式列出文件绝对路径**，不用通配符、不整目录交付；交付后核对工作区里就是这几件、无多余同名文件。
+- **dsh 交付**：产物直接生成在会话工作区——`.pptx` 与两份核验报告在 `dknowc-projects/<项目名>/exports/`，渲染中转件在 `dknowc-output/<会话ID前8位>/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`。dsh 以工作区为文件视图、访达也可直达，直接向用户展示上面三件的绝对路径即可，无需交付复制，也不存在 skill 内部路径打不开的问题；交付前核对交付清单这三件齐全、无多余同名文件。
+- 不发送 SVG 源文件、内容包草稿、质检报告、`dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 中转报告等中间产物，除非用户明确要看。
 - 询问是否需要调整（改文字/换风格/调页序）：调整走内容包 → SVG → 重导出的闭环，不直接改 .pptx。

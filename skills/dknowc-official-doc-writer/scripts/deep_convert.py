@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
@@ -56,12 +56,31 @@ def clean_text(text) -> str:
     return " ".join(str(text or "").split())
 
 
+_TABLE_TAG_RE = re.compile(r"<\s*(/?)\s*(table|thead|tbody|tr|td|th|br)\b[^>]*>", re.IGNORECASE)
+
+
 def strip_html(text) -> str:
-    """去掉深度搜索段落内容里的 HTML 标签并反转义实体（真实返回含表格等标签）。"""
-    out = re.sub(r"<[^>]+>", " ", str(text or ""))
+    """去掉深度搜索段落内容里的 HTML 标签并反转义实体（真实返回含表格等标签）。
+
+    表格标签（table/thead/tbody/tr/td/th/br）原样保留（2026-10-14 修复）：深度返回的
+    标准限值表/名单表此前被整体拍平成空格分隔文本，知识专库与引文胶囊无法按表格
+    形态展示（渲染端 sanitize_table_html / render_excerpt_html 对表格做白名单清洗与
+    展示，可信搜索通道 dkag_search 亦原样保留表格，两通道口径一致）。"""
+    raw = str(text or "")
+    holders: list = []
+
+    def _protect(match) -> str:
+        holders.append(match.group(0))
+        return f"\x00TBL{len(holders) - 1}\x00"
+
+    protected = _TABLE_TAG_RE.sub(_protect, raw)
+    out = re.sub(r"<[^>]+>", " ", protected)
     for a, b in HTML_ENTITIES:
         out = out.replace(a, b)
-    return " ".join(out.split())
+    out = " ".join(out.split())
+    for i, tag in enumerate(holders):
+        out = out.replace(f"\x00TBL{i}\x00", tag)
+    return out.strip()
 
 
 def first_value(item: dict, *keys: str) -> str:
@@ -130,6 +149,10 @@ def convert(data, area: str, purpose: str) -> dict:
             "发布日期": clean_text(first_value(raw, "发布日期", "date")),
             "数据源": clean_text(first_value(raw, "数据源", "source")) or "未知来源",
             "段落": paragraphs,
+            # 检索通道标记：本产物来自深知深度搜索（deep-query/v3）。
+            # 溯源报告据此区分"深度搜索 / 可信搜索"两个接口来源与各自路数，
+            # 一路透传：merge → build_trace_json → source_note_html → render_trace_html。
+            "检索通道": "深知深度搜索",
         }
         if source_url:
             article["源网址"] = source_url

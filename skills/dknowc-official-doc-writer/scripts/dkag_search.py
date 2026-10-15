@@ -33,7 +33,7 @@ QUERY_TOO_SHORT_ERROR = f"错误：查询关键词过短，最少需要 {MIN_QUE
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 API_KEY_ENV = "DKNOWC_API_KEY"
 DEFAULT_BASE_URL = "https://open.dknowc.cn/dependable/search/"
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
@@ -283,7 +283,10 @@ def clean_dkag_response(api_response: dict) -> dict:
                 "文章标题": art.get("文章标题", "无标题"),
                 "发布日期": art.get("发布日期", ""),
                 "数据源": art.get("数据源", "未知来源"),
-                "段落": []
+                "段落": [],
+                # 检索通道标记：本产物来自深知可信搜索（dependable/search）。
+                # 溯源报告据此区分"深度搜索 / 可信搜索"两个接口来源与各自路数。
+                "检索通道": "深知可信搜索",
             }
             for key in ("源网址", "sourceUrl", "source_url", "原文链接", "原文地址", "文章链接", "url", "URL"):
                 if art.get(key):

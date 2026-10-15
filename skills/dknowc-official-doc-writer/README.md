@@ -11,7 +11,7 @@
 - 任务路由：`reference/task_router.md` 定义简单任务、常规任务、复杂任务和高风险任务的处理方式。
 - 质量审查：`reference/review_checklist.md` 定义公文内容、可信溯源、文种专项和 Word 输出检查项。
 - Word 排版：通过 `scripts/format_document.py` 生成普通格式 `.docx`，支持标准 Markdown 表格和宽表横向页面。
-- 溯源核验报告：执行过搜索时，通过 `scripts/source_note_html.py` 和 `scripts/render_trace_html.py` 生成独立 HTML 溯源核验报告（句后引文胶囊、知识专库分组视图、章节引用徽章；生成时自动检测原文链接可达性并支持存档快照兜底）。
+- 产出物 HTML：执行过搜索时，通过 `scripts/source_note_html.py` 和 `scripts/render_trace_html.py` 生成单文件产出物 HTML（顶部切换 **正文（去索引） / 溯源核验报告 / 知识专库** 三页）：正文页为干净正式正文（与 Word 正文一致）；溯源核验报告页含 **AI 自验收**（过程回顾条）、核验单与带角标的正文（角标为可点击引文胶囊）；知识专库页按检索分组展示来源材料；原文链接原样给出、附存档快照兜底。顶栏「导出」可导出正文 Markdown（.md）或 PDF（正文 / 溯源核验报告）。文件名按用户需求（正文标题）生成，形如 `XXX.html`。
 - 已有 Word 审查：通过 `scripts/review_document.py` 只读提取已有 `.docx` 的格式信息和待核验事实表述。
 - 红头文件：通过 `scripts/template_generator.py` 代码化生成红头和表尾，不依赖 `templates/` 中的 Word 模板。
 - 个人素材库与写作偏好：`scripts/local_memory.py` 管理本机私有素材库与偏好（不随公开包分发）。
@@ -49,13 +49,13 @@ API Key 按需配置：
 SkillHub 版默认使用：
 
 - 接入点 `type=6`，即深知可信搜索。
-- 渠道码 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05`。
+- 渠道码 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05`（dsh 专属）。
 - 统一环境变量 `DKNOWC_API_KEY` 保存 API Key，由公文范文大纲接口和深知可信搜索接口共用。
 
 当任务需要搜索且当前环境变量 `DKNOWC_API_KEY` 未配置时，进入 MaaS 注册。第 1 步，发送短信验证码（只调用一次、不自动重试）：
 
 ```bash
-node scripts/register.mjs send --phone 13812345678
+node <skillDir>/scripts/register.mjs send --phone 13812345678
 ```
 
 发码有两个分支，都必须支持（2026-10-09 注册链路改造，user-auth maas-1.1.6）：
@@ -67,7 +67,7 @@ node scripts/register.mjs send --phone 13812345678
 第 2 步，注册并获取 API Key：
 
 ```bash
-node scripts/register.mjs register --phone 13812345678 --vcode 123456 --organ 个人 --name 用户
+node <skillDir>/scripts/register.mjs register --phone 13812345678 --vcode 123456 --organ 个人 --name 用户
 ```
 
 注册第二步会固定携带 `source="agent"`（注册接口的合同标记，服务端按它放行老用户直接返 Key），并继续使用 SkillHub 渠道码；调用来源统计走 `X-Dknowc-Attribution` 请求头（`agentSource=` 为本 Skill 标识），两者互不影响。手机号已注册时，默认查回该账号已有可用 API Key；手机号未注册时，按 MaaS 注册流程创建账号并获取 API Key；账号已建但密钥仍在准备时返回 `pending=true`（非错误，稍后同参数重试一次）。成功后，脚本会把 API Key 写入本机专用配置文件（`~/.config/dknowc/api_key`），并返回 `user_message`（含注册赠送 10 万积分与实名认证再送 10 万积分告知，Agent 必须转述）。返回的完整 Key 仅供 Agent 当前任务临时注入环境变量使用，不得向用户展示完整 API Key，不得要求用户手动复制 Key。
@@ -75,7 +75,7 @@ node scripts/register.mjs register --phone 13812345678 --vcode 123456 --organ �
 默认不重新生成 API Key。只有用户明确要求重新生成或新建 Key 时，才追加 `--new-key`：
 
 ```bash
-node scripts/register.mjs register --phone 13812345678 --vcode 123456 --organ 个人 --name 用户 --new-key
+node <skillDir>/scripts/register.mjs register --phone 13812345678 --vcode 123456 --organ 个人 --name 用户 --new-key
 ```
 
 如自动注册链路失败，可按脚本 `user_message` 降级引导用户访问 MaaS 平台：
@@ -92,9 +92,18 @@ https://open.dknowc.cn/dependable/search/
 
 API Key 只能通过环境变量 `DKNOWC_API_KEY` 注入或本机专用配置文件（`~/.config/dknowc/api_key`）持久化，不得硬编码，不得写入公开包。脚本读取顺序为进程环境变量优先、缺失时自动读取配置文件，历史 `~/.zshrc` 中的 Key 块仅作迁移期兜底，无需重启宿主。
 
+## 交付形态
+
+交付形态由两个独立开关决定（详见 `reference/task_router.md`）：
+
+- **是否命中文公文范式** → 决定要不要 Word：命中 15 种法定公文（决议、决定、命令、公报、公告、通告、意见、通知、通报、报告、请示、批复、议案、函、纪要，含复函与提醒函）时生成 `.docx`；用户明确要求 Word/红头时也生成 Word。
+- **是否执行过深知搜索** → 决定要不要产出物 HTML：只要用过深知可信搜索或深度搜索，就生成单文件产出物 HTML（正文 / 溯源核验报告 / 知识专库 三页）。
+
+两者可同时成立。非公文且执行过搜索时，交付产出物 HTML 并询问用户是否需要另出 Word。
+
 ## 版本说明
 
-当前 SkillHub Public 版基于 `3.7.9`。
+当前 dsh 版基于 SkillHub 母版 `3.8.1`（版本号 `3.8.1-dsh`）。
 
 检索通道：统一走脚本通道（`deep_query.py` / `dkag_search.py` / `outline_reference.py`，需 API Key）。3.7.5 起不再走 MCP「深知可信工作台」通道——MCP 侧大结果落盘方案改造完成后另行加回。
 
@@ -116,7 +125,7 @@ python3 <skillDir>/scripts/outline_reference.py "请写一份关于基层治理�
 普通 Word 生成：
 
 ```bash
-python3 <skillDir>/scripts/format_document.py official-docs/input/dknowc-test.md --output dknowc-test.docx
+python3 <skillDir>/scripts/format_document.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/dknowc-test.md --output dknowc-test.docx
 ```
 
 红头 Word 生成：
@@ -140,5 +149,5 @@ python3 <skillDir>/scripts/merge_search_results.py result_gd.json result_bj.json
 溯源核验报告 HTML：
 
 ```bash
-python3 <skillDir>/scripts/source_note_html.py official-docs/input/trace-report.json --output trace-report.html
+python3 <skillDir>/scripts/source_note_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/trace-report.json --output trace-report.html
 ```

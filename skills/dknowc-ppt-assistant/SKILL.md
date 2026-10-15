@@ -7,7 +7,7 @@ description: "当用户要求制作 PPT、演示文稿、汇报 PPT、工作总�
 description_zh: "深知可信PPT，是由北京彩智科技有限公司旗下“深知可信智能”提供的演示文稿制作助手，高效、专业地完成企事业单位与政府机关等场景下的汇报演示制作、课件宣讲和材料转化需求，所有事实素材与数据依据，都全程可溯源到权威部门发布的规范性文件。本技能用于工作汇报PPT、专题汇报、总结汇报、述职汇报、政策宣讲、培训课件、数据汇报等演示文稿制作，也支持把用户上传的 Word 文稿、会议记录、调研报告等工作材料直接转为 PPT，帮助用户把零散想法、汇报要点、工作素材转化为逻辑清楚、重点突出、风格得体、可直接修改使用的演示文稿。内置党政简洁、数据图表、商务汇报、庄重典雅、培训课件等风格预设，支持 16:9、4:3、小红书、朋友圈、竖版故事、A4 等多画布规格。依托深知可信搜索，获取准确有效的法规政策依据、行业信息与数据、标准规范和案例参考，并单独生成可交互的溯源核验报告，帮助用户讲得有依据、能复核、可交付。演示文稿支持生成真实可编辑的 PowerPoint 文档（.pptx），原生形状、文本、图表与表格均可在 PowerPoint/WPS 中继续修改，并配套交付可点击核验的溯源核验报告。"
 description_en: "dknowc PPT assistant is a presentation-generation Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It combines reasoning-first presentation methodology with a trusted content layer: authoritative materials with sources are gathered through dknowc Trusted Search, confirmed as a content pack, then hand-authored page by page as constrained SVG and compiled by a deterministic converter into a genuinely editable native PowerPoint (real shapes, text, charts and tables). Built-in party/government-compliant style presets; multi-canvas support (16:9, 4:3, RED, square, story, A4); delivers .pptx plus a clickable provenance HTML."
 category: "通用办公"
-version: "1.3.6-dsh"
+version: "1.3.7-dsh"
 author: "彩智科技"
 permissions:
   network:
@@ -20,8 +20,8 @@ permissions:
   local_write:
     - "本地初始化状态文件"
     - "dknowc-projects/ 项目目录（内容包、SVG、图片、质检报告、导出产物）"
-    - "dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/ 检索结果与溯源中间文件"
-    - "宿主环境工作区（如 WorkBuddy outputs/，仅用于 deliver_outputs.py 复制交付物）"
+    - "dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/ 检索结果与溯源中间文件"
+    - "会话工作区产物目录（脚本按会话自动锚定，无需交付复制）"
     - "本机 DKNOWC_API_KEY 专用配置文件（~/.config/dknowc/api_key，注册成功后写入；历史 ~/.zshrc 配置块仅迁移期读取）"
 secrets:
   - "DKNOWC_API_KEY"
@@ -35,7 +35,7 @@ secrets:
 
 ## 权限说明
 
-本 Skill 访问 `https://open.dknowc.cn/` 用于深知可信搜索素材检索；访问 `https://platform.dknowc.cn/` 用于 MaaS 手机号验证码注册与 API Key 获取说明。运行中读取本 Skill 的规则、契约与项目文件，写入 `dknowc-projects/` 项目工作区（内容包、SVG、图片、导出产物）和 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/` 中间文件。API Key 只通过环境变量 `DKNOWC_API_KEY` 注入，不硬编码、不写入公开包、不在对话中展示完整内容。
+本 Skill 访问 `https://open.dknowc.cn/` 用于深知可信搜索素材检索；访问 `https://platform.dknowc.cn/` 用于 MaaS 手机号验证码注册与 API Key 获取说明。运行中读取本 Skill 的规则、契约与项目文件，写入 `dknowc-projects/` 项目工作区（内容包、SVG、图片、导出产物，工作区级、跨会话延续）和 `dknowc-output/<会话ID前8位>/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/` 中间文件（按会话隔离）。API Key 只通过环境变量 `DKNOWC_API_KEY` 注入，不硬编码、不写入公开包、不在对话中展示完整内容。
 
 > **dsh Key 机制**：dsh 清理名字含 KEY 的隐式环境变量，但**专用配置文件读取不受影响**——注册成功后 Key 写入 `~/.config/dknowc/api_key`，本会话检索脚本立即可用（无需重启 dsh）。仅 dsh 捆绑的 MCP 兜底工具需重启后加载新 Key。
 >
@@ -63,7 +63,7 @@ uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pp
 
 ## 统一 API Key 管理
 
-SkillHub 版不内置 API Key。MaaS 注册取 Key 两步执行（`scripts/register_key.mjs`，固定 `type=11`、渠道码 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05`、`source="agent"`——注册 body 的 `source` 是注册 API 的**合同标记**，服务端按它放行「老用户直接返 Key」，必须为 `agent`、不得传 skill 标识；调用来源统计走请求头 `X-Dknowc-Attribution` 的 `agentSource` 字段，值由脚本自动读包根 `attribution.json`，两者互不影响）：
+SkillHub 版不内置 API Key。MaaS 注册取 Key 两步执行（`scripts/register_key.mjs`，固定 `type=11`、渠道码 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05`（dsh 专属）、`source="agent"`——注册 body 的 `source` 是注册 API 的**合同标记**，服务端按它放行「老用户直接返 Key」，必须为 `agent`、不得传 skill 标识；调用来源统计走请求头 `X-Dknowc-Attribution` 的 `agentSource` 字段，值由脚本自动读包根 `attribution.json`，两者互不影响）：
 
 ```bash
 node {skillDir}/scripts/register_key.mjs send --phone <手机号>
@@ -147,9 +147,9 @@ node {skillDir}/scripts/register_key.mjs register --phone <手机号> --vcode <�
 
 ## 交付规范
 
-- 主交付物：`dknowc-projects/<项目名>/exports/<演示名>.pptx` + 一句简短说明。
-- 执行过检索时按三件套交付：`.pptx` + `<演示名>_提纲核验报告.html`（事前核验）+ `<演示名>_成稿核验报告.html`（事后溯源）；两份报告均为辅助核验文件，不是正文附件。
-- **宿主环境交付（WorkBuddy 等）**：提纲版报告生成后与三件套交付前，一律运行 `scripts/deliver_outputs.py` 把产物复制到宿主工作区并展示 `delivered` 路径（宿主只展示工作区文件，skill 内部路径用户打不开，展示了也无法查看）。**该条命令必须用绝对路径调用、命令前不得 `cd`**——WorkBuddy 为会话拉起的命令行，其默认工作目录就是当前会话工作区（`~/Workbuddy/<时间戳>/`），一旦先 cd 到 skill 目录就丢了这条线索，脚本只能退回"取最新时间戳工作区"的猜测，多会话并存时会把产物交付到别的会话（实测踩坑）；保持默认工作目录运行，脚本经 cwd 探测即可精确命中当前会话。交付后核对返回 JSON 的 `dest_source`：以 `workbuddy-cwd:` 开头即精确命中；不确定时先 `pwd` 确认，`dest_source` 非该前缀时用 `--dest <本次任务工作区>` 重跑。`need_dest=true` 时同样用 `--dest` 指定后重跑；非宿主环境运行无害，探测不到时直接展示 skill 内路径。
+- 主交付物：`dknowc-dknowc-projects/<项目名>/exports/<演示名>.pptx` + 一句简短说明。
+- 执行过检索时按三件套交付：`.pptx` + `<演示名>_提纲核验报告.html`（事前核验）+ `<演示名>_成稿核验报告.html`（事后溯源）；两份报告均为辅助核验文件，不是正文附件。**交付清单只有这三件、且每个产物只交付一份**——`dknowc-dknowc-projects/<项目名>/exports/` 下逐个显式列路径交付，不得把 `dknowc-output/<会话ID前8位>/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/` 的中转报告与归档件同时交付（同一份报告两个文件名＝交付事故，实测发生过）；检索 JSON、答案文件、内容包、SVG、质检报告等中间产物一律不交付（与公文写作、可信搜索同口径：交付物只有最终产物）。
+- **dsh 交付**：产物直接生成在会话工作区——`.pptx` 与两份核验报告按脚本实际输出位置为准（`dknowc-dknowc-projects/<项目名>/exports/` 与 `dknowc-output/<会话ID前8位>/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`），dsh 以工作区为文件视图、访达也可直达，直接向用户展示脚本打印的路径即可，无需交付复制，也不存在 skill 内部路径打不开的问题。
 - **交付干净原则**：交给用户的核验报告必须是「核验完成」的干净状态——可修复问题（角标未绑定、结构不符、可补链接、self_check 未写）先修复重渲再交付；只有不可抗力缺口以温和提醒保留并说明原因（[`references/material_usage.md`](references/material_usage.md)）。
 - 不发送 SVG 源文件、内容包草稿、质检报告等中间产物；用户明确要看时除外。
 - 修改走闭环：内容包 → SVG → 重新质检导出；不直接改 .pptx。

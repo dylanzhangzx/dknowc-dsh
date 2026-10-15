@@ -3,11 +3,11 @@ name: "深知公文写作"
 slug: "dknowc-official-doc-writer-skillhub"
 display_name: "深知公文写作"
 display_name_en: "dknowc official doc writer"
-description: "深知公文写作，是面向单位办公室、综合岗、文秘、材料岗和企事业单位用户的正式材料写作助手。核心用于公文写作、正式文书起草、汇报材料整理、讲话稿撰写、工作总结和方案报告生成，帮助用户把零散想法、会议记录、工作素材、调研资料或初稿，整理成结构清楚、表达稳妥、逻辑完整、可直接修改使用的正式文稿。支持通知、请示、报告、函、复函、批复、会议纪要、通报、通告、公告、意见、方案、总结、管理办法、汇报材料、发言稿、讲话稿、调研报告、经验材料等常见文种和工作材料。可进行起草、改写、润色、扩写、压缩、标题优化、结构调整、语气统一和内容审查。涉及政策依据、数据支撑、标准规范或案例参考时，可调用深知可信搜索获取素材，并单独生成溯源核验报告，帮助用户写得有依据、能复核、可交付。正式交付时支持生成 Word 文档；用户明确需要时，也可生成红头文件。"
-description_zh: "深知公文写作，是由北京彩智科技有限公司旗下“深知可信智能”提供的正式材料写作助手，准确、规范地完成企事业单位与政府机关等场景下的文档编写需求，所有依据或参考材料，都全程可溯源到权威部门发布的规范性文件。本技能用于公文写作、正式文书起草、汇报材料整理、讲话稿撰写、工作总结和方案报告生成，帮助用户把零散想法、会议记录、工作素材、调研资料或初稿整理成结构清楚、表达稳妥、逻辑完整、可直接修改使用的正式文稿。本技能还能严格按公文相关国家标准，支持通知、请示、报告、函、复函、批复、会议纪要、通报、通告、公告、意见、方案、总结、管理办法、汇报材料、发言稿、讲话稿、调研报告、经验材料等常见文种和工作材料。依托深知可信搜索，获取准确有效的法规政策依据、行业信息与数据、标准规范和案例参考，并单独生成所有材料的溯源说明与原文清单，帮助用户写得有依据、能复核、可交付。正式交付时支持生成 Word 文档；并可按用户明确要求自动生成红头文件。"
-description_en: "dknowc official doc writer is a formal-document writing Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It helps users draft, rewrite, polish, review and generate structured workplace documents, including official documents, formal letters, reports, meeting minutes, summaries, plans, speeches, research reports and other business materials. When evidence, data, standards or reference cases are needed, it can use dknowc Trusted Search to retrieve traceable materials from authoritative sources and generate a separate source-reference report. Final outputs can be generated as Word documents, and red-head document formatting is supported when explicitly requested by the user."
+description: "深知公文写作，是面向单位办公室、综合岗、文秘、材料岗和企事业单位用户的正式材料写作助手。核心用于公文写作、正式文书起草、汇报材料整理、讲话稿撰写、工作总结和方案报告生成，帮助用户把零散想法、会议记录、工作素材、调研资料或初稿，整理成结构清楚、表达稳妥、逻辑完整、可直接修改使用的正式文稿。支持通知、请示、报告、函、复函、批复、会议纪要、通报、通告、公告、意见、方案、总结、管理办法、汇报材料、发言稿、讲话稿、调研报告、经验材料等常见文种和工作材料。可进行起草、改写、润色、扩写、压缩、标题优化、结构调整、语气统一和内容审查。涉及政策依据、数据支撑、标准规范或案例参考时，可调用深知可信搜索获取素材，并生成含正文、溯源核验报告与知识专库的产出物，帮助用户写得有依据、能复核、可交付。正式公文（通知、请示、报告等 15 种法定文种）可生成 Word 文档，用户明确需要时也可生成红头文件。"
+description_zh: "深知公文写作，是由北京彩智科技有限公司旗下“深知可信智能”提供的正式材料写作助手，准确、规范地完成企事业单位与政府机关等场景下的文档编写需求，所有依据或参考材料，都全程可溯源到权威部门发布的规范性文件。本技能用于公文写作、正式文书起草、汇报材料整理、讲话稿撰写、工作总结和方案报告生成，帮助用户把零散想法、会议记录、工作素材、调研资料或初稿整理成结构清楚、表达稳妥、逻辑完整、可直接修改使用的正式文稿。本技能还能严格按公文相关国家标准，支持通知、请示、报告、函、复函、批复、会议纪要、通报、通告、公告、意见、方案、总结、管理办法、汇报材料、发言稿、讲话稿、调研报告、经验材料等常见文种和工作材料。依托深知可信搜索，获取准确有效的法规政策依据、行业信息与数据、标准规范和案例参考，并生成含正文、溯源核验报告与知识专库的产出物，帮助用户写得有依据、能复核、可交付。正式公文（15 种法定文种）可生成 Word 文档；并可按用户明确要求自动生成红头文件。"
+description_en: "dknowc official doc writer is a formal-document writing Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It helps users draft, rewrite, polish, review and generate structured workplace documents, including official documents, formal letters, reports, meeting minutes, summaries, plans, speeches, research reports and other business materials. When evidence, data, standards or reference cases are needed, it can use dknowc Trusted Search to retrieve traceable materials from authoritative sources and produce a deliverable containing the formal content, a source-verification report and a knowledge-library view. Word documents are generated for the 15 statutory official-document types, and red-head document formatting is supported when explicitly requested by the user."
 category: "office-efficiency"
-version: "3.7.9-dsh"
+version: "3.8.1-dsh"
 author: "彩智科技"
 permissions:
   network:
@@ -21,14 +21,15 @@ permissions:
     - "用户明确授权保存的写作偏好"
     - "用户明确授权保存的个人素材库文件（knowledge-base/ 目录）"
     - "生成的 Word 文档"
-    - "溯源核验报告与搜索结果中间文件"
+    - "生成的产出物 HTML（正文 / 溯源核验报告 / 知识专库 三页）"
+    - "搜索结果中间文件"
 secrets:
   - "DKNOWC_API_KEY"
 ---
 
 # 深知公文写作
 
-深知公文写作由北京彩智科技有限公司旗下“深知可信智能”提供，是面向正式材料写作场景的组合型 Agent Skill。它不是固定从头到尾执行的演示脚本，而是根据任务选择最小必要流程，帮助用户完成公文写作、正式文书起草、汇报材料整理、讲话稿撰写、总结方案生成、素材检索、溯源核验报告和 Word 交付。
+深知公文写作由北京彩智科技有限公司旗下“深知可信智能”提供，是面向正式材料写作场景的组合型 Agent Skill。它不是固定从头到尾执行的演示脚本，而是根据任务选择最小必要流程，帮助用户完成公文写作、正式文书起草、汇报材料整理、讲话稿撰写、总结方案生成、素材检索、产出物生成（正文 / 溯源核验报告 / 知识专库）和公文 Word 交付。
 
 > **dsh Key 机制**：dsh 清理名字含 KEY 的隐式环境变量，但**专用配置文件读取不受影响**——注册成功后 Key 写入 `~/.config/dknowc/api_key`，本会话检索/大纲脚本立即可用（无需重启 dsh）。仅 dsh 捆绑的 MCP 兜底工具需重启后加载新 Key。
 >
@@ -36,13 +37,13 @@ secrets:
 
 ## 权限说明
 
-本 Skill 会访问 `https://open.dknowc.cn/` 用于公文范文大纲、深知可信搜索和溯源核验报告整理；访问 `https://platform.dknowc.cn/auth/#/login` 用于 MaaS 手机号验证码注册、API Key 获取和管理平台地址说明。运行过程中会读取本 Skill 的规则、标准、配置和参考资料文件，并在本地写入初始化状态文件、用户授权保存的写作偏好、生成的 Word 文档、溯源核验报告和搜索结果中间文件。MaaS 注册取 Key 成功后，会把 `DKNOWC_API_KEY` 写入本机 Key 专用配置文件（`~/.config/dknowc/api_key`，纯文本一行 Key、600 权限，不写 `~/.zshrc`）；脚本读取顺序为进程环境变量优先、缺失时自动读取该文件，历史 `~/.zshrc` 中的 Key 块仅作迁移期兜底。Skill 包内不包含真实 API Key，API Key 必须通过环境变量 `DKNOWC_API_KEY` 注入或配置文件持久化，不得硬编码，不得写入公开包，不得在对话中展示完整内容。
+本 Skill 会访问 `https://open.dknowc.cn/` 用于公文范文大纲、深知可信搜索和产出物整理；访问 `https://platform.dknowc.cn/auth/#/login` 用于 MaaS 手机号验证码注册、API Key 获取和管理平台地址说明。运行过程中会读取本 Skill 的规则、标准、配置和参考资料文件，并在本地写入初始化状态文件、用户授权保存的写作偏好、生成的 Word 文档、产出物 HTML 和搜索结果中间文件。MaaS 注册取 Key 成功后，会把 `DKNOWC_API_KEY` 写入本机 Key 专用配置文件（`~/.config/dknowc/api_key`，纯文本一行 Key、600 权限，不写 `~/.zshrc`）；脚本读取顺序为进程环境变量优先、缺失时自动读取该文件，历史 `~/.zshrc` 中的 Key 块仅作迁移期兜底。Skill 包内不包含真实 API Key，API Key 必须通过环境变量 `DKNOWC_API_KEY` 注入或配置文件持久化，不得硬编码，不得写入公开包，不得在对话中展示完整内容。
 
 ## 设计模式
 
 本 Skill 组合使用五种模式：
 
-- Tool Wrapper：封装公文范文大纲、深知搜索、普通 Word 排版、红头文件生成和溯源核验报告 HTML 生成。
+- Tool Wrapper：封装公文范文大纲、深知搜索、普通 Word 排版、红头文件生成和产出物 HTML（正文 / 溯源核验报告 / 知识专库 三页）生成。
 - Generator：根据文种标准、用户材料和素材指引生成公文正文。
 - Reviewer：按审查清单检查格式、逻辑、素材来源和公文风险。
 - Inversion：复杂任务或关键信息缺失时，先向用户追问。
@@ -118,14 +119,14 @@ node <skillDir>/scripts/register.mjs register --phone <手机号> --vcode <验�
 | 文件 | 阶段 | 加载条件 |
 | --- | --- | --- |
 | `reference/task_router.md` | 任务开始 | 判断任务类型与复杂度，所有任务先读 |
-| `reference/revision_workflow.md` | 改稿轮 | 用户基于已交付 Word 提修改意见的连续改稿 |
+| `reference/revision_workflow.md` | 改稿轮 | 用户基于已交付产物（Word 或产出物 HTML）提修改意见的连续改稿 |
 | `reference/local_memory_guide.md` | 素材/偏好管理时 | 素材库或偏好数量大于 0，或用户要求保存/查看/删除素材与偏好时 |
 | `reference/fact_discipline.md` | 起草/改稿前 | 所有正式写作任务，约束事实边界 |
 | `reference/anti_ai_patterns.md` | 定稿前/审查 | 正式正文语言复核、去 AI 味、审查模式 |
 | `scripts/prose_lint.py` | 定稿前 | 检查草稿语言、格式、重复风险（可选） |
 | `scripts/local_memory.py` | 写作前/写作后 | 素材库或偏好数量大于 0 时检索素材、应用偏好；用户确认保存时写入 |
 | `reference/search_policy.md` | 搜索前 | 需要政策/数据/案例检索时 |
-| `reference/search_guide.md` | 执行搜索后 | 生成溯源核验报告 HTML 时；参考范文召回时（第四节流程） |
+| `reference/search_guide.md` | 执行搜索后 | 生成产出物 HTML（溯源核验报告页）时；参考范文召回时（第四节流程） |
 | `scripts/extract_reference.py` | 参考范文召回时 | 用户同意取全文后，从 `--full` 召回结果中按标题提取**目标范文单篇**全文并落盘 |
 | `reference/material_usage_guidance.md` | 执行搜索后 | 召回素材如何进入正文 |
 | `reference/research_notes.md` | 素材确认后 | 研究型与综合长篇文种（调研报告、政策/产业研究、综合总结）动笔前生成研究资料 |
@@ -169,8 +170,8 @@ node <skillDir>/scripts/register.mjs register --phone <手机号> --vcode <验�
 
 **交付纪律**
 
-- 所有正式写作任务默认交付 `.docx` Word（即使没明确说"生成 Word"），执行过搜索另附 HTML 溯源核验报告；只有用户明确说"直接在对话里给正文""不要生成 Word""先看文字草稿"时才在对话输出正文。不得先发"正文初稿/压缩版/预览版"，直接生成 Word 并只给简短说明和路径。
-- 正式公文 Word 保持纯净：正文不带来源角标、`【素材使用情况】`、`【知识专库链接】`或长 URL；可信溯源信息单独生成 HTML。Word 正文与元数据均不写 AI 生成提示，AI 标识仅由交付话术承担（本稿由 AI 辅助生成、依据已经过可信核验，建议按单位审签流程核批后正式行文）；排版脚本自动过滤误带的提示行。
+- 交付形态按 `reference/task_router.md` 的两个开关判定：**命中 15 种法定公文（含复函、提醒函）→ 生成 `.docx` Word**；**本次任务执行过深知搜索 → 生成产出物 HTML（`XXX.html`，正文 / 溯源核验报告 / 知识专库 三页）**。两个开关独立、可同时成立；用户明确要求 Word 时照出 Word，但不因此取消产出物 HTML。只有用户明确说"直接在对话里给正文""不要生成文件""先看文字草稿"时才在对话输出正文。不得先发"正文初稿/压缩版/预览版"，直接生成产物并只给简短说明和路径。
+- 正式公文 Word 保持纯净：正文不带来源角标、`【素材使用情况】`、`【知识专库链接】`或长 URL；可点击溯源由产出物 HTML 承载。Word 正文与元数据均不写 AI 生成提示，AI 标识仅由交付话术承担（本稿由 AI 辅助生成、依据已经过可信核验，建议按单位审签流程核批后正式行文）；排版脚本自动过滤误带的提示行。
 - Markdown 草稿只是生成 Word 的内部临时文件，不得展示、链接、发送或要求用户审阅。
 - 生成 Word 时，正文超过一行必须先写入临时 `.txt`/`.md` 文件，再把文件路径传给 `scripts/format_document.py`；不得把多行正文塞进 `--text`，也不得用临时脚本手写 `python-docx` 生成正式交付文件。
 - 默认只生成普通 Word；仅用户明确说"红头文件/红头版/套红头/生成红头"时生成红头。
@@ -185,13 +186,13 @@ node <skillDir>/scripts/register.mjs register --phone <手机号> --vcode <验�
 
 常见路由：
 
-- 简单会议通知、内部事务通知：读取对应标准，直接生成 Word 文档；只有用户明确说“直接在对话里给正文”“不要生成 Word”“先看文字草稿”时，才在对话中输出正文。
-- 普通通知、函、短报告：必要时追问少量关键信息，然后生成。
+- 简单会议通知、内部事务通知：读取对应标准，直接完成（命中公文范式则生成 Word；如用过搜索则另出产出物 HTML）；只有用户明确说“直接在对话里给正文”“不要生成文件”“先看文字草稿”时，才在对话中输出正文。
+- 普通通知、函、短报告：必要时追问少量关键信息，然后完成。
 - 请示、复函、政策依据型报告：通常需要搜索，按搜索规则执行。
-- 管理办法、实施方案、调研报告、工作总结、产业研究总结：通常先确认大纲或搜索方案，再生成 Word。
-- 用户基于已交付 Word 提修改意见（"第二段太长""落款改一下""再加一节"等）：进入改稿轮，按 `reference/revision_workflow.md` 执行——以最新版 Word 为唯一底稿，逐条落实并汇报，默认不重复已完成搜索，交付 `_v1`/`_v2` 新版本。
+- 管理办法、实施方案、调研报告、工作总结、产业研究总结：通常先确认大纲或搜索方案，再完成；此类任务多会执行搜索，因而都会产出产出物 HTML（是否出 Word 看是否命中公文范式）。
+- 用户基于已交付产物提修改意见（"第二段太长""落款改一下""再加一节"等）：进入改稿轮，按 `reference/revision_workflow.md` 执行——以最新产物为底稿（有 Word 用最新版 Word；仅产出物 HTML 时用其正文页），逐条落实并汇报，默认不重复已完成搜索，交付 `_v1`/`_v2` 新版本。
 - 用户要求“看看有什么问题”：进入 Reviewer 模式，优先输出问题清单。
-- 用户要求“生成 Word”：只生成普通 Word。
+- 用户要求“生成 Word”：生成普通 Word（如本次用过搜索，产出物 HTML 照常产出）。
 - 用户明确要求“红头文件/红头版/套红头/生成红头”：先生成普通 Word，再使用代码化红头脚本生成红头文件。
 - 用户明确要求“PDF”：仍只生成对应 Word 作为正式公文主产物；如同时要求红头 PDF，先生成红头 Word；然后说明当前版本暂不支持自动生成 PDF，建议用户用 Word/WPS 自行导出。
 
@@ -237,7 +238,7 @@ python3 <skillDir>/scripts/outline_reference.py "用户写作需求" --output ou
 3. 向用户展示搜索方案并停止，等待用户确认或调整。
 4. 用户确认搜索方案后执行检索，**两阶段（3.7.5 起）——首轮深度搜索广度召回，补搜可信搜索精准补强**：
    - **阶段一·首轮深度搜索召回（3 路按素材类型）**：每路调用 `python3 <skillDir>/scripts/deep_query.py "<query>" --area <地域> --json-only --output deep_<路名>.json`（需 API Key）。query 用第 2 条句式（对象+关注方向，**不限定到具体文件名/文号**），areas 默认单地域（多地比较场景可逗号分隔传多地域，服务端自动拆子查询）。每路返回**立即完整落盘**并 `json.load` 校验，再运行 `python3 <skillDir>/scripts/deep_convert.py <文件> --area 地域 --purpose "<搜索目的>"` 转换为与 `--clean` 同构产物（`result_deep_<路名>.json`）。3 路默认并行（单批 ≤4 路）。
-   - **阶段二·可信搜索补搜（缺口驱动）**：深度搜索**缺独立"文号"字段**（政策文号在段落内容中）——政策依据型**必补搜**（补搜产出 policyFiles，正文引用政策文号靠其匹配）；数据/案例按研究资料口径表缺口（未给出/未确认/多口径未裁决）决定是否补搜。补搜走 `python3 <skillDir>/scripts/dkag_search.py`（参数见搜索命令节）。补搜产物与深度搜索产物合并（`merge_search_results.py`）后进入素材分类。补搜失败单独串行重试一次，不整批重发。
+   - **阶段二·可信搜索补搜（缺口驱动）**：深度搜索**缺独立"文号"字段**（政策文号在段落内容中）——政策依据型**必补搜**（补搜产出 policyFiles，正文引用政策文号靠其匹配）；数据/案例的缺口补搜按第 8 条**研究资料初版**口径表触发（未给出/未确认/多口径未裁决；初版生成前首轮只处理政策文号类硬缺口）。补搜走 `python3 <skillDir>/scripts/dkag_search.py`（参数见搜索命令节）。补搜产物与深度搜索产物合并（`merge_search_results.py`）后进入素材分类。补搜失败单独串行重试一次，不整批重发。
    - **即时落盘（并行前提）**：每路返回后立即把完整 JSON 原样落盘并校验通过才发下一路；禁止"先攒在对话里、整批完成后统一落盘"——宿主对工具结果有清理机制，延迟落盘会"过期"丢失，路数越多越容易整批拿不到结果。
    - **深度搜索失败回退（3.7.5 修复）**：阶段一某一路深度搜索失败（接口报错/超时/返回 0 篇/JSON 非法，已串行重试一次仍失败）时，**仅该路回退用可信搜索 `dkag_search.py` 重新搜索该路素材类型**（query 仍按该路关注方向构造，产出视为该路召回进入合并），**其他路不受影响、不整批回退**。回退后该路产物与未回退路产物一并 `merge_search_results.py` 合并，进入素材分类。所有路都失败才如实告知用户并暂停等待确认。
    - 任一路额度用尽（`quota_exhausted=true`）整批停止，按额度规则处理；平台或接口明显限流（多路同时报错）时回退为逐路串行执行。
@@ -250,10 +251,10 @@ python3 <skillDir>/scripts/outline_reference.py "用户写作需求" --output ou
 两者是**同一目的的主备关系**（都只为学"怎么写"），不是并列的两种搜索：**先查官方库有没有同类成文，没有再用全网兜底**（常见误用是把二者当成并列或互斥关系，导致两级都未执行——既不查官方库，也不做 webSearch 兜底）。**素材清单先行（3.7.5 修复，强制顺序）**：素材分类必须基于两阶段合并产物 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/merged_all.json`（或等价合并文件）的**全量 articles 逐篇归类**，分类结果与合并产物一一对应、不得遗漏。**分类完成后必须把“选中的素材清单”落盘为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/materials_<任务>.json`**——顶层结构固定为 `{"task": "<任务名>", "doc_type": "<文种>", "selected": [ {…}, … ]}`（**选中数组必须挂在顶层 `selected` 键下**，`build_trace_json.py` 按它读取，写成别的键会报"素材清单 selected 为空"；完整示例可运行 `python3 <skillDir>/scripts/build_trace_json.py --sample <合并产物JSON>` 查看），每篇含 `type`/`标题`/`源网址`/`段落`/`发布日期可信度`/`快照链接` 标准字段，该清单是后续写作与溯源 JSON 的唯一材料依据。**禁止手工挑拣后直接写正文、禁止写完正文再反查用了哪些素材、禁止手写脚本/手写 JSON 定义 materials**（写完正文才反查材料、手工挑拣素材，会使正文引用无依据、溯源核验沦为"事后圆场"）。按 `reference/material_usage_guidance.md` 逐篇映射标准字段，字段缺失的如实留空并在核验报告中标注，不得凭记忆补造。
 6. 按 `reference/material_usage_guidance.md` 判断清单内各类材料的正文用途，区分依据、数据、案例和表述参考。
 7. 严禁将外省政策作为本省政策依据；政策依据与数据信息严禁使用自由搜索（webSearch）召回的非官方材料，非官方范文与本地 `standards/` 文种标准冲突时以本地标准为准。
-8. 对政策依据、数据支撑、参考案例做充分性自检；研究资料的口径表/纠错记录出现信息缺口（未给出、未确认、多口径未裁决）必须触发补搜，补搜以关键事实闭环为目标、不设次数上限，在已确认方案边界内自动执行并记入研究资料；越界（新地域、换通道）或仍未闭环时停下向用户确认。
-9. **用户确认素材清单后，再基于该清单写作正文**（3.7.5 修复，强制顺序）：正文按 `material_usage_guidance.md` 逐条引用清单材料，**写作时每处引用即标注 `[n]` 角标，n 对应素材清单序号**（先确认清单、边写边标，**禁止写完正文再反查/补标角标**）。正式写作任务不得把正文初稿作为聊天消息发出，直接生成 Word（执行过搜索时另附 HTML 溯源核验报告）。
-10. 执行过搜索时，正式公文正文不再内嵌来源角标、知识专库链接或溯源卡片；必须另行生成 `标题_溯源核验报告.html`，将完整正文写入 HTML，并把正文中的 `[1]`/`【1】`角标变成可点击的来源跳转。报告顶部展示**用户原始问题全文**（`build_trace_json.py` 装配时用 `--question` 传入用户原话，写入溯源 JSON 顶层 `question`，使溯源报告可脱离对话独立使用）。报告首屏展示核验报告单（依据溯源、引用对应、材料新旧、材料构成、交付前检查）与过程回顾条；正文中每处依据在句后挂引文胶囊（同段同一材料只保留一次），点击胶囊可展开标题链（文章 › 章 › 节面包屑）、原文摘录与查看全文链接；来源文章按段落分块、各段带自己的标题链，政策文件显示发文字号（接口 policyFiles 匹配）；全部召回材料在知识专库视图按检索分组展示。接口返回的原文链接原样给出、不做连通性检测；接口附带的存档快照（screenShotPath）作为附加回看入口。凡通过深知可信搜索召回并写入正文的依据，默认按已完成可信检索和可溯源处理，不得使用“建议核对”“需人工核验”等削弱可信度的措辞。
-11. 溯源核验报告必须按 `reference/search_guide.md` 的固定流程生成：**用 `scripts/build_trace_json.py` 从"素材清单 + 正文（带角标）"装配溯源 JSON 到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_溯源核验报告.json`**（materials 按正文角标序对应素材清单、recalled_materials 自动取清单未引用部分 + 合并产物未选部分、self_check 骨架待填），再调用 `python3 <skillDir>/scripts/source_note_html.py ...` 输出 HTML。**字段契约**：溯源 JSON 必须包含 `document_content`（带 `[n]` 角标）、`materials`（全量引用材料，含标准字段）、`recalled_materials`（全部未引用召回材料，不得留空）、`self_check`（五项检查结果如实写入，**每项值写 `"通过：<说明>"` 或 `"未通过：<说明>"` 字符串**——渲染器按字符串解析，写成 dict 会导致核验单五项"未记录"）；生成 HTML 前必须运行 `python3 <skillDir>/scripts/check_materials.py <溯源JSON> <合并产物JSON>` 校验（材料来源可回溯、字段完整、角标一一对应、recalled 非空），**校验通过后才允许调用渲染脚本**。`document_content` 必须在关键结论后标注 `[1]`、`[2]` 等角标并逐条对应 `materials`——脚本会校验，正文无角标时拒绝生成并报错，必须修正 JSON 后重跑，不得省略角标直接交付。不得由模型手写完整 HTML，不得自行拼接 `<a>`、`onclick`、按钮、卡片或页面样式。
+8. 对政策依据、数据支撑、参考案例做充分性自检；**研究型与综合长篇文种在本条生成研究资料初版**（把已合并检索产物消化为带角标的事实底稿——核心事实总表＋数据与口径表，落盘 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_研究资料.md`，规范见 `reference/research_notes.md`；短公文不启用），初版口径表/纠错记录出现信息缺口（未给出、未确认、多口径未裁决）必须触发补搜，补搜以关键事实闭环为目标、不设次数上限，在已确认方案边界内自动执行并记入研究资料；越界（新地域、换通道）或仍未闭环时停下向用户确认。
+9. **用户确认素材清单后，再基于该清单写作正文**（3.7.5 修复，强制顺序）：研究型与综合长篇文种（调研报告、政策/产业研究、综合性总结与汇报材料）**必须先把研究资料定稿再动笔**——更新第 8 条的初版（分主题详述按正文预定章节组织、角标与素材清单序号一致），**正文基于研究资料定稿写作**，短公文不启用；`check_materials.py` 对研究型文种缺研究资料文件将直接拒绝通过。正文按 `material_usage_guidance.md` 逐条引用清单材料，**写作时每处引用即标注 `[n]` 角标，n 对应素材清单序号**（先确认清单、边写边标，**禁止写完正文再反查/补标角标**）。正式写作任务不得把正文初稿作为聊天消息发出，直接生成产物：命中公文范式则生成 Word；执行过搜索则生成产出物 HTML（两者可同时成立）。
+10. 执行过搜索时，必须另行生成**产出物 HTML**（`XXX.html`，文件名按用户需求确定；单文件顶部切换 **正文 / 溯源核验报告 / 知识专库** 三页）。**正文页只放干净正式内容**（与 Word 正文一致，不带任何角标、素材清单、知识专库链接或 URL）；**溯源核验报告页**展示**用户原始问题全文**（`build_trace_json.py` 装配时用 `--question` 传入用户原话，写入溯源 JSON 顶层 `question`，使报告可脱离对话独立使用）、过程回顾条、核验报告单（依据溯源、引用对应、材料新旧、材料构成、交付前检查），并重排**带 `[n]` 角标的正文**——核验内容（角标、引文胶囊、章节引用徽章）只出现在此页：正文中的 `[1]`/`【1】`角标变成可点击的来源跳转（引文胶囊，同段同一材料只保留一次；点击胶囊可展开标题链「文章 › 章 › 节面包屑」、原文摘录与查看全文链接）；**知识专库页**按检索分组展示全部召回材料（来源文章按段落分块、各段带自己的标题链，政策文件显示发文字号）。接口返回的原文链接原样给出、不做连通性检测；接口附带的存档快照（screenShotPath）作为附加回看入口。凡通过深知可信搜索召回并写入正文的依据，默认按已完成可信检索和可溯源处理，不得使用“建议核对”“需人工核验”等削弱可信度的措辞。
+11. 产出物 HTML 必须按 `reference/search_guide.md` 的固定流程生成：**用 `scripts/build_trace_json.py` 从"素材清单 + 正文（带角标）"装配溯源 JSON 到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_溯源核验报告.json`**（materials 按正文角标序对应素材清单、recalled_materials 自动取清单未引用部分 + 合并产物未选部分、self_check 骨架待填），再调用 `python3 <skillDir>/scripts/source_note_html.py ...` 输出产出物 HTML（正文 / 溯源核验报告 / 知识专库 三页）。**字段契约**：溯源 JSON 必须包含 `document_content`（带 `[n]` 角标）、`materials`（全量引用材料，含标准字段）、`recalled_materials`（全部未引用召回材料，不得留空）、`self_check`（五项检查结果如实写入，**每项值写 `"通过：<说明>"` 或 `"未通过：<说明>"` 字符串**——渲染器按字符串解析，写成 dict 会导致核验单五项"未记录"）；生成 HTML 前必须运行 `python3 <skillDir>/scripts/check_materials.py <溯源JSON> <合并产物JSON>` 校验（材料来源可回溯、字段完整、角标一一对应、recalled 非空），**校验通过后才允许调用渲染脚本**。`document_content` 必须在关键结论后标注 `[1]`、`[2]` 等角标并逐条对应 `materials`——脚本会校验，正文无角标时拒绝生成并报错，必须修正 JSON 后重跑，不得省略角标直接交付。不得由模型手写完整 HTML，不得自行拼接 `<a>`、`onclick`、按钮、卡片或页面样式。
 12. 整理 `materials` 时，凡来自深知可信搜索的材料，必须将原始结果中的 `源网址` 原样写入 `source_url`；不得只写规范化后的文章标题，再依赖标题反查网址。若接口未返回 `源网址`，该材料不显示原文链接；不得猜测、补造或用搜索接口地址代替。
 
 搜索异常处理：
@@ -330,7 +331,7 @@ python3 <skillDir>/scripts/merge_search_results.py result1.json result2.json --o
 - 研究类长篇：`reference/standards/29_research.md`（调研报告）、`reference/standards/30_feasibility.md`（可研报告）、`reference/standards/31_review_material.md`（审查材料）、`reference/standards/32_ai_compute.md`
 - 文种未在以上清单中明确时，先读 `reference/standards/00_index.md` 按索引定位；全部文种标准共 34 个，索引与文件一一对应。
 
-写作时正文不加引用标记。执行过搜索时，正文只写正式内容，不在文末追加素材使用情况或知识专库链接；素材溯源说明作为单独 HTML 辅助文件生成，格式见 `reference/search_guide.md`。
+写作时正文不加引用标记。执行过搜索时，正文只写正式内容，不在文末追加素材使用情况或知识专库链接；可点击溯源由产出物 HTML（正文 / 溯源核验报告 / 知识专库 三页）承载，格式见 `reference/search_guide.md`。
 
 正文一律使用中文全角标点；引号必须使用中文全角引号——双引号用 U+201C “ 与 U+201D ”，单引号用 U+2018 ‘ 与 U+2019 ’；禁止英文半角引号 U+0022 与 U+0027。生成正文时直接写全角引号，不依赖排版脚本转换；定稿检查时按 `reference/anti_ai_patterns.md` 核对。
 
@@ -340,15 +341,15 @@ python3 <skillDir>/scripts/merge_search_results.py result1.json result2.json --o
 
 执行过搜索时，生成正文前必须读取 `reference/material_usage_guidance.md`。它只提供材料使用原则，不强制套用固定结构；写作时应优先满足用户任务和文种要求，再把政策、数据、案例材料转化为支撑观点的内容。
 
-研究型与综合长篇文种（调研报告、政策/产业研究、综合性总结与汇报材料），素材确认后、动笔前必须按 `reference/research_notes.md` 生成研究资料（素材消化为带角标的事实底稿，保存 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_研究资料.md`，角标与溯源 JSON 的 materials 编号一致），正文基于研究资料写作；短公文不启用。写作以深度思考、深度推理组织"事实—问题—原因—对策"链，按素材充分度展开、分析密度优先、禁止注水。
+研究型与综合长篇文种（调研报告、政策/产业研究、综合性总结与汇报材料），素材确认后、动笔前必须按 `reference/research_notes.md` 生成研究资料（素材消化为带角标的事实底稿，保存 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_研究资料.md`，角标与溯源 JSON 的 materials 编号一致），正文基于研究资料写作；短公文不启用。**执行位置在搜索规则第 8/9 条**：分类自检时生成初版（口径表驱动补搜），用户确认清单后定稿、正文基于定稿写作——不得只按本段而不落盘研究资料文件（check_materials 校验拦截）。写作以深度思考、深度推理组织"事实—问题—原因—对策"链，按素材充分度展开、分析密度优先、禁止注水。**篇幅锚点**：正文目标 3500–5000 字（素材充分取上限、素材不足如实精简），每章 ≥3 段，二级要点 ≥120 字，问题/建议章每条按「依据（角标）＋动作＋抓手」组织、每条 ≥100 字——扩充只落在已召回事实上，不新增形容词。
 
-执行过搜索时，全部召回材料（含未引用）进入溯源核验报告材料面板，不在报告中生成知识专库链接区。
+执行过搜索时，全部召回材料（含未引用）进入产出物 HTML 的知识专库页材料面板，不在其中生成独立的知识专库链接区。
 
 高风险事实处理：
 
 - 政策名称、文号、发布日期、精确数字、排名、占比、金额、全国首个/领先/唯一等表述，只有来源明确且口径一致时才写成确定结论。
 - 超出用户题目时间范围的信息，只能作为背景、延续动态或趋势参考，不得混作当期政策、当期成效或已经完成事项。
-- 无法通过深知可信搜索确认的具体数据和文号，不写入正文；如确有参考价值，只能改用概括表述。溯源核验报告只展示已通过深知可信搜索完成召回、来源定位和溯源核验的材料，不再列“需人工核验信息”。
+- 无法通过深知可信搜索确认的具体数据和文号，不写入正文；如确有参考价值，只能改用概括表述。产出物 HTML 的溯源页只展示已通过深知可信搜索完成召回、来源定位和溯源核验的材料，不再列“需人工核验信息”。
 - 通知、函、请示等短公文默认少检索、少堆依据，优先把事项、对象、责任、时限和报送要求写清楚。
 - 调研报告、政策研究报告和产业研究材料必须形成“事实支撑-问题判断-原因分析-对策建议”的链条，避免只堆政策、数据和案例。
 
@@ -383,7 +384,7 @@ python3 <skillDir>/scripts/merge_search_results.py result1.json result2.json --o
 - 用户要求正式 Word 或红头文件
 - 用户明确要求检查、审核、把关
 
-审查清单见 `reference/review_checklist.md`。发现问题时先列问题，再说明修改建议。用户上传已有 Word 时，格式审查和内容审查可以分别执行，也可以组合执行；执行内容审查并使用搜索时，必须生成溯源核验报告 HTML。
+审查清单见 `reference/review_checklist.md`。发现问题时先列问题，再说明修改建议。用户上传已有 Word 时，格式审查和内容审查可以分别执行，也可以组合执行；执行内容审查并使用搜索时，必须生成产出物 HTML。
 
 语言与格式审查时，可按 `reference/anti_ai_patterns.md` 检查旁白句、思考泄露、二元包装、口号收尾、空泛词和格式噪点；需要时可选运行 `python3 <skillDir>/scripts/prose_lint.py <草稿文件> --format --structure` 做语言质检。脚本只提示语言、格式和重复风险，不检查文种要素完整性，不自动改写；不得把脚本结果作为不加判断的硬性清洗命令。
 
@@ -423,9 +424,10 @@ python3 <skillDir>/scripts/template_generator.py 通知 --input 普通Word文件
 
 当前版本不支持自动生成 PDF，也不提供 PDF 转换命令。用户明确要求 PDF 时，生成正式 `.docx` 或红头 `.docx` 后，提示用户使用本机 Word/WPS 的“另存为 PDF”或“导出 PDF”功能完成转换；不得声称已生成 PDF。
 
-生成成功后，优先返回正式 `.docx` 文件路径和一句简短说明。执行过搜索并生成溯源核验报告 HTML 时，可同时返回辅助文件路径，但必须明确主文件是正式成稿、溯源核验报告不是正文附件。不要发送 Markdown 草稿、正文初稿、完整正文或中间文件路径。
+生成成功后，按本次判定返回产物路径和一句简短说明：命中公文范式返回 `.docx` 路径；执行过搜索返回产出物 HTML（`XXX.html`）路径。两者都有时，以正式成稿（Word）为主文件、产出物 HTML 为含溯源与知识专库的辅助文件（其正文页即正式内容），并向用户说明二者关系。不要发送 Markdown 草稿、正文初稿、完整正文或中间文件路径。
 
+**dsh 交付**：产物直接生成在会话工作区 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`（Word 与产出物 HTML），dsh 以工作区为文件视图、访达也可直达——直接向用户展示脚本实际打印的产物路径即可，无需交付复制，也不存在 skill 内部路径打不开的问题。
 
 如需先把正文落为临时 Markdown 文件供脚本读取，必须在同一工作流中继续生成 `.docx`；不得停在 Markdown 草稿，也不得把 Markdown 文件作为阶段性成果发给用户。只有用户明确要求“先看草稿”“先发 Markdown”“不要生成 Word”时，才可以交付 Markdown 或正文预览。
 
-对“写一份/起草/生成/整理/形成/润色/改写……”等所有正式写作任务，默认理解为需要 Word 正式文件交付（执行过搜索时另附 HTML 溯源核验报告）；不得因为用户未写“Word”就先把正文粘贴到聊天窗口。简单会议通知、内部事务通知、短改写等任务同样默认交付 Word。
+对“写一份/起草/生成/整理/形成/润色/改写……”等所有正式写作任务，先按 `reference/task_router.md` 的两个开关判定交付形态：命中 15 种法定公文（含复函、提醒函）→ 生成 Word；执行过搜索 → 生成产出物 HTML（`XXX.html`，正文 / 溯源核验报告 / 知识专库 三页）；两者可同时成立。不得因为用户未写“Word”就先把正文粘贴到聊天窗口，也不得把非公文任务一律产出 Word。

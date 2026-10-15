@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""可信溯源核验报告渲染器：把结构化正文/素材 JSON 渲染为单文件可核验 HTML。
+"""产出物 HTML 渲染器：把结构化正文/素材 JSON 渲染为单文件三页 HTML（正文 / 溯源核验报告 / 知识专库）。
 
 报告定位：不止展示"材料从哪来"（溯源），更要传达"我们查过了，可以交付"（核验）。
-3.7.0 架构（交互形态参考自研原型，数据口径保持自有与真实）：
-- 顶栏：身份章 + 标题 + 工具组（只看正文 / 复制全文 / 打印归档）+ 阅读进度条
-- Hero：大标题 + 真实统计（N 次检索 · M 条材料 · K 处引用）+ 双视图切换
+3.8.0 架构（交互形态参考自研原型，数据口径保持自有与真实）：
+- 顶栏：身份章 + 标题 + 工具组（复制全文 / 打印归档）+ 阅读进度条
+- Hero：大标题 + 真实统计（N 次检索 · M 条材料 · K 处引用）+ 三页切换
 - 过程回顾条：检索 → 入库 → 逐条比对 → 核验完成（静态回放，数字全部真实计算；
   无思考流数据就不展示"思考"步骤——硬造即违背核验诚实性）
-- 核验报告视图（默认）：核验报告单 + 正文分节卡；角标点击跳知识专库定位
-- 知识专库视图（全屏）：大搜索 + 热词（标题/正文高频词真实计算）+ 检索分组 tabs + 材料卡
+- 正文页（默认）：干净正式内容，不带任何角标/胶囊（与 Word 正文一致）
+- 溯源核验报告页：过程回顾 + 核验报告单 + 带角标正文（角标可点击跳来源）
+- 知识专库页（全屏）：大搜索 + 热词（标题/正文高频词真实计算）+ 检索分组 tabs + 材料卡
 三个核验层次：报告级（核验报告单）／材料级（来源卡核验链标记）／引用级（角标一一绑定）。
 诚实原则：脚本真实计算的结果才打勾；无法自动判定的项不虚构展示（"现行效力"人工复核提示行已按产品要求移除）。
 布局为单文件静态 HTML；打印归档模式单栏全展开并附材料附录。
@@ -265,8 +266,9 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
     source["chain_full"] = " › ".join(segments[0]["chain"]) if segments else ""
     # 发文字号（接口 policyFiles.writtenText，本地标题匹配）
     source["doc_number"] = first_str(item.get("文号"), item.get("doc_number"))
-    # 所属搜索条件（多路检索分组）与引用状态（未引用=接口召回但正文未采用）
+    # 所属搜索条件（多路检索分组）、检索通道（深知深度搜索/深知可信搜索）与引用状态
     source["search_key"] = first_str(item.get("搜索条件"), item.get("search_key"))
+    source["channel"] = first_str(item.get("检索通道"), item.get("channel"))
     source["used"] = item.get("已引用", item.get("used", True))
     if not isinstance(source["used"], bool):
         source["used"] = True
@@ -587,18 +589,31 @@ def compute_process_stats(sources: List[Dict[str, str]], answer: str) -> Dict[st
     cond_rows = []
     for key in order:
         group = [s for s in sources if (s.get("search_key") or "").strip() == key]
+        # 该路检索的接口通道（深知深度搜索/深知可信搜索）：取组内多数通道
+        # （同一材料被两接口召回时通道为顿号拼接的多值，按拆分后的单值计数）
+        chan_counts: Dict[str, int] = {}
+        for s in group:
+            ch = (s.get("channel") or "").strip()
+            for token in [t.strip() for t in ch.split("、") if t.strip()]:
+                chan_counts[token] = chan_counts.get(token, 0) + 1
+        channel = max(chan_counts, key=chan_counts.get) if chan_counts else ""
         cond_rows.append({
             "key": key,
             "total": len(group),
             "used": sum(1 for s in group if s.get("used", True)),
+            "channel": channel,
         })
     n_searches = len(cond_rows) or (1 if sources else 0)
+    deep_routes = sum(1 for r in cond_rows if "深度" in r.get("channel", ""))
+    trusted_routes = sum(1 for r in cond_rows if "可信" in r.get("channel", ""))
     used_count = sum(1 for s in sources if s.get("used", True))
     unused_count = len(sources) - used_count
     n_cite_marks = len(re.findall(r"\[(\d+)\]", answer))
     return {
         "conds": cond_rows,
         "n_searches": n_searches,
+        "deep_routes": deep_routes,
+        "trusted_routes": trusted_routes,
         "has_cond_detail": bool(cond_rows),
         "n_materials": len(sources),
         "used_count": used_count,
@@ -607,60 +622,6 @@ def compute_process_stats(sources: List[Dict[str, str]], answer: str) -> Dict[st
     }
 
 
-HOT_STOP = {
-    "关于", "通知", "工作", "意见", "方案", "实施", "有关", "问题", "情况", "报告", "总结",
-    "制度", "体系", "机制", "指导", "贯彻", "落实", "进一步", "以及", "其他", "相关", "以下",
-    "以上", "共和国", "人民", "中华", "国务院", "人民政府", "办公厅", "印发", "试行",
-    "办法", "条例", "若干", "的重点", "有所", "一个", "方面", "方式", "内容", "基本",
-    "发展", "建设", "政策", "产业", "企业", "应用", "改革", "目标", "任务", "规划",
-    "领域", "措施", "支持", "行动", "服务", "管理", "政府",
-}
-
-
-def extract_hot_terms(answer: str, sources: List[Dict[str, str]], top: int = 8) -> List[str]:
-    """知识专库热词：材料标题（加权）+ 检索条件 + 正文的高频 2-4 字词，真实统计。
-
-    泛词过滤：出现在超过 60% 材料标题中的词（如库内全部材料共有的主题词）
-    无法筛出子集，没有筛选价值，剔除。
-    """
-    corpus_parts: List[str] = []
-    for s in sources:
-        if s.get("title"):
-            corpus_parts.extend([s["title"]] * 3)
-        if s.get("search_key"):
-            corpus_parts.extend([s["search_key"]] * 2)
-    clean_answer = re.sub(r"\[\d+\]", "", answer or "")
-    corpus_parts.append(clean_answer)
-    corpus = "\n".join(corpus_parts)
-
-    counts: Dict[str, int] = {}
-    for run in re.findall(r"[一-鿿]{2,}", corpus):
-        for n in (2, 3, 4):
-            for i in range(len(run) - n + 1):
-                gram = run[i:i + n]
-                counts[gram] = counts.get(gram, 0) + 1
-
-    titles = [s.get("title") or "" for s in sources]
-    n_titles = max(1, len(titles))
-    df_limit = max(1, int(n_titles * 0.6))
-
-    cands = [(g, c) for g, c in counts.items()
-             if c >= 2 and g not in HOT_STOP and "的" not in g and not any(ch.isdigit() for ch in g)
-             and sum(1 for t in titles if g in t) <= df_limit]
-    cands.sort(key=lambda x: (-x[1], -len(x[0])))
-    kept: List[Tuple[str, int]] = []
-    for gram, count in cands:
-        redundant = False
-        for kgram, kcount in kept:
-            # 短词是已入选高频长词的子串且计数接近 → 被长词覆盖，剔除
-            if gram in kgram and kcount >= count * 0.6:
-                redundant = True
-                break
-        if not redundant:
-            kept.append((gram, count))
-        if len(kept) >= top:
-            break
-    return [g for g, _ in kept]
 
 
 # ============================================================
@@ -725,7 +686,8 @@ def render_excerpt_html(text: str) -> str:
     return f'<div class="sc-excerpt rich">{sanitize_table_html(value)}</div>'
 
 
-def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str, str]] = None) -> Tuple[List[Dict[str, Any]], set]:
+def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str, str]] = None,
+                         strip_cites: bool = False) -> Tuple[List[Dict[str, Any]], set]:
     """把正文 Markdown 解析为结构化块；同时收集全部角标。
 
     角标渲染为原型式 sup.cite 上标胶囊；段落对应的溯源卡（src-card）由
@@ -782,7 +744,10 @@ def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str
 
     def make_block_repl(block_text: str):
         """按块构造角标替换器：同段同材料只保留最后一次出现的角标（前处整体删除），
-        最后一处挂数字角标 + 引文胶囊——一段中同一材料只出现一次。"""
+        最后一处挂数字角标 + 引文胶囊——一段中同一材料只出现一次。
+        正文页（strip_cites=True）直接删掉全部角标，输出干净正文。"""
+        if strip_cites:
+            return lambda match: ""
         remaining: Dict[str, int] = {}
         for cid in re.findall(r"\[(\d+)\]", block_text):
             remaining[cid] = remaining.get(cid, 0) + 1
@@ -812,7 +777,7 @@ def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str
         # 注意：须把连续角标序列整体换位（如 [13][14]；），否则标点被夹在两个胶囊
         # 中间——[13]；[14] 会让分号"跑到胶囊后边"。
         block = re.sub(r"((?:\[\d+\])+)([。；，、！？：；,.])", r"\2\1", block)
-        ids = citation_ids(block)
+        ids = [] if strip_cites else citation_ids(block)
         repl = make_block_repl(block)
         heading_match = re.match(r"^(#{1,4})\s+(.+)$", block)
         if heading_match:
@@ -826,7 +791,8 @@ def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str
                 table_lines.append(lines[idx].strip())
                 idx += 1
             repl = make_block_repl("\n".join(table_lines))
-            blocks.append({"kind": "table", "html": render_markdown_table(table_lines, repl), "cites": citation_ids("\n".join(table_lines))})
+            blocks.append({"kind": "table", "html": render_markdown_table(table_lines, repl),
+                           "cites": [] if strip_cites else citation_ids("\n".join(table_lines))})
         elif block in {"---", "***"}:
             blocks.append({"kind": "hr", "html": '<hr class="doc-divider">', "cites": []})
             idx += 1
@@ -940,7 +906,14 @@ def render_source_links(url: str, policy_url: str = "", snapshot: str = "", link
 
 def render_verify_panel(v: Dict[str, Any]) -> str:
     """核验报告单：报告级核验结论 + 五项指标。"""
-    manual_checks_html = "".join("<br>· " + esc(x) for x in v.get("manual_checks", []))
+    # 核验明细（溯源 JSON 的 verification_checks）默认折叠——明细可能很长（逐条"已完成…"），
+    # 平铺会把核验单撑得过高；折叠后默认只见一句方式说明，点开才展开逐条明细。
+    _checks = [str(x) for x in (v.get("manual_checks") or []) if str(x).strip()]
+    manual_checks_html = ""
+    if _checks:
+        _items = "".join(f"<li>{esc(x)}</li>" for x in _checks)
+        manual_checks_html = (f'<details class="v-checks"><summary>查看核验明细（{len(_checks)} 项）</summary>'
+                              f'<ul>{_items}</ul></details>')
     ov = v["overall"]
     state = "ok" if ov["passed"] else "fail"
     stamp = '<span class="v-stamp">已核验</span>' if ov["passed"] else '<span class="v-stamp bad">核验未通过</span>'
@@ -976,7 +949,7 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
         bd_html = '<div class="vi"><span class="s none">— 引用对应 0/0</span><span class="d">正文里没有来源角标</span></div>'
     elif not bd["unbound"]:
         bd_html = (f'<div class="vi"><span class="s ok">✓ 引用对应 {bd["bound"]}/{bd["total"]}</span>'
-                   f'<span class="d">正文每处 [n] 都能找到对应来源文章</span></div>')
+                   f'<span class="d">正文每一处引用都已对回来源文章，点开即可核对原文</span></div>')
     else:
         unbound_text = "、".join(f"[{esc(x)}]" for x in bd["unbound"][:8])
         bd_html = (f'<div class="vi"><span class="s fail">✗ 引用对应 {bd["bound"]}/{bd["total"]}</span>'
@@ -1000,9 +973,8 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
                 f'<span class="d">{esc(" · ".join(parts)) if parts else "材料没标类型"}</span></div>')
 
     sc = v["self_check"]
+    selfcheck_notes_html = ""
     if sc["status"] == "pass":
-        notes = "；".join(note for _, note in sc["items"].values() if note)
-        title_attr = f' title="{esc(notes)}"' if notes else ""
         missing = sc.get("missing_items") or []
         none_count = sum(1 for status, _ in sc["items"].values() if status == "none")
         unrecorded = len(missing) + none_count
@@ -1011,10 +983,15 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
         if missing:
             detail = f"缺少：{'、'.join(missing)}"
         else:
-            item_names = "、".join(sc["items"].keys())
-            detail = item_names + (" · 悬停查看说明" if notes else "")
-        sc_html = (f'<div class="vi"><span class="s ok"{title_attr}>✓ 交付前检查 {sc["passed"]}/{sc["total"]}{esc(none_note)}</span>'
+            detail = "、".join(sc["items"].keys())
+        sc_html = (f'<div class="vi"><span class="s ok">✓ 交付前检查 {sc["passed"]}/{sc["total"]}{esc(none_note)}</span>'
                    f'<span class="d">{esc(detail)}</span></div>')
+        # 逐项说明默认折叠（与底部"核验明细"同款交互、触屏可用），不再用鼠标悬浮 tooltip
+        note_items = [(label, note) for label, (status, note) in sc["items"].items() if note]
+        if note_items:
+            _li = "".join(f"<li><b>{esc(label)}</b>：{esc(note)}</li>" for label, note in note_items)
+            selfcheck_notes_html = (f'<details class="v-checks"><summary>查看交付前检查说明（{len(note_items)} 项）</summary>'
+                                    f'<ul>{_li}</ul></details>')
     elif sc["status"] == "fail":
         failed_parts = []
         for label, (status, note) in sc["items"].items():
@@ -1036,7 +1013,7 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
       <div class="v-grid">
         {tr_html}{bd_html}{fr_html}{cov_html}{sc_html}
       </div>
-      <div class="v-note">核验方式：先用深知可信搜索找权威来源，再把正文每处依据和原文逐条比对（都能点开原文回看），最后做了交付前五项检查。{manual_checks_html}</div>
+      <div class="v-note">AI 已完成自验收，正文依据可逐条点开原文复核。{selfcheck_notes_html}{manual_checks_html}</div>
     </div>"""
 
 
@@ -1070,10 +1047,12 @@ def render_src_card(jb: Dict[str, str], cid: str, dup: bool = False) -> str:
     )
 
 
-def render_section_cards(sections: List[Dict[str, Any]], sources: List[Dict[str, str]]) -> str:
+def render_section_cards(sections: List[Dict[str, Any]], sources: List[Dict[str, str]],
+                         with_ids: bool = True, id_prefix: str = "sec") -> str:
     """正文渲染（原型复刻）：chapter（h2）+ lead/para 段落 + 段后 src-card 溯源卡。
 
     溯源卡按段内角标顺序输出；同一材料在同段只出一张，跨段重复出现标记 dup-card（灰化）。
+    with_ids=False 时不输出 `id="sec-N"`（正文页锚点唯一，溯源核验报告页复用同一份正文时避免重复 id）。
     """
     parts: List[str] = []
     first_para = True
@@ -1093,7 +1072,8 @@ def render_section_cards(sections: List[Dict[str, Any]], sources: List[Dict[str,
                 state = "bad" if unbound else ""
                 text = f"本章引用 {len(sec_cites)} 处" + (f" · {unbound} 处未绑定" if unbound else " · 已核验")
                 badge_html = f'<span class="sec-badge {state}">{esc(text)}</span>'
-            parts.append(f'<section class="chapter" id="sec-{sec_idx}">'
+            sec_id = f' id="{id_prefix}-{sec_idx}"' if with_ids else ""
+            parts.append(f'<section class="chapter"{sec_id}>'
                          f'<header class="ch-head"><h2>{esc(chapter_title)}</h2>{badge_html}</header>')
         for b in sec["blocks"]:
             if b["kind"] == "heading":
@@ -1221,9 +1201,22 @@ def render_process_bar(stats: Dict[str, Any], verification: Dict[str, Any]) -> s
     ov = verification["overall"]
     tr = verification["traceability"]
     first_query = stats["conds"][0]["key"] if stats["conds"] else ""
+    # 步骤一标题按接口通道拆分（深度搜索与可信搜索是两个接口，不混计成一个数）；
+    # 无通道信息（历史 JSON）时退回"深知检索 N 次"
+    deep_n = stats.get("deep_routes", 0)
+    trusted_n = stats.get("trusted_routes", 0)
+    if deep_n and trusted_n:
+        step1_title = f"深度搜索 {deep_n} 路 · 可信补搜 {trusted_n} 次"
+    elif deep_n:
+        step1_title = f"深知深度搜索 {deep_n} 路"
+    elif trusted_n:
+        step1_title = f"深知可信搜索 {trusted_n} 次"
+    else:
+        step1_title = f"深知检索 {stats['n_searches']} 次"
     detail_rows = "".join(
-        f'<div class="pd-row"><b>{esc(row["key"])}</b>'
-        f'<span>召回 {row["total"]} 条 · 正文采用 {row["used"]} 条</span></div>'
+        f'<div class="pd-row"><b>{esc(row["key"])}'
+        + (f'（{"深度搜索+可信搜索" if ("深度" in row.get("channel", "") and "可信" in row.get("channel", "")) else ("深度搜索" if "深度" in row.get("channel", "") else "可信搜索")}）' if row.get("channel") else "")
+        + f'</b><span>召回 {row["total"]} 条 · 正文采用 {row["used"]} 条</span></div>'
         for row in stats["conds"]
     ) or '<div class="pd-row"><span>本次溯源 JSON 未记录各次检索条件</span></div>'
     detail_hint = f'{esc(short(first_query, 26))}…' if (stats["n_searches"] > 1 and first_query) else "查看检索明细"
@@ -1238,12 +1231,12 @@ def render_process_bar(stats: Dict[str, Any], verification: Dict[str, Any]) -> s
     step4_label = "核验完成" if ov["passed"] else "核验未完全通过"
     step4_sub = "结论：正文依据逐条对过原文" if ov["passed"] else esc(short("；".join(ov["reasons"]) or "见核验报告单", 30))
     return f"""
-    <section class="process" aria-label="生成过程回顾">
-      <div class="p-head"><b>过程回顾</b><span>数字来自本次任务的真实记录</span></div>
+    <section class="process" aria-label="AI 自验收">
+      <div class="p-head"><b>AI 自验收</b><span>交付前由 AI 自动完成，数字来自本次任务的真实记录</span></div>
       <ol class="p-steps">
         <li class="p-step expandable" id="p-step-search" role="button" tabindex="0" title="展开各路检索明细">
           <span class="p-no">1</span>
-          <div class="p-txt"><b>深知检索 {stats['n_searches']} 次</b><i>{step1_sub}</i></div>
+          <div class="p-txt"><b>{esc(step1_title)}</b><i>{step1_sub}</i></div>
         </li>
         <li class="p-arrow" aria-hidden="true">›</li>
         <li class="p-step">
@@ -1265,7 +1258,7 @@ def render_process_bar(stats: Dict[str, Any], verification: Dict[str, Any]) -> s
     </section>"""
 
 
-def render_library_view(sources: List[Dict[str, str]], hot_terms: List[str]) -> str:
+def render_library_view(sources: List[Dict[str, str]], doc_title: str = "") -> str:
     """知识专库全屏视图：大搜索 + 热词 + 检索分组 tabs + 材料卡列表。"""
     if not sources:
         return ('<section class="view" id="view-library" aria-label="知识专库">'
@@ -1288,30 +1281,18 @@ def render_library_view(sources: List[Dict[str, str]], hot_terms: List[str]) -> 
     tabs = [f'<button class="on" data-cond="" type="button">全部（{len(sources)}）</button>']
     for name, count in conds:
         tabs.append(f'<button data-cond="{esc(name)}" type="button">{esc(name)}（{count}）</button>')
-    if unused_sources:
-        tabs.append(f'<button data-cond="__unused__" type="button">未引用（{len(unused_sources)}）</button>')
-
-    hot_html = ""
-    if hot_terms:
-        hot_items = "".join(f'<button class="hot-term" type="button">{esc(term)}</button>' for term in hot_terms)
-        hot_html = f'<div class="hot-terms" aria-label="热门搜索词"><span class="hot-label">大家都在搜</span>{hot_items}</div>'
-
     cards_html = "".join(render_source_card(s) for s in used_sources)
     cards_html += "".join(render_source_card(s) for s in unused_sources)
 
-    cited_verified = sum(1 for s in used_sources if s.get("verified"))
-    badge = "全部已核验" if used_sources and cited_verified == len(used_sources) else f"{cited_verified}/{len(used_sources)} 已核验"
+    lib_title = f"知识专库：{doc_title}" if (doc_title or "").strip() else "知识专库"
     return f"""
     <section class="view" id="view-library" aria-label="知识专库">
       <div class="lib-head">
-        <div class="lib-title"><b>知识专库</b>
-          <span>共 {len(sources)} 条 · 已引用 {len(used_sources)} · {esc(badge)}</span>
-        </div>
+        <div class="lib-title"><b>{esc(lib_title)}</b></div>
         <div class="lib-searchWrap">
           <span class="lib-searchIcon" aria-hidden="true">⌕</span>
           <input class="lib-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源文章">
         </div>
-        {hot_html}
         <div class="lib-tabs" role="tablist" aria-label="按检索分组筛选">{"".join(tabs)}</div>
       </div>
       <div class="lib-list" id="lib-list">{cards_html}</div>
@@ -1333,7 +1314,7 @@ def render_toc(sections: List[Dict[str, Any]]) -> str:
             continue
         number, title_text = split_heading_number(title)
         label = f"{number} {title_text}" if (number and title_text) else title_text
-        items.append(f'<a href="#sec-{i}">{esc(short(label, 16))}</a>')
+        items.append(f'<a href="#sec-{i}" data-sec="{i}">{esc(short(label, 16))}</a>')
     if len(items) < 6:
         return ""
     return f'<nav class="toc" aria-label="章节目录">{"".join(items)}</nav>'
@@ -1385,16 +1366,20 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
   color:var(--ink);background:#f4f5f7;line-height:1.75;font-size:14.5px}
 a{color:var(--brand)}
 
-/* ===== 顶栏 ===== */
-.topbar{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:9px 22px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--line)}
-.tb-left{display:flex;align-items:center;gap:10px;min-width:0}
+/* ===== Banner 统一区 =====
+   2026-10-14 反馈意见一：整体结构＝上部 banner 区＋下部正文区。
+   banner 内统一收纳：文档名＋三切换＋工具（复制/导出）＋原问题＋统计；
+   切换三页时 banner 高度与位置保持不变（同一容器，无页面各自的顶部块）。 */
+.banner{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:8px 22px 9px}
+.banner-bar{display:flex;align-items:center;gap:14px;max-width:1080px;margin:0 auto}
+.banner-bar .tb-title{flex:0 1 auto;min-width:0;max-width:30%;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;color:var(--muted);font-size:12.5px}
+.banner-bar .view-switch{margin:0 auto}
+.banner-bar .tb-tools{flex:0 0 auto}
 .tb-stamp{flex:none;font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:4px;text-indent:4px}
 .tb-stamp::before,.tb-stamp::after{content:"";display:inline-block;width:22px;border-top:1px solid var(--line-strong);
   vertical-align:middle;margin:0 6px}
-.tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:13px}
-.tb-right{display:flex;align-items:center;gap:8px;flex:none}
 .view-switch{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
 .view-switch button{border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:700;
   padding:5px 14px;cursor:pointer}
@@ -1415,33 +1400,27 @@ a{color:var(--brand)}
 .progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:transparent}
 .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6512ad,#8b5cf6)}
 
-/* ===== Hero ===== */
-.hero{position:relative;background:linear-gradient(180deg,#fbfaff 0%,#f7f4fd 100%);
-  color:var(--ink);padding:32px 22px 58px;text-align:center;border-bottom:1px solid var(--line)}
-.r-badge{display:inline-flex;align-items:center;gap:14px;margin:0 0 8px;
-  background:var(--grad);color:#fff;border-radius:999px;padding:4px 22px;
-  font-size:15px;font-weight:800;letter-spacing:7px;text-indent:7px;line-height:1.6;
-  box-shadow:0 2px 8px rgba(101,18,173,.22)}
-.hero h1{margin:0 0 10px;font-size:24px;line-height:1.5;max-width:860px;margin-left:auto;margin-right:auto;color:var(--ink)}
-.hero .meta{color:var(--muted);font-size:13px;letter-spacing:.5px}
+/* ===== banner 内的原问题行与统计行 ===== */
+.banner .orig-q{max-width:1080px;margin:7px auto 0;color:var(--ink);font-size:13.5px;line-height:1.6;text-align:center}
+.banner .orig-q b{color:var(--brand);margin-right:2px}
+.banner .meta{max-width:1080px;margin:3px auto 0;color:var(--muted);font-size:11.5px;letter-spacing:.3px;text-align:center}
+.banner-bar .view-switch{border-color:#d9c9f4;background:#fff;box-shadow:0 1px 3px rgba(24,20,40,.04)}
+.banner-bar .view-switch button{color:#70678a;padding:6px 18px;font-size:13px}
+.banner-bar .view-switch button.on{background:var(--grad);color:#fff}
 /* 原问题行：报告须含完整原问题才能独立使用 */
-.hero .orig-q{margin-top:8px;padding:8px 14px;background:rgba(255,255,255,.72);border:1px solid var(--line);
-  border-radius:10px;color:var(--ink);font-size:13.5px;line-height:1.7;text-align:left}
-.hero .orig-q b{color:var(--brand);margin-right:2px}
-.hero-switch{margin-top:16px;display:flex;justify-content:center}
-.hero-switch .view-switch{border-color:#d9c9f4;background:#fff;box-shadow:0 1px 3px rgba(24,20,40,.04)}
-.hero-switch .view-switch button{color:#70678a;padding:6px 22px;font-size:13px}
-.hero-switch .view-switch button.on{background:var(--grad);color:#fff}
 
 /* ===== 容器与视图 ===== */
 .container{max-width:1080px;margin:0 auto;padding:0 18px}
-.app[data-view="library"] #view-report{display:none}
-#view-library{display:none}
+.app{padding-top:16px}
+/* 三页产出物：正文 / 溯源核验报告 / 知识专库，单文件顶部切换 */
+#view-body,#view-report,#view-library{display:none}
+.app[data-view="body"] #view-body{display:block}
+.app[data-view="report"] #view-report{display:block}
 .app[data-view="library"] #view-library{display:block}
 
 /* ===== 过程回顾条 ===== */
 .process{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-1);
-  padding:15px 20px 13px;margin:-36px auto 16px;position:relative}
+  padding:15px 20px 13px;margin:0 auto 16px;position:relative}
 .p-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
 .p-head b{font-size:14.5px;color:var(--navy);letter-spacing:1px}
 .p-head span{font-size:11.5px;color:var(--muted)}
@@ -1468,7 +1447,7 @@ a{color:var(--brand)}
 .pd-row span{color:var(--muted)}
 
 /* ===== 核验报告视图 ===== */
-#view-report{padding-bottom:26px}
+#view-body,#view-report{padding-bottom:26px}
 .warn-box{margin:0 0 16px;padding:13px 16px;border:1.5px solid var(--danger);border-radius:10px;
   background:#fdf3f3;color:#8f2626;font-size:13.5px;line-height:1.7}
 .verify{margin:0 0 16px;background:#fff;border:1px solid #bfe8da;border-left:4px solid var(--ok);
@@ -1492,6 +1471,15 @@ a{color:var(--brand)}
 .vi .s.man{color:var(--case)}
 .vi .s.none{color:var(--muted)}
 .vi .d{color:var(--muted);min-width:0}
+/* 溯源核验报告页正文区的文头标题（反馈意见：标题放正文区，而非页面顶部） */
+.paper-title{margin:0 0 18px;font-size:20px;font-weight:800;color:var(--ink);text-align:center;line-height:1.55;letter-spacing:.3px}
+.v-checks{margin-top:9px}
+.v-checks summary{cursor:pointer;color:var(--brand);font-weight:700;font-size:12.5px;list-style:none;display:inline-flex;align-items:center;gap:5px}
+.v-checks summary::-webkit-details-marker{display:none}
+.v-checks summary::before{content:"＋";font-weight:700;font-size:12px}
+.v-checks[open] summary::before{content:"－"}
+.v-checks ul{margin:7px 0 0 4px;padding-left:16px}
+.v-checks li{font-size:12.5px;color:var(--sub);line-height:1.72;margin:5px 0}
 .v-note{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--muted);line-height:1.7}
 
 /* 正文（原型复刻）：章节 / 段落 / 角标 / 句后溯源卡 */
@@ -1573,29 +1561,23 @@ a.jb-quote{text-decoration:none}
 #view-library{padding:26px 0 30px}
 .lib-head{max-width:860px;margin:0 auto 16px;text-align:center}
 .lib-title{margin-bottom:14px}
-.lib-title b{font-size:17px;color:var(--navy);letter-spacing:2px}
-.lib-title span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.lib-title b{font-size:16px;color:var(--navy);letter-spacing:.5px;line-height:1.5}
 .lib-searchWrap{position:relative;max-width:620px;margin:0 auto}
 .lib-searchIcon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#a6adbd;font-size:16px;font-weight:700}
 .lib-search{width:100%;padding:11px 16px 11px 38px;border:1.5px solid var(--line-strong);border-radius:999px;
   font-size:14px;background:#fff;box-shadow:var(--shadow-1);outline:none}
 .lib-search:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(139,92,246,.18)}
-.hot-terms{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:12px;align-items:center}
-.hot-label{font-size:12px;color:var(--muted)}
-.hot-term{border:0;border-radius:999px;background:var(--brand-soft);color:var(--brand);
-  font-size:12.3px;font-weight:700;padding:3px 13px;cursor:pointer}
-.hot-term:hover{background:var(--grad);color:#fff}
 .lib-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px}
 .lib-tabs button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
   padding:4px 13px;font-size:12.3px;cursor:pointer}
 .lib-tabs button.on{background:var(--grad);border-color:var(--brand);color:#fff;font-weight:700}
-.lib-list{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:14px}
+.lib-list{max-width:860px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 .lib-empty{max-width:860px;margin:30px auto;text-align:center;color:var(--muted);font-size:13.5px}
 .lib-empty.hide{display:none}
 .lib-foot{text-align:center;color:var(--muted);font-size:11.5px;padding:18px 0 0;line-height:1.8}
 
 /* ===== 材料卡 ===== */
-.scard{border:1px solid var(--line);border-left-width:3px;border-radius:12px;padding:14px 18px;
+.scard{min-width:0;border:1px solid var(--line);border-left-width:3px;border-radius:12px;padding:14px 18px;
   background:#fff;box-shadow:var(--shadow-1);transition:box-shadow .25s}
 .scard:hover{box-shadow:var(--shadow-2)}
 .scard.pol{border-left-color:var(--policy)}
@@ -1648,15 +1630,13 @@ a.jb-quote{text-decoration:none}
   line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toc a.on{color:var(--brand);border-left-color:var(--brand);font-weight:700}
 /* 切到知识专库视图时隐藏章节目录（避免进入专库页后左侧仍残留目录栏）。
-   目录节点渲染在 .app 之后（.app 的兄弟节点），故主规则用兄弟选择器；同时兼容其被移入 .app 内的情况。 */
+   正文页与溯源核验报告页都有分节正文，目录在这两页都显示；目录节点渲染在 .app 之后
+   （.app 的兄弟节点），故主规则用兄弟选择器；同时兼容其被移入 .app 内的情况。 */
 .app[data-view="library"] ~ .toc,.app[data-view="library"] .toc{display:none}
 @media (max-width:1460px){.toc{display:none}}
 
+/* 顶部任务区（三切换＋原问题＋工具）样式已并入顶部 .banner 统一区 */
 .foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
-
-/* ===== 只看正文（纯净阅读态） ===== */
-body.reading .process,body.reading .verify,body.reading .jb,body.reading .sec-badge,
-body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!important}
 
 /* ===== 打印附录 ===== */
 .print-appendix{display:none}
@@ -1666,23 +1646,23 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
 .sheet{display:none}
 @media (max-width:680px){
   body{font-size:14px;line-height:1.8}
-  .topbar{padding:7px 10px;gap:6px}
+  .banner{padding:6px 10px 7px}
   .tb-stamp{font-size:11px;letter-spacing:2px;text-indent:2px}
   .tb-stamp::before,.tb-stamp::after{width:12px;margin:0 4px}
-  .tb-title{display:none}
-  .topbar .view-switch{display:none}
+  .banner-bar{flex-wrap:wrap;justify-content:center;gap:7px}
+  .banner-bar .tb-title{display:none}
+  .banner-bar .view-switch{margin:0}
+  .banner-bar .view-switch button{padding:5px 11px;font-size:12px}
+  .banner .orig-q{font-size:12.5px}
+  .banner .meta{font-size:11px}
   .tb-tools button{font-size:11.5px;padding:4px 8px}
-  .hero{padding:24px 14px 50px}
   .ch-head{gap:8px;margin-bottom:14px;flex-wrap:nowrap}
   .ch-head h2{font-size:17px;line-height:1.45}
+  .paper-title{font-size:17.5px;margin-bottom:16px}
   .ch-head::after{display:none}
   .ch-head .sec-badge{font-size:10.5px;padding:2px 7px;white-space:nowrap}
   .jb-name{max-width:calc(100vw - 72px)}
-  .r-badge{font-size:13.5px;letter-spacing:6px;text-indent:6px;gap:10px}
-  .hero h1{font-size:18.5px}
-  .hero .meta{font-size:11.5px;line-height:1.7}
-  .hero-switch .view-switch button{padding:6px 16px;font-size:12.5px}
-  .process{margin-top:-30px;padding:12px 12px 11px}
+  .process{padding:12px 12px 11px}
   .p-step{flex:1 1 100%}
   .p-arrow{display:none}
   .verify{padding:13px 14px}
@@ -1707,7 +1687,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     -webkit-overflow-scrolling:touch;scrollbar-width:none}
   .lib-tabs::-webkit-scrollbar{display:none}
   .lib-tabs button{flex:none}
-  .lib-list{grid-template-columns:1fr;gap:10px}
+  .lib-list{grid-template-columns:minmax(0,1fr);gap:10px}
   .scard{padding:10px 11px}
   .crumb{font-size:11px}
   .sc-excerpt{font-size:11.5px}
@@ -1741,13 +1721,14 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
 
 /* ===== 打印归档 ===== */
 @media print{
-  .topbar,.process .p-detail,.hero-switch,.tb-tools,.view-switch,.lib-head,.toc,.sheet,.sheet-mask,
+  .banner-bar,.process .p-detail,.lib-head,.toc,.sheet,.sheet-mask,
   .progress{display:none!important}
-  #view-library{display:none!important}
-  #view-report{display:block!important}
-  .app[data-view="library"] #view-report{display:block!important}
-  .hero{background:none;border:0;color:var(--ink);padding:10px 0 4px}
-  .hero .meta{color:var(--muted)}
+  /* 溯源核验报告导出：三页顺序打印 */
+  #view-body,#view-report,#view-library{display:block!important}
+  .banner{position:static;background:none;border:0;padding:0 0 6px}
+  .banner .orig-q{text-align:left;font-size:13px}
+  .banner .meta{color:var(--muted);text-align:left}
+  .app{padding-top:0}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .process{box-shadow:none;margin:6px 0 12px}
   .verify{border-color:#bbb;box-shadow:none;break-inside:avoid}
@@ -1764,13 +1745,14 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   .jb.active{break-inside:avoid}
   .jb.active .jb-body{display:block!important}
   .jb.active .jb-body .jb-quote{break-inside:avoid}
-  body.reading .verify,body.reading .process,body.reading .ev-row,body.reading .sec-badge,
-  body.reading .cite{display:none!important}
   .print-appendix{display:block;break-before:page}
-  body.print-body-only .verify,body.print-body-only .process,body.print-body-only .print-appendix,
-  body.print-body-only .jb,body.print-body-only .foot{display:none!important}
+  body.print-body-only #view-report,body.print-body-only #view-library,
+  body.print-body-only .print-appendix,body.print-body-only .foot{display:none!important}
   .print-appendix h3{font-size:15px;color:var(--navy);border-bottom:1px solid #999;padding-bottom:6px;margin:0 0 12px}
   .print-appendix .scard{margin-bottom:10px}
+  /* 打印时宽表格贴合页宽（屏幕端靠 .sc-excerpt.rich 横向滚动，纸张上不能滚） */
+  .print-appendix .sc-excerpt.rich,.sc-excerpt.rich{overflow-x:visible}
+  .print-appendix .sc-excerpt.rich table,.sc-excerpt.rich table{width:100%!important;min-width:0}
 }
 """
 
@@ -1783,8 +1765,9 @@ PAGE_JS = """
   var app = $(".app");
   var isMobile = function () { return window.matchMedia("(max-width:680px)").matches; };
 
-  /* ===== 1. 双视图切换（保存/恢复各自滚动位置） ===== */
-  var savedScroll = { report: 0, library: 0 };
+  /* ===== 1. 三页切换（正文 / 溯源核验报告 / 知识专库；保存/恢复各自滚动位置） ===== */
+  var savedScroll = { body: 0, report: 0, library: 0 };
+  var viewChangeHook = null; /* 切页后重算目录锚点等 */
   function setView(view) {
     if (!app || app.getAttribute("data-view") === view) return;
     savedScroll[app.getAttribute("data-view") || "report"] = window.scrollY;
@@ -1793,6 +1776,7 @@ PAGE_JS = """
       b.classList.toggle("on", b.getAttribute("data-view") === view);
     });
     window.scrollTo(0, Math.max(0, savedScroll[view] || 0));
+    if (viewChangeHook) viewChangeHook(view);
   }
   $$(".view-switch button").forEach(function (b) {
     b.addEventListener("click", function () { setView(b.getAttribute("data-view")); });
@@ -1809,26 +1793,14 @@ PAGE_JS = """
   window.addEventListener("scroll", updateProgress, { passive: true });
   updateProgress();
 
-  /* ===== 3. 只看正文（纯净阅读态切换） ===== */
-  var readBtn = $("#btn-reading");
-  if (readBtn) {
-    readBtn.addEventListener("click", function () {
-      var on = document.body.classList.toggle("reading");
-      readBtn.setAttribute("aria-pressed", on ? "true" : "false");
-      readBtn.textContent = on ? "显示核验" : "只看正文";
-      /* 只看正文只作用于核验报告视图：正在知识专库时切回报告，专库不受影响 */
-      if (on && app && app.getAttribute("data-view") !== "report") setView("report");
-    });
-  }
-
-  /* ===== 4. 复制全文（章节标题 + 段落 + 表格，去角标） ===== */
+  /* ===== 3. 复制全文（章节标题 + 段落 + 表格，去角标） ===== */
   var copyBtn = $("#btn-copy");
   if (copyBtn) {
     copyBtn.addEventListener("click", function () {
       var parts = [];
       /* 按文档流顺序收集章节标题/段落/表格；克隆后剔除引文胶囊与角标，
          只复制正文本身（胶囊标题/展开摘录/编号数字均不带出） */
-      var nodes = $$("#view-report .ch-head h2, #view-report .lead, #view-report .para, #view-report .tbl-wrap");
+      var nodes = $$("#view-body .ch-head h2, #view-body .lead, #view-body .para, #view-body .tbl-wrap");
       nodes.sort(function (a, b) { return (a.compareDocumentPosition(b) & 4) ? -1 : 1; });
       nodes.forEach(function (el) {
         var clone = el.cloneNode(true);
@@ -1863,26 +1835,45 @@ PAGE_JS = """
     });
   }
 
-  /* ===== 5. 打印归档（PDF）：下拉双选项——只打印正文 / 完整归档 ===== */
-  var printBtn = $("#btn-print");
-  var printDrop = $("#print-drop");
+  /* ===== 5. 导出：正文 Markdown / PDF（浏览器打印另存为 PDF） ===== */
+  var exportBtn = $("#btn-export");
+  var exportDrop = $("#export-drop");
+  function docTitleForFile() {
+    var t = $(".tb-title");
+    var name = (t ? t.textContent.trim() : "") || document.title || "文稿";
+    return name.replace(/[\\/:*?"<>|]+/g, "_").trim() || "文稿";
+  }
+  function exportMarkdown() {
+    var el = document.getElementById("doc-export");
+    var data = { title: docTitleForFile(), markdown: "" };
+    if (el) { try { data = JSON.parse(el.textContent) || data; } catch (err) {} }
+    var blob = new Blob([data.markdown || ""], { type: "text/markdown;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = (data.title || docTitleForFile()) + ".md";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 800);
+  }
   function printBy(mode) {
     if (mode === "body") document.body.classList.add("print-body-only");
-    if (printDrop) printDrop.hidden = true;
+    if (exportDrop) exportDrop.hidden = true;
     window.print();
   }
-  if (printBtn && printDrop) {
-    printBtn.addEventListener("click", function (e) {
+  if (exportBtn && exportDrop) {
+    exportBtn.addEventListener("click", function (e) {
       e.stopPropagation();
-      printDrop.hidden = !printDrop.hidden;
+      exportDrop.hidden = !exportDrop.hidden;
     });
-    printDrop.addEventListener("click", function (e) {
+    exportDrop.addEventListener("click", function (e) {
       e.stopPropagation();
       var t = e.target.closest("button");
       if (!t) return;
-      printBy(t.id === "print-body" ? "body" : "full");
+      if (t.id === "export-md") { exportMarkdown(); exportDrop.hidden = true; return; }
+      printBy(t.id === "export-pdf-body" ? "body" : "full");
     });
-    document.addEventListener("click", function () { printDrop.hidden = true; });
+    document.addEventListener("click", function () { exportDrop.hidden = true; });
     /* 打印结束移除临时模式（浏览器打印窗口关闭后触发） */
     window.addEventListener("afterprint", function () { document.body.classList.remove("print-body-only"); });
   }
@@ -2044,15 +2035,6 @@ PAGE_JS = """
   });
   var search = $(".lib-search");
   if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); applyFilter(); });
-  $$(".hot-term").forEach(function (t) {
-    t.addEventListener("click", function () {
-      if (!search) return;
-      search.value = t.textContent.trim();
-      kw = search.value.toLowerCase();
-      applyFilter();
-      if (search.focus) search.focus();
-    });
-  });
 
   /* ===== 8. 过程回顾条：检索步骤展开 ===== */
   var pStep = $("#p-step-search");
@@ -2065,20 +2047,30 @@ PAGE_JS = """
     });
   }
 
-  /* ===== 9. 章节目录（spy） ===== */
+  /* ===== 9. 章节目录（spy；正文页与溯源核验报告页共用，按当前视图切换锚点） ===== */
   var toc = $(".toc");
   if (toc) {
     var links = $$("a", toc);
-    var secs = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+    function tocPrefix() {
+      var v = app ? app.getAttribute("data-view") : "";
+      return v === "report" ? "rsec" : (v === "body" ? "sec" : "");
+    }
+    function tocSecs() {
+      var p = tocPrefix();
+      if (!p) return [];
+      return links.map(function (a) { return document.getElementById(p + "-" + a.getAttribute("data-sec")); });
+    }
+    var secs = tocSecs();
     links.forEach(function (a) {
       a.addEventListener("click", function (e) {
         e.preventDefault();
-        var target = document.querySelector(a.getAttribute("href"));
+        var p = tocPrefix();
+        var target = p ? document.getElementById(p + "-" + a.getAttribute("data-sec")) : null;
         if (!target) return;
         /* 手动定位而非 scrollIntoView({block:"start"})：后者把标题顶到视口 y=0，
            会被 sticky 顶栏盖住（点"四、…"后一级标题看不见）。
            偏移量与目录吸顶位置同一基准（顶栏高 + 20px）。 */
-        var bar = document.querySelector(".topbar");
+        var bar = document.querySelector(".banner");
         var offset = (bar ? bar.offsetHeight : 0) + 20;
         var y = target.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
@@ -2091,24 +2083,20 @@ PAGE_JS = """
       links.forEach(function (a, i) { a.classList.toggle("on", i === current); });
     }
     window.addEventListener("scroll", spy, { passive: true });
-    spy();
-    /* 目录纵向定位：此前 CSS 写死 top:120px，目录顶部与页头齐平、离正文很远。
-       改为——初始与正文首节对齐，滚动时吸附在顶栏下方。 */
-    var topbar = document.querySelector(".topbar");
+    /* 目录纵向定位：初始与正文首节对齐，滚动时吸附在顶栏下方（目录过长由 CSS max-height 内部滚动兜底）。 */
+    var bannerEl = document.querySelector(".banner");
     function placeToc() {
       var first = secs[0];
       if (!first) return;
-      var stick = (topbar ? topbar.offsetHeight : 0) + 20;
+      var stick = (bannerEl ? bannerEl.offsetHeight : 0) + 20;
       var want = Math.round(first.getBoundingClientRect().top);
-      /* 不再按"视口内放不放得下"压缩位置：正文首节上方还有页头、
-         过程回顾和核验单，首屏内它常位于视口之外；若按 innerHeight 把目录上移，目录会被
-         顶到页面中上部，反而显得"悬得过高"，与正文脱节。直接跟随正文首节——首屏看不到
-         目录属正常，向下滚动后它自然吸附在顶栏下方。目录过长时由 CSS 的
-         max-height:60vh + overflow:auto 内部滚动兜底。 */
       toc.style.top = Math.max(stick, want) + "px";
     }
     window.addEventListener("scroll", placeToc, { passive: true });
     window.addEventListener("resize", placeToc);
+    /* 切页时重算锚点与高亮（正文页 sec-N / 溯源核验报告页 rsec-N） */
+    viewChangeHook = function () { secs = tocSecs(); spy(); placeToc(); };
+    spy();
     placeToc();
   }
 })();
@@ -2148,7 +2136,6 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
 
     verification = compute_verification(answer, sources, payload, generated_at)
     process_stats = compute_process_stats(sources, answer)
-    hot_terms = extract_hot_terms(answer, sources)
     citation_warning = ""
     if sources and not used:
         citation_warning = (
@@ -2165,6 +2152,9 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
         for key, html in (jb.pop("_tables", {}) or {}).items():
             jb_tables[key] = html
     doc_title, sections = group_sections(blocks)
+    # 正文页：同一份正文去掉全部角标/引文胶囊，输出干净正式内容（核验内容归"溯源核验报告"页）
+    clean_blocks, _ = parse_answer_blocks(answer, {s["id"] for s in sources}, chip_map, strip_cites=True)
+    _, clean_sections = group_sections(clean_blocks)
     display_title = doc_title or title
     # 原问题行：溯源报告须含完整原问题才能独立使用。
     # 只认调用方显式传入的 question_override（source_note_html 读溯源 JSON 顶层
@@ -2172,91 +2162,110 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
     # question 字段兜底（该字段历史上常被报告标题冒充，显示了反而误导）；为空或与
     # 标题相同时不显示该行（历史 JSON 兼容）。
     question_text = (question_override or "").strip()
-    orig_q_html = (f'<div class="orig-q"><b>原问题</b>：{esc(question_text)}</div>'
+    orig_q_html = (f'<div class="orig-q" title="{esc(question_text)}"><b>原问题</b>：{esc(question_text)}</div>'
                    if question_text and question_text != display_title else "")
 
     jb_tables_json = json.dumps(jb_tables, ensure_ascii=False).replace("</", "<\\/")
     jb_tables_script = (f'<script type="application/json" id="jb-tables">{jb_tables_json}</script>\n'
                         if jb_tables else "")
+    # 导出用正文 Markdown（去角标，干净正文），供顶部"导出 ▾ → 导出正文 Markdown"下载
+    export_payload = {"title": display_title, "markdown": strip_citation_markers(answer)}
+    export_json = json.dumps(export_payload, ensure_ascii=False).replace("</", "<\\/")
+    export_script = f'<script type="application/json" id="doc-export">{export_json}</script>\n'
 
     meta_bits = []
     if process_stats["n_searches"]:
-        meta_bits.append(f"深知检索 {process_stats['n_searches']} 次")
+        # 检索计数按接口通道拆分显示（深度搜索与可信搜索是两个接口来源）
+        _deep_n = process_stats.get("deep_routes", 0)
+        _trusted_n = process_stats.get("trusted_routes", 0)
+        if _deep_n and _trusted_n:
+            meta_bits.append(f"深度搜索 {_deep_n} 路 · 可信补搜 {_trusted_n} 次")
+        elif _deep_n:
+            meta_bits.append(f"深知深度搜索 {_deep_n} 路")
+        elif _trusted_n:
+            meta_bits.append(f"深知可信搜索 {_trusted_n} 次")
+        else:
+            meta_bits.append(f"深知检索 {process_stats['n_searches']} 次")
     if sources:
-        meta_bits.append(f"来源文章 {len(sources)} 篇")
+        meta_bits.append(f"知识专库文章 {len(sources)} 篇")
     if process_stats["n_cite_marks"]:
-        meta_bits.append(f"正文引用 {process_stats['n_cite_marks']} 处")
+        meta_bits.append(f"正文实际引用 {process_stats['n_cite_marks']} 处")
     meta_bits.append(f"生成于 {generated}")
     meta_line = " · ".join(meta_bits)
+    # 来源＝材料实际使用的检索通道（深知深度搜索 / 深知可信搜索，动态汇总）；
+    # 历史溯源 JSON 无通道信息时保留旧文案
+    _channels: List[str] = []
+    for s in sources:
+        _ch = (s.get("channel") or "").strip()
+        # 通道可能为顿号拼接的多值（同一材料被两接口召回），拆分后逐 token 汇总
+        for token in [t.strip() for t in _ch.split("、") if t.strip()]:
+            if token not in _channels:
+                _channels.append(token)
+    source_line = " · ".join(_channels) if _channels else "深知可信搜索"
 
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(display_title)} · 溯源核验报告</title>
+<title>{esc(display_title)}</title>
 <style>{PAGE_CSS}</style>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="tb-left">
-    <span class="tb-stamp">溯源核验报告</span>
+<header class="banner">
+  <div class="banner-bar">
     <span class="tb-title">{esc(display_title)}</span>
-  </div>
-  <div class="tb-right">
-    <div class="view-switch" role="tablist" aria-label="视图切换">
-      <button class="on" data-view="report" type="button">核验报告</button>
-      <button data-view="library" type="button">知识专库</button>
+    <div class="view-switch" role="tablist" aria-label="页面切换">
+      <button data-view="body" type="button">正文（去索引）</button>
+      <button class="on" data-view="report" type="button">溯源核验报告</button>
+      <button data-view="library" type="button">知识专库（{len(sources)}）</button>
     </div>
     <div class="tb-tools">
-      <button id="btn-reading" type="button" aria-pressed="false" title="隐藏核验元素，纯阅读正文">只看正文</button>
       <button id="btn-copy" type="button" title="复制正文纯文本">复制全文</button>
       <span class="print-menu">
-        <button id="btn-print" type="button" aria-haspopup="true" title="浏览器打印／另存为 PDF">打印归档 ▾</button>
-        <span class="print-drop" id="print-drop" hidden>
-          <button id="print-body" type="button">只打印正文</button>
-          <button id="print-full" type="button">完整归档（含来源文章）</button>
+        <button id="btn-export" type="button" aria-haspopup="true" title="导出正文 Markdown 或 PDF">导出 ▾</button>
+        <span class="print-drop" id="export-drop" hidden>
+          <button id="export-md" type="button">导出 Markdown（正文）</button>
+          <button id="export-pdf-body" type="button">导出 PDF（正文）</button>
+          <button id="export-pdf-full" type="button">导出 PDF（溯源核验报告）</button>
         </span>
       </span>
     </div>
   </div>
+  {orig_q_html}
+  <div class="meta">{esc(meta_line)} ｜ 来源：{esc(source_line)}</div>
   <div class="progress" aria-hidden="true"><i></i></div>
 </header>
 
-<div class="hero">
-  <div class="r-badge">溯源核验报告</div>
-  <h1>{esc(display_title)}</h1>
-  <div class="meta">{esc(meta_line)} ｜ 来源：深知可信搜索</div>
-  {orig_q_html}
-  <div class="hero-switch">
-    <div class="view-switch" role="tablist" aria-label="视图切换">
-      <button class="on" data-view="report" type="button">核验报告</button>
-      <button data-view="library" type="button">知识专库（{len(sources)}）</button>
-    </div>
-  </div>
-</div>
-
 <div class="app container" data-view="report">
-  {render_process_bar(process_stats, verification)}
+  <main class="view" id="view-body" aria-label="正文">
+    <h2 class="paper-title">{esc(display_title)}</h2>
+    <div class="doc-paper">
+    {render_section_cards(clean_sections, sources, with_ids=True, id_prefix="sec")}
+    </div>
+    <div class="foot">深知公文写作 · 正文 ｜ 内容由 AI 生成，仅供参考</div>
+  </main>
 
-  <main class="view" id="view-report" aria-label="核验报告正文">
+  <main class="view" id="view-report" aria-label="溯源核验报告">
+    <h2 class="paper-title">溯源核验报告：{esc(display_title)}</h2>
     {citation_warning}
+    {render_process_bar(process_stats, verification)}
     {render_verify_panel(verification)}
     <div class="doc-paper">
-    {render_section_cards(sections, sources)}
+    {render_section_cards(sections, sources, with_ids=True, id_prefix="rsec")}
     </div>
     <div class="foot">深知公文写作 · 溯源核验报告 ｜ 内容由 AI 生成，仅供参考</div>
   </main>
 
-  {render_library_view(sources, hot_terms)}
+  {render_library_view(sources, display_title)}
   {render_print_appendix(sources)}
 </div>
 
 {render_toc(sections)}
 
 <div class="ev-panel" id="ev-pop" hidden></div>
-{jb_tables_script}<div class="sheet-mask" aria-hidden="true"></div>
+{export_script}{jb_tables_script}<div class="sheet-mask" aria-hidden="true"></div>
 <div class="sheet" role="dialog" aria-label="来源文章">
   <div class="sheet-grab"></div>
   <div class="sheet-head"><b>依据对照</b><button class="sheet-close" type="button">收起</button></div>
@@ -2311,10 +2320,8 @@ def _check_degraded_input(payload: Dict[str, Any], path: str) -> None:
         )
 
 
-
-
 def _dsh_default_output_dir() -> str:
-    """dsh：未显式传 --output 时，默认输出到会话产物目录 official-docs/output/。"""
+    """dsh：默认输出目录锚定会话工作区（与其他脚本的 WS_ROOT 同源解析）。"""
     import os as _os
     _ws = _os.environ.get("DKNWOC_WS_ROOT")
     if not _ws:

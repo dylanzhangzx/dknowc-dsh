@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Dict
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
@@ -193,6 +193,11 @@ def merge_results(result_files: List[str]) -> Dict:
                 # 追加本次搜索的来源标记（搜索地域/搜索词/搜索目的）
                 if region and region not in (existing.get("搜索地域") or ""):
                     existing["搜索地域"] = (existing.get("搜索地域") or "") + (("、" + region) if existing.get("搜索地域") else region)
+                # 检索通道：两接口召回同一材料时拼接保留双通道（2026-10-14 修复——
+                # 原按"字段非空保留先入"会让深搜标签覆盖补搜标签，补搜召回的标准在
+                # 报告材料级被误标为仅"深知深度搜索"）
+                if (article.get("检索通道") or "") and article["检索通道"] not in (existing.get("检索通道") or ""):
+                    existing["检索通道"] = (existing.get("检索通道") or "") + (("、" + article["检索通道"]) if existing.get("检索通道") else article["检索通道"])
                 if search_meta.get("query") and not existing.get("搜索词"):
                     existing["搜索词"] = search_meta.get("query")
                 if purpose_val and not existing.get("搜索目的"):
@@ -213,7 +218,102 @@ def merge_results(result_files: List[str]) -> Dict:
             if article.get("policyUrl") and not article.get("知识专库原文"):
                 article["知识专库原文"] = article["policyUrl"]
             all_articles.append(article)
-    
+
+    # —— 近似重复去重（句子指纹，2026-10-14 修复"段落重复"问题）——
+    # 搜索接口对同一篇文章常返回多个标题变体条目（如"北京出台智能体专项政策"与
+    # "…专项政策 最高支持1亿元"），上面的标题去重会漏掉，表现为知识专库中同一内容
+    # 出现多张卡：段落完全一致、或分段切法不同导致顺序略不同。此处按"句子集合"二次
+    # 判定：一篇的句子被另一篇覆盖过半即判同一材料，保留更完整的一篇，段落取并集。
+    def _norm_sent(s) -> str:
+        return re.sub(r"[\s，,、。；;：:！!？?「」『』“”\"'（）()\[\]【】·—\-]", "", str(s or ""))
+
+    def _sentence_fp(article: dict) -> set:
+        sents = set()
+        for p in (article.get("段落") or []):
+            if not isinstance(p, dict):
+                continue
+            for s in re.split(r"[。；;!？?]", str(p.get("内容") or p.get("content") or "")):
+                ns = _norm_sent(s)
+                if len(ns) >= 12:
+                    sents.add(ns)
+        return sents
+
+    def _is_official_title(t: str) -> bool:
+        t = t or ""
+        return ("关于印发" in t) or t.endswith("的通知") or t.endswith("的公告") or t.endswith("的意见")
+
+    fps = [_sentence_fp(a) for a in all_articles]
+    _i = 0
+    while _i < len(all_articles):
+        _j = _i + 1
+        while _j < len(all_articles):
+            si, sj = fps[_i], fps[_j]
+            inter = len(si & sj) if (si and sj) else 0
+            if inter >= 4 and inter / min(len(si), len(sj)) >= 0.55:
+                # 保留更完整（句子更多）的一篇；相当时优先"发文版"标题，再相当保留先入篇
+                if len(si) != len(sj):
+                    keep_idx = _i if len(si) > len(sj) else _j
+                else:
+                    ti = all_articles[_i].get("文章标题") or ""
+                    tj = all_articles[_j].get("文章标题") or ""
+                    keep_idx = _i if (_is_official_title(ti) or not _is_official_title(tj)) else _j
+                drop_idx = _j if keep_idx == _i else _i
+                keep, drop = all_articles[keep_idx], all_articles[drop_idx]
+                # 段落取并集（内容级去重，保留各自 id；后续统一重编号）
+                _seen_para = {re.sub(r"\s+", "", str(p.get("内容") or p.get("content") or ""))
+                              for p in (keep.get("段落") or [])}
+                for p in (drop.get("段落") or []):
+                    pc = re.sub(r"\s+", "", str(p.get("内容") or p.get("content") or ""))
+                    if pc and pc not in _seen_para:
+                        _seen_para.add(pc)
+                        keep.setdefault("段落", []).append(p)
+                # 字段取并集：保留篇空字段用被并篇补
+                for f, v in drop.items():
+                    if f == "段落":
+                        continue
+                    if not keep.get(f) and v:
+                        keep[f] = v
+                # 检索通道：不同则拼接保留双通道（同上方同名键去重处的 2026-10-14 修复）
+                if (drop.get("检索通道") or "") and drop["检索通道"] not in (keep.get("检索通道") or ""):
+                    keep["检索通道"] = (keep.get("检索通道") or "") + (("、" + drop["检索通道"]) if keep.get("检索通道") else drop["检索通道"])
+                if (drop.get("搜索地域") or "") and drop["搜索地域"] not in (keep.get("搜索地域") or ""):
+                    keep["搜索地域"] = (keep.get("搜索地域") or "") + (("、" + drop["搜索地域"]) if keep.get("搜索地域") else drop["搜索地域"])
+                all_articles.pop(drop_idx)
+                fps.pop(drop_idx)
+                duplicates_count += 1
+                if drop_idx == _i:
+                    _j = _i + 1  # _i 处已换成保留篇，重新向后比较
+                continue
+            _j += 1
+        _i += 1
+
+    # 段内重复段去重（2026-10-14 修复"一张卡里两段内容一样"）：
+    # ① 内容完全一致 → 保留先出现的；
+    # ② "标题链拼进正文"的污染段——接口偶发把段落标题/上级标题文字拼进内容开头，
+    #    形成 内容=标题前缀+另一段内容 的超集段（渲染剥前缀后两段看起来完全一样）。
+    #    判定：归一化后一段是另一段的前缀或后缀超集（短段≥30字）→ 丢弃污染的长段、保留干净段。
+    for article in all_articles:
+        paras = article.get("段落") or []
+        texts = [re.sub(r"\s+", "", str(p.get("内容") or p.get("content") or "")) for p in paras]
+        drop = set()
+        for a in range(len(paras)):
+            ta = texts[a]
+            if len(ta) < 30 or a in drop:
+                continue
+            for b in range(len(paras)):
+                tb = texts[b]
+                if a == b or b in drop or len(tb) < 30:
+                    continue
+                if ta == tb:
+                    if a < b:
+                        drop.add(b)      # 完全一致：保留先出现的
+                elif tb.startswith(ta) or tb.endswith(ta):
+                    drop.add(b)          # b 是带标题前缀的污染超集段
+                elif ta.startswith(tb) or ta.endswith(tb):
+                    drop.add(a)          # a 才是污染段
+        if drop:
+            article["段落"] = [p for i, p in enumerate(paras) if i not in drop]
+
     # 重新编号段落
     global_id = 1
     total_paragraphs = 0

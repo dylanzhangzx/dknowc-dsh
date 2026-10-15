@@ -131,7 +131,7 @@ def is_useless_kb_label_line(text):
 DEFAULT_OUTPUT_DIR = "official-docs/output"
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'config', 'format.json')
 SKILL_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 _ws = os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
     # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，

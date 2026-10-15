@@ -327,6 +327,16 @@ def main() -> None:
 
     if args.json_only:
         _bail_if_biz_error(body)  # 落盘前校验：错误响应不落盘、不报"已保存"（1.4.0 修复）
+        # 检索通道打标（1.5.0）：v3 产物每篇文章（含公共文章）注入 检索通道="深知深度搜索"，
+        # 供 merge → 渲染按接口通道拆分计数与来源声明；字段随文章 dict 原样透传
+        _data = body.get("data") if isinstance(body.get("data"), dict) else {}
+        for _s in (_data.get("searches") or []):
+            for _a in ((_s.get("result") if isinstance(_s, dict) else None) or []):
+                if isinstance(_a, dict) and not _a.get("检索通道"):
+                    _a["检索通道"] = "深知深度搜索"
+        for _a in (_data.get("common_articles") or []):
+            if isinstance(_a, dict) and not _a.get("检索通道"):
+                _a["检索通道"] = "深知深度搜索"
         raw_json = json.dumps(body, ensure_ascii=False, indent=2)
         if args.output:
             output_path = resolve_output_json(args.output)

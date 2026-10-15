@@ -1719,13 +1719,13 @@ a.jb-quote{text-decoration:none}
 .lib-tabs button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
   padding:4px 13px;font-size:12.3px;cursor:pointer}
 .lib-tabs button.on{background:var(--grad);border-color:var(--brand);color:#fff;font-weight:700}
-.lib-list{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:14px}
+.lib-list{max-width:860px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 .lib-empty{max-width:860px;margin:30px auto;text-align:center;color:var(--muted);font-size:13.5px}
 .lib-empty.hide{display:none}
 .lib-foot{text-align:center;color:var(--muted);font-size:11.5px;padding:18px 0 0;line-height:1.8}
 
 /* ===== 材料卡 ===== */
-.scard{border:1px solid var(--line);border-left-width:3px;border-radius:12px;padding:14px 18px;
+.scard{min-width:0;border:1px solid var(--line);border-left-width:3px;border-radius:12px;padding:14px 18px;
   background:#fff;box-shadow:var(--shadow-1);transition:box-shadow .25s}
 .scard:hover{box-shadow:var(--shadow-2)}
 .scard.pol{border-left-color:var(--policy)}
@@ -1831,7 +1831,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     -webkit-overflow-scrolling:touch;scrollbar-width:none}
   .lib-tabs::-webkit-scrollbar{display:none}
   .lib-tabs button{flex:none}
-  .lib-list{grid-template-columns:1fr;gap:10px}
+  .lib-list{grid-template-columns:minmax(0,1fr);gap:10px}
   .scard{padding:10px 11px}
   .crumb{font-size:11px}
   .sc-excerpt{font-size:11.5px}
@@ -1896,6 +1896,9 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   body.print-body-only .jb,body.print-body-only .foot{display:none!important}
   .print-appendix h3{font-size:15px;color:var(--navy);border-bottom:1px solid #999;padding-bottom:6px;margin:0 0 12px}
   .print-appendix .scard{margin-bottom:10px}
+  /* 打印时宽表格贴合页宽（屏幕端靠 .sc-excerpt.rich 横向滚动，纸张上不能滚） */
+  .print-appendix .sc-excerpt.rich,.sc-excerpt.rich{overflow-x:visible}
+  .print-appendix .sc-excerpt.rich table,.sc-excerpt.rich table{width:100%!important;min-width:0}
 }
 """
 

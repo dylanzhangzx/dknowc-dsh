@@ -46,16 +46,6 @@ MAT_EXCERPT_FIELDS = ("excerpt", "摘录", "支撑内容", "support", "excerpts"
 MAT_TYPE_FIELDS = ("type", "素材类型")
 
 
-def _cm_ws_root() -> "Path":
-    """dsh：会话工作区根（与各脚本的 WS_ROOT 同源解析）。"""
-    import os as _os
-    _ws = _os.environ.get("DKNWOC_WS_ROOT")
-    if not _ws:
-        _sid = _os.environ.get("DSH_SESSION_ID", "")
-        _ws = str(Path.cwd() / "dknowc-output" / (_sid[:8] if _sid else "_default"))
-    return Path(_ws).resolve()
-
-
 def first_value(d: dict, keys: tuple) -> str:
     for k in keys:
         v = d.get(k)
@@ -71,26 +61,54 @@ def load_json(path: Path):
         raise SystemExit(f"错误：无法读取 {path}（{exc}）")
 
 
-def build_source_index(merged: dict) -> dict:
-    """从合并产物构建 {标题: {url, ...}} 索引（标题去规范化空格）。"""
-    index = {}
+def _cm_ws_root() -> "Path":
+    """dsh：会话工作区根（与各脚本的 WS_ROOT 同源解析）。"""
+    import os as _os
+    _ws = _os.environ.get("DKNWOC_WS_ROOT")
+    if not _ws:
+        _sid = _os.environ.get("DSH_SESSION_ID", "")
+        _ws = str(Path.cwd() / "dknowc-output" / (_sid[:8] if _sid else "_default"))
+    return Path(_ws).resolve()
+
+
+def build_source_index(merged: dict) -> tuple:
+    """从合并产物构建（标题索引, 全量 URL 集合）。
+
+    标题索引：{去空格标题: {title, url}}——同标题多来源变体只留首条（仅作
+    "标题兜底"展示用）；URL 集合收录**全部变体 URL**（含 policyFiles）。
+    2026-10-14 修复（豆包侧移植实测发现）：此前按标题 setdefault 只保留首条
+    URL，同一文件在门户栏目页与部门页各有 URL 变体时（如 zhengcefagui 与
+    gdj），引用非首条变体的材料被误报"source_url 不在合并产物中（可能编造）"，
+    校验永远 ok=false 卡死写作链（70 篇池 2 组同标题双 URL 变体必现）。"""
+    index: dict = {}
+    urls: set = set()
+
+    def _norm_url(u) -> str:
+        return re.sub(r"\s+", "", str(u or "")).rstrip("/")
+
     for art in merged.get("articles") or []:
         title = first_value(art, SOURCE_TITLE_FIELDS)
         if not title:
             continue
         key = re.sub(r"\s+", "", title)
         index.setdefault(key, {"title": title, "url": first_value(art, SOURCE_URL_FIELDS)})
+        for f in SOURCE_URL_FIELDS:
+            if art.get(f):
+                urls.add(_norm_url(art[f]))
     # policyFiles 也纳入（文号匹配用；部分材料可能只出现在 policyFiles）
     for pf in merged.get("policyFiles") or []:
         title = first_value(pf, ("title", "writtenText"))
         if title:
             key = re.sub(r"\s+", "", title)
             index.setdefault(key, {"title": title, "url": first_value(pf, ("sourceUrl", "url"))})
-    return index
+        for f in ("sourceUrl", "url"):
+            if pf.get(f):
+                urls.add(_norm_url(pf[f]))
+    return index, urls
 
 
-def check_material_source(mat: dict, index: dict, mat_no: int) -> list[str]:
-    """校验单条材料能否在合并产物中回溯到来源。"""
+def check_material_source(mat: dict, index: dict, source_urls: set, mat_no: int) -> list[str]:
+    """校验单条材料能否在合并产物中回溯到来源（URL 按全量变体集合判定）。"""
     errors = []
     title = first_value(mat, MAT_TITLE_FIELDS)
     url = first_value(mat, MAT_URL_FIELDS)
@@ -98,10 +116,10 @@ def check_material_source(mat: dict, index: dict, mat_no: int) -> list[str]:
         return [f"材料[{mat_no}] 无标题且无 source_url，无法回溯来源"]
 
     if url:
-        # 源网址必须能在合并产物中找到（或为空待补，不得是编造的）
-        found = any(i.get("url") and (url == i["url"] or url.rstrip("/") == i["url"].rstrip("/"))
-                    for i in index.values())
-        if not found:
+        # 源网址必须能在合并产物中找到（或为空待补，不得是编造的）；
+        # 归一化（去空白、去尾斜杠）后对全量 URL 变体集合判定
+        norm = re.sub(r"\s+", "", str(url)).rstrip("/")
+        if norm not in source_urls:
             errors.append(f"材料[{mat_no}] 的 source_url 不在合并产物中（可能编造）：{url[:60]}")
     if title:
         key = re.sub(r"\s+", "", title)
@@ -213,16 +231,16 @@ def main() -> int:
     merged = load_json(Path(merged_path).expanduser())
 
     errors = []
-    index = build_source_index(merged)
+    index, source_urls = build_source_index(merged)
 
     materials = trace.get("materials") or []
     recalled = trace.get("recalled_materials") or []
 
     # ① 材料来源可回溯
     for i, mat in enumerate(materials, 1):
-        errors.extend(check_material_source(mat, index, i))
+        errors.extend(check_material_source(mat, index, source_urls, i))
     for i, mat in enumerate(recalled, 1):
-        errors.extend(check_material_source(mat, index, i))
+        errors.extend(check_material_source(mat, index, source_urls, i))
 
     # ② 字段完整性
     # 注：source_url **允许缺省** —— search_guide.md 明确"接口未返回原网址时不填、不猜测"，
@@ -243,6 +261,22 @@ def main() -> int:
 
     # ④ self_check 完整
     errors.extend(check_self_check(trace.get("self_check")))
+
+    # ⑤ 研究资料 gate（3.8.0）：研究型与综合长篇文种必须落盘研究资料底稿
+    # （SKILL.md 搜索规则第 8/9 条：分类自检时初版、确认清单后定稿）。该层是
+    # 研究型文种分析深度与数据密度的来源，曾因只写在散文段而整层被跳过
+    # （无层 2509 字 vs 有层 9045 字）——此处在渲染前强制拦截。
+    doc_type = str(trace.get("doc_type") or "")
+    if any(k in doc_type for k in ("调研报告", "研究报告", "政策研究", "产业研究", "工作总结", "汇报材料")):
+        input_dir = Path(args.trace_json).expanduser().resolve().parent
+        notes = [p for p in input_dir.glob("*研究资料*.md")
+                 if p.is_file() and p.stat().st_size > 500]
+        if not notes:
+            errors.append(
+                f"doc_type={doc_type} 属研究型/综合长篇文种，但未找到研究资料文件"
+                f"（{input_dir}/*研究资料*.md）——按 SKILL.md 搜索规则第 8/9 条先生成研究资料"
+                f"（初版：核心事实总表+数据口径表；定稿：角标与素材清单对齐，正文基于定稿写作），"
+                f"缺该层曾致正文只有 2509 字（有层实测 9045 字）")
 
     if errors:
         print(json.dumps({"ok": False, "errors": errors, "file": str(Path(args.trace_json))},

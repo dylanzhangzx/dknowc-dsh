@@ -59,6 +59,7 @@ def check_api_key_config():
                 "api_key_hint": f"未检测到可用的 {API_KEY_ENV}（环境变量、专用配置文件与历史 zshrc 均未找到）。运行注册脚本开通后 Key 自动写入 ~/.config/dknowc/api_key，本会话立即可用。",
                 "search_ready": False, "search_note": f"当前缺少 {API_KEY_ENV}，暂时不能查询政策法规、办事流程、标准依据和可信溯源内容。"}
 
+
     # 环境变量优先，缺失时从专用配置文件读取，历史 zshrc 兜底
     api_key = ""
     source = ""

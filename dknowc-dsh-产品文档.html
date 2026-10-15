@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dknowc-dsh（DeepSeek Harness 插件）· 产品文档</title>
+<style>
+  :root {
+    --primary: #0d7d8c;
+    --primary-soft: #e5f4f6;
+    --border: #e5e7eb;
+    --muted: #6b7280;
+    --ok: #059669;
+    --warn: #d97706;
+    --ink: #1f2937;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #f9fafb; color: var(--ink); line-height: 1.7; padding: 32px 16px;
+  }
+  .page { max-width: 1040px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .hero { padding: 28px 36px 22px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #edf7f9 0%, #ffffff 100%); }
+  .hero .eyebrow { color: var(--primary); font-size: 13px; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .hero h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+  .hero p { color: var(--muted); font-size: 14px; }
+  .meta { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .tag { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .tag.ver { background: var(--primary-soft); color: var(--primary); }
+  .tag.ok { background: #ecfdf5; color: var(--ok); }
+  .tag.info { background: #f3f4f6; color: var(--muted); }
+  .tag.warn { background: #fef3c7; color: var(--warn); }
+  .content { padding: 24px 36px 36px; }
+  .section { margin-top: 32px; }
+  .section:first-child { margin-top: 0; }
+  .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .section-no { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px;
+    background: var(--primary); color: #fff; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  .section-head h2 { font-size: 18px; font-weight: 700; }
+  h3 { font-size: 15px; font-weight: 700; margin: 18px 0 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; vertical-align: top; }
+  th { background: #f8fafc; font-weight: 600; }
+  table.kv th { width: 170px; }
+  table.k th { width: auto; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 12.5px; word-break: break-all; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 12px 15px; border-radius: 8px; overflow-x: auto; font-size: 12.5px; line-height: 1.65; margin: 10px 0; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .card { border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-top: 12px; background: #fff; }
+  .card h3 { font-size: 15px; margin: 0 0 6px; }
+  .card p, .card li { font-size: 13.5px; color: #374151; }
+  .card ul { padding-left: 20px; margin-top: 4px; }
+  .card li { margin-top: 3px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+  .grid .card { margin-top: 0; }
+  .ok { color: var(--ok); font-weight: 600; }
+  .no { color: #dc2626; font-weight: 600; }
+  .note { border-left: 4px solid var(--primary); background: var(--primary-soft); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 13.5px; color: #155e6a; margin-top: 12px; }
+  .warnbox { border-left: 4px solid var(--warn); background: #fffbeb; border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 13.5px; color: #7c4a03; margin-top: 12px; }
+  .tree { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.8; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-top: 10px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; font-size: 13px; }
+  .flow .step { background: var(--primary-soft); color: var(--primary); border-radius: 6px; padding: 4px 10px; font-weight: 600; }
+  .flow .arrow { color: var(--muted); }
+  .fchart { margin-top: 14px; }
+  .fstep { display: flex; align-items: flex-start; gap: 10px; margin: 6px 0; }
+  .fnum { flex-shrink: 0; width: 26px; height: 26px; border-radius: 7px; margin-top: 2px; background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .fnum.j { background: #fff; border: 2px solid var(--warn); color: var(--warn); }
+  .fnum.opt { background: #fff; border: 2px solid var(--border); color: var(--muted); }
+  .fnum.gate { background: var(--warn); color: #fff; }
+  .chip { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; vertical-align: 1px; white-space: nowrap; }
+  .chip.confirm { background: #fef3c7; color: #b45309; }
+  .chip.gate { background: #ffedd5; color: #c2410c; }
+  .chip.opt { background: #f3f4f6; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 14px; }
+  .legend .lg { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #374151; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; }
+  .sw { display: inline-block; width: 15px; height: 15px; border-radius: 4px; flex: none; }
+  .sw.solid { background: var(--primary); }
+  .sw.conf { background: #fff; border: 2px solid var(--warn); }
+  .sw.gate { background: var(--warn); }
+  .sw.opt { background: #fff; border: 2px solid var(--border); }
+  .fbody { flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 9px; padding: 9px 13px; }
+  .fbody .t { font-weight: 700; font-size: 13.5px; }
+  .fbody .d { color: #374151; font-size: 12.5px; margin-top: 3px; line-height: 1.65; }
+  .fbody .d code { font-size: 11.5px; }
+  .farrow { text-align: center; color: var(--muted); font-size: 12px; line-height: 1; margin: 2px 0; }
+  .footer { padding: 18px 36px; border-top: 1px solid var(--border); background: #f8fafc; font-size: 12.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">DKOWNC · 深知可信智能</div>
+    <h1>dknowc-dsh（DeepSeek Harness 插件）· 产品文档</h1>
+    <p>深知可信办公全家桶的 DeepSeek Harness（dsh）分发版 —— 一个 bundle 交付三个深知 Skill，脚本直连全量检索 + MCP 应急兜底，产物按会话隔离落工作区。</p>
+    <div class="meta">
+      <span class="tag ver">插件版本 v2.2.0</span>
+      <span class="tag info">2026-10-15 更新</span>
+      <span class="tag info">3 skill · 3.8.1-dsh / 1.5.1-dsh / 1.3.7-dsh</span>
+      <span class="tag ok">npm 主源</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- 1 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">1</span><h2>产品概览</h2></div>
+      <table class="kv">
+        <tr><th>是什么</th><td>面向 DeepSeek Harness（dsh）的插件包（bundle），把深知可信搜索、深知可信PPT、深知公文写作三个 Skill 一次性接入 dsh：安装后 skill 出现在会话可用目录，模型按任务自动路由；同时捆绑「深知可信工作台」MCP（<code>trusted_search / deep_query / doc_outline</code>）作为脚本异常时的应急兜底通道。</td></tr>
+        <tr><th>架构取向</th><td>① <strong>检索走脚本直连</strong>（全量结构化返回：文号、存档快照、标题链、可信度），MCP 返回为精简视图、仅作兜底；② <strong>零 dsh SDK 依赖</strong>（入口只用 Node 内置模块 + cordis 注入的 ctx），MCP client 由宿主自带，跨 dsh 大版本天然兼容；③ <strong>产物不落插件目录</strong>，按会话隔离写入工作区。</td></tr>
+        <tr><th>与母版的关系</th><td>三个 skill 的内容源头是各自 SkillHub 母版；本包按「母版同步 → 重打 dsh 补丁」流程维护（会话隔离路径、dsh Key 三级门禁、渠道码、交付表述、剔除母版专属脚本）。</td></tr>
+        <tr><th>不做什么</th><td>不内置 API Key（注册引导获取）；不走 OAuth 取 Key（dsh 捆绑 MCP 为 Bearer 认证）；不修改 dsh 宿主行为；不做宿主交付复制（产物天然在工作区）。</td></tr>
+      </table>
+    </div>
+
+    <!-- 2 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">2</span><h2>能力矩阵（三 skill）</h2></div>
+      <table class="k">
+        <tr><th style="width:120px">Skill</th><th>能力</th><th style="width:250px">交付物</th></tr>
+        <tr>
+          <td><strong>深知可信搜索</strong><br><code>dknowc-trusted-search</code></td>
+          <td>咨询式政策问答（dsh 版由本 skill 承接，不设独立咨询 skill）＋ 权威材料检索 / 深度研究（按问题复杂度分级）；研究资料层（核心事实总表＋数据口径表，缺口驱动补搜）；政策可视化图表并入报告。</td>
+          <td>直接答案 ＋ <strong>单文件产出物 HTML 三页</strong>（正文（去索引）／溯源核验报告／知识专库；顶栏可导出正文 Markdown 与 PDF）。</td>
+        </tr>
+        <tr>
+          <td><strong>深知公文写作</strong><br><code>dknowc-official-doc-writer</code></td>
+          <td>正式公文 / 事务文书 / 工作材料起草、改写、多轮改稿；两阶段检索（深度搜索广度召回＋可信搜索精准补搜）；研究资料层（研究型文种强制，gate 拦截）；参考范文召回；范文大纲。</td>
+          <td><strong>双开关交付</strong>：命中 15 种法定公文 → Word（可红头）；执行过搜索 → 产出物 HTML 三页；两者可同时成立。</td>
+        </tr>
+        <tr>
+          <td><strong>深知可信PPT</strong><br><code>dknowc-ppt-assistant</code></td>
+          <td>约束 SVG 逐页创作 → 确定性编译为<strong>原生可编辑</strong> PowerPoint（真实形状/文本/图表/表格，非整页图片）；素材检索全程可溯源；多画布（16:9 / 4:3 / 小红书 / 朋友圈 / 竖版 / A4）。</td>
+          <td><code>.pptx</code> ＋ 提纲版 / 成稿版两份溯源核验报告（三件套，交付清单外一律不交付）。</td>
+        </tr>
+      </table>
+      <div class="grid">
+        <div class="card">
+          <h3>dsh 会话隔离</h3>
+          <p>所有脚本产物落 <code>&lt;工作区&gt;/dknowc-output/&lt;会话ID前8位&gt;/official-docs/…</code>（<code>DKNWOC_WS_ROOT</code> 显式指定 &gt; <code>DSH_SESSION_ID</code> 自动隔离 &gt; 回退当前目录）。同一工作区多会话互不混杂、互不覆盖；dsh 以工作区为文件视图，访达也可直达。</p>
+        </div>
+        <div class="card">
+          <h3>dsh Key 三级门禁</h3>
+          <p><code>DSH_DKNOWC_API_KEY</code>（插件 shell-env 注入，与 MCP Bearer 同源）→ 环境变量 <code>DKNOWC_API_KEY</code> → 本机专用配置文件 <code>~/.config/dknowc/api_key</code>（600 权限）→ 历史 <code>~/.zshrc</code> 兜底。配置文件读取不受 dsh 环境变量清理影响，<strong>注册成功后本会话立即可用、无需重启</strong>。</p>
+        </div>
+        <div class="card">
+          <h3>跨会话持久数据</h3>
+          <p>公文写作的个人素材库与写作偏好存 <code>~/.dknowc-writer/</code>；可信PPT 的项目目录（内容包 / SVG / 导出产物）存工作区级 <code>dknowc-projects/&lt;项目名&gt;/</code>——均不随会话隔离，插件升级不丢失。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">3</span><h2>全景流程（从安装到交付）</h2></div>
+      <div class="fchart">
+        <div class="fstep"><div class="fnum">0</div><div class="fbody"><div class="t">安装插件</div><div class="d"><code>dsh plugin --profile web add dknowc-dsh</code>（npm 安装；也支持 GitHub / 本地目录 / dshmarket 市场一键安装）</div></div></div>
+        <div class="farrow">▼</div>
+        <div class="fstep"><div class="fnum">1</div><div class="fbody"><div class="t">初始化与 Key 检查</div><div class="d">skill 被调用时自动运行 <code>initialize.py</code>；dsh 下优先读 <code>DSH_DKNOWC_API_KEY</code>，缺失走三级解析。已有 Key（配置文件 / 环境变量）直接就绪。</div></div></div>
+        <div class="farrow">▼</div>
+        <div class="fstep"><div class="fnum j">2</div><div class="fbody"><div class="t">无 Key → 注册引导<span class="chip confirm">需用户确认</span></div><div class="d">手机号验证码两步注册（<code>register_key.mjs</code> / <code>register.mjs</code>）：send 支持短信直发与行为验证链接两分支；成功后 Key 自动写入配置文件，<strong>本会话立即可用</strong>；注册赠送 10 万积分、实名认证再送 10 万积分。</div></div></div>
+        <div class="farrow">▼</div>
+        <div class="fstep"><div class="fnum">3</div><div class="fbody"><div class="t">任务路由（模型自动）</div><div class="d">咨询 / 检索 / 深度研究 → 可信搜索；做 PPT / 演示文稿 → 可信PPT；写正式文稿 / 公文 → 公文写作。</div></div></div>
+        <div class="farrow">▼</div>
+        <div class="fstep"><div class="fnum">4</div><div class="fbody"><div class="t">脚本直连检索（全量结构化返回）</div><div class="d">可信搜索 / 深度搜索（公文与搜索 skill 均为两阶段）；深度搜索原始产物先经 <code>deep_convert.py</code> 转通用形态再合并（表格标签保留、通道打标）。</div></div></div>
+        <div class="farrow">▼</div>
+        <div class="fstep"><div class="fnum">5</div><div class="fbody"><div class="t">合并 · 写作 / 综合答案 · 装配溯源 JSON</div><div class="d">合并去重（句子指纹＋污染段剔除＋通道拼接）；写作逐处标角标；<code>build_trace_json.py</code> 装配（materials 按角标号升序）。</div></div></div>
+        <div class="farrow">▼</div>
+        <div class="fstep"><div class="fnum gate">6</div><div class="fbody"><div class="t">交付前校验<span class="chip gate">gate</span></div><div class="d"><code>check_materials.py</code>（公文）：材料可回溯（URL 全量变体集合判定）、角标一一对应、self_check 五项、研究资料 gate；渲染器内置"答案必须有角标且逐条绑定"硬校验。</div></div></div>
+        <div class="farrow">▼</div>
+        <div class="fstep"><div class="fnum">7</div><div class="fbody"><div class="t">渲染产出物</div><div class="d">三页 HTML（<code>source_note_html.py</code> / <code>render_trace_html.py</code>）、Word（<code>format_document.py</code>，公文开关）、PPTX（<code>svg_to_pptx.py</code> 编译）。</div></div></div>
+        <div class="farrow">▼</div>
+        <div class="fstep"><div class="fnum">8</div><div class="fbody"><div class="t">dsh 交付</div><div class="d">产物已在会话工作区（<code>dknowc-output/&lt;会话ID前8位&gt;/</code> 与 <code>dknowc-projects/</code>），直接展示脚本打印的路径即可——dsh 以工作区为文件视图，<strong>无需交付复制</strong>。</div></div></div>
+      </div>
+      <div class="note"><strong>MCP 兜底：</strong>脚本通道异常时，可经捆绑的「深知可信工作台」MCP 工具（<code>mcp__dknowc__trusted_search / deep_query / doc_outline</code>）应急取数，返回经 <code>mcp_convert.py</code> / <code>adapt_mcp_result.py</code> 规范化落盘；MCP 返回为精简视图，不用于生成正式溯源核验报告。</div>
+    </div>
+
+    <!-- 4 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">4</span><h2>交付物：单文件产出物 HTML 三页（公文 / 搜索）</h2></div>
+      <table class="k">
+        <tr><th style="width:130px">页面</th><th>内容</th><th style="width:200px">说明</th></tr>
+        <tr><td><strong>正文（去索引）</strong></td><td>干净的正式正文（与 Word 正文一致），不带任何角标和链接；顶部是文稿标题。</td><td>可直接复制使用</td></tr>
+        <tr><td><strong>溯源核验报告</strong></td><td>「溯源核验报告：{标题}」→ AI 自验收过程条（检索按接口通道拆分计数、研究资料规模）→ 核验单 → <strong>带角标的正文</strong>（角标可点开原文原段引文胶囊）。</td><td>默认打开页；核验内容只在此页</td></tr>
+        <tr><td><strong>知识专库</strong></td><td>全部召回材料卡片（含未引用），按检索分组筛选、可搜索；标题链面包屑、原文摘录、原文链接与存档快照入口、政策文件发文字号、表格按表格渲染（宽表卡内横向滚动）。</td><td>材料全集，供人工复核</td></tr>
+      </table>
+      <p style="font-size:13.5px;color:#374151;margin-top:10px">顶部为单一吸顶 banner（文稿名 ｜ 三页切换 ｜ 复制/导出 ＋ 原问题 ＋ 统计行，切页高度不变）；导出菜单：导出 Markdown（正文）／导出 PDF（正文）／导出 PDF（溯源核验报告）。可信搜索不再另生成 <code>.clean.md</code>（正文页与导出已覆盖）。可信PPT 的核验报告为双版（提纲 / 成稿）独立 HTML。</p>
+    </div>
+
+    <!-- 5 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">5</span><h2>目录与文件清单</h2></div>
+      <div class="tree">
+dknowc-dsh/
+├── package.json                  dsh bundle 声明（dsh.bundle.patch → cordis.patch.yml）+ check 脚本 + prepack 清理
+├── cordis.patch.yml              挂载 skill provider + mcp-client（Bearer 认证）
+├── src/index.js                  注册 3 个 skill 到 dsh ctx.skills（零 dsh SDK 依赖）
+├── dknowc-dsh-产品文档.html       本文档（不入 npm 包）
+├── README.md                     安装 / 配置 / 工作区机制 / 维护约定
+└── skills/
+    ├── dknowc-trusted-search/      深知可信搜索 1.5.1-dsh（含 deep_convert.py 转换层、mcp_direct.py）
+    ├── dknowc-ppt-assistant/       深知可信PPT 1.3.7-dsh（SVG→PPTX 编译链、双版核验报告）
+    └── dknowc-official-doc-writer/ 深知公文写作 3.8.1-dsh（含 adapt_mcp_result.py、34 篇文种标准）
+      </div>
+      <h3>与母版的差异（dsh 补丁清单）</h3>
+      <table class="k">
+        <tr><th style="width:220px">补丁</th><th>内容</th></tr>
+        <tr><td>WS_ROOT 会话隔离</td><td>全部路径锚定脚本加工作区根解析块（<code>DKNWOC_WS_ROOT</code> / <code>DSH_SESSION_ID</code> / cwd 回退），产物目录 <code>dknowc-output/&lt;会话ID前8位&gt;/official-docs/</code>；相对 <code>--output</code> 改 cwd 相对解析。</td></tr>
+        <tr><td>dsh Key 三级门禁</td><td><code>initialize.py</code> 增加 <code>_in_dsh()</code> 分支（<code>DSH_SHELL=1</code> 判定，优先 <code>DSH_DKNOWC_API_KEY</code>，Key 缺失仅暂停检索不阻断纯写作/生成）。</td></tr>
+        <tr><td>SKILL.md 适配</td><td>版本号 <code>-dsh</code> 后缀；顶部 dsh Key / 检索通道说明块；<code>&lt;skillDir&gt;</code> 脚本前缀；产物路径前缀；「MCP 取 Key 优先」改 dsh 不适用说明；交付步骤改 dsh 工作区交付。</td></tr>
+        <tr><td>渠道标识</td><td>注册渠道码 <code>46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05</code>；<code>attribution.json</code> 的 <code>channel=dsh</code>（来源声明头 <code>kind=skill;agentSource=&lt;skill&gt;;version=&lt;版本&gt;-dsh;channel=dsh</code>）。</td></tr>
+        <tr><td>剔除母版专属脚本</td><td><code>deliver_outputs.py</code>（宿主交付复制，dsh 产物天然在工作区）、<code>check_release.py</code>、<code>detect_workbuddy.py</code> 不入包；对应文档步骤改写。</td></tr>
+        <tr><td>dsh 专属脚本</td><td><code>mcp_direct.py</code>（MCP 兜底直调落盘）与公文 <code>adapt_mcp_result.py</code>（MCP 返回 → 渲染输入适配，含 outline 模式）。</td></tr>
+      </table>
+    </div>
+
+    <!-- 6 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">6</span><h2>关键约束（红线规则）</h2></div>
+      <table class="k">
+        <tr><th style="width:150px">红线</th><th>内容</th></tr>
+        <tr><td>产物只落工作区</th><td>bundle 内 skill 目录是只读发布产物；一切运行时产物写会话工作区（<code>dknowc-output/&lt;会话ID前8位&gt;/</code>、<code>dknowc-projects/</code>、<code>~/.dknowc-writer/</code>），禁止写入插件目录。</td></tr>
+        <tr><td>脚本直连优先</th><td>正式检索与溯源核验一律走脚本通道（全量返回）；MCP 精简视图仅作应急，<strong>不据此生成正式核验报告</strong>。</td></tr>
+        <tr><td>不用模型手写 HTML</th><td>产出物 HTML 必须由渲染脚本生成，不得自行拼接 <code>&lt;a&gt;</code>／按钮／样式。</td></tr>
+        <tr><td>角标与素材纪律</th><td>素材清单先行、逐处标角标、禁止事后补标（继承母版红线；渲染与校验脚本双重拦截）。</td></tr>
+        <tr><td>Key 安全</th><td>Key 不入包、不硬编码、不在对话展示完整内容；注册走 dsh 专属渠道码；验证链接展示前经安全校验（同源、精确路径、token 形态），凭据不写公共日志。</td></tr>
+        <tr><td>额度处理</th><td>接口返回额度用尽（<code>quota_exhausted</code>）整批停止、禁止重试、引导 MaaS 平台。</td></tr>
+        <tr><td>版本同步纪律</th><td>skill 内容改动一律先改 SkillHub 母版，再同步本包重打补丁；本包不独立演进 skill 内容。</td></tr>
+      </table>
+    </div>
+
+    <!-- 7 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">7</span><h2>接口、Key 与渠道码</h2></div>
+      <table class="kv">
+        <tr><th>检索接口</th><td>深知可信搜索 <code>https://open.dknowc.cn/dependable/search/</code> ＋ 深度搜索接口（deep-query/v3）；MCP 兜底端点 <code>https://mcp.dknowc.cn/s6/mcp/</code>（Bearer 认证）。</td></tr>
+        <tr><th>API Key</th><td>dsh 下三级解析：<code>DSH_DKNOWC_API_KEY</code>（插件注入）→ <code>DKNOWC_API_KEY</code> → <code>~/.config/dknowc/api_key</code> → 历史 <code>~/.zshrc</code>。用户只需配置 <code>DKNOWC_API_KEY</code> 或经注册落盘配置文件；MCP 的 Bearer 直读 dsh 主进程环境变量（改后需重启 dsh 生效，脚本通道不受影响）。</td></tr>
+        <tr><th>dsh 渠道码</th><td><code>46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05</code>（注册行为渠道细分统计）；来源声明头 <code>channel=dsh</code>；注册 body <code>source="agent"</code> 为 API 合同标记（老用户直接返 Key 放行依据），与声明头 <code>agentSource</code> 是两个不同字段。</td></tr>
+        <tr><th>注册链路</th><td>sendMessage 两分支（短信直发 exit 0 ／行为验证链接 exit 2）＋ 退出码 1 错误；X-MaaS 客户端观测四头（Entry-Surface / Client-Name / Client-Version / Client-Instance-Id 服务端签发落盘回传）；<code>pending:true</code> 为密钥准备中非错误。</td></tr>
+        <tr><th>PPT 编译依赖</th><td><code>python-pptx</code> ＋ <code>XlsxWriter</code>（缺失时 <code>uv run --with …</code> 隔离提供，检索与 SVG 创作不受影响）；可选增强 skia-pathops / uharfbuzz。</td></tr>
+      </table>
+    </div>
+
+    <!-- 8 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">8</span><h2>分发渠道</h2></div>
+      <table class="k">
+        <tr><th style="width:170px">渠道</th><th>说明</th></tr>
+        <tr><td>npm（主源）</td><td><code>dknowc-dsh</code>，<code>dsh plugin add dknowc-dsh</code> 即装；新版本有 1 天安全观察期（dsh <code>minimumReleaseAge</code>），本机可在 pnpm-workspace.yaml 的 exclude 列表跳过。</td></tr>
+        <tr><td>GitHub 仓库</td><td><code>dsh-plugin</code> topic；每版 Release 附 tgz，支持 <code>dsh plugin add github:&lt;repo&gt;</code> 安装。</td></tr>
+        <tr><td>awesome-dsh-plugin</td><td>精选列表（PR 已合并），线上目录收录。</td></tr>
+        <tr><td>dshmarket（第三方插件市场）</td><td>dsh 内嵌可视化市场（数据源为 awesome 列表）：设置 → 插件市场，可搜索 <code>dknowc-dsh</code> 一键安装 / 一键更新；触达依赖用户访问市场页（无主动推送）。</td></tr>
+      </table>
+      <div class="warnbox">dsh 官方客户端当前<strong>无内置插件市场</strong>：设置 → 插件页支持按 npm 包名 / GitHub URL / 本地路径手动添加。</div>
+    </div>
+
+    <!-- 9 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">9</span><h2>版本历史</h2></div>
+      <table class="k">
+        <tr><th style="width:90px">版本</th><th style="width:110px">日期</th><th>主要内容</th></tr>
+        <tr><td><strong>2.2.0</strong></td><td>2026-10-15</td><td>同步母版 3.8.1 / 1.5.1 / 1.3.7：产出物 HTML 三页架构（banner 收敛版）、公文 Word×HTML 双开关交付、检索通道标注全链路、merge 句子指纹去重与表格保留、materials 角标重排、check_materials URL 变体修复与研究资料 gate、可信搜索 deep_convert 转换层（不再生成 clean.md）、可信PPT 卡片溢出修复与交付清单纪律；修复 dsh 侧遗留（deliver_outputs 幽灵引用、PPT initialize 重复定义、检索产物位置口径、src/index.js 描述旧口径）。</td></tr>
+        <tr><td><strong>2.1.0</strong></td><td>2026-10-09</td><td>注册链路契约同步（母版 3.7.9 / 1.4.5 / 1.3.6）：注册 body <code>source="agent"</code> 回退（修复老用户返 Key）、声明头键名 <code>agentSource</code>、sendMessage 两分支、X-MaaS 四观测头。</td></tr>
+        <tr><td><strong>2.0.0</strong></td><td>2026-09-29</td><td>移除深知可信咨询 skill（咨询由可信搜索承接）；检索通道反转为脚本直连；Key 落盘迁专用配置文件（注册后本会话即用）；同步母版 1.4.2 / 1.3.4 / 3.7.7。</td></tr>
+        <tr><td>1.4.0</td><td>2026-09-17</td><td>四 skill 溯源核验报告整体重构；公文范文大纲接入 MCP 第四工具 <code>doc_outline</code>。</td></tr>
+        <tr><td>1.3.0</td><td>2026-09-11</td><td>母版核验报告改版与 Key 自动持久化同步；WS 会话隔离补丁全量铺开。</td></tr>
+        <tr><td>1.2.1</td><td>2026-09-04</td><td>dsh 0.1.0–0.1.2 全版本兼容实测；README 版本兼容性章节。</td></tr>
+        <tr><td>1.0.4</td><td>2026-08-21</td><td>注册引导优化同步（价值前置 / 时机后移 / 可退路）＋ sendMessage 渠道埋点。</td></tr>
+        <tr><td>1.0.1–1.0.2</td><td>2026-08-19</td><td>MCP 实测适配、产物统一工作区、素材库主目录锚定、会话隔离；awesome PR 合并、dshmarket 市场收录。</td></tr>
+        <tr><td>1.0.0</td><td>2026-08-17</td><td>首发：三 skill MCP 转接架构 + npm / GitHub 分发。</td></tr>
+      </table>
+    </div>
+
+    <!-- 10 -->
+    <div class="section">
+      <div class="section-head"><span class="section-no">10</span><h2>当前已知问题与待办</h2></div>
+      <table class="k">
+        <tr><th style="width:220px">问题</th><th>影响</th><th style="width:190px">状态</th></tr>
+        <tr><td>官方客户端无内置插件市场</td><td>用户需手动按包名安装，或先装第三方 dshmarket 获得市场 UI；更新触达依赖用户主动访问。</td><td>生态侧现状，跟踪 dsh 官方</td></tr>
+        <tr><td>MCP 兜底通道为精简视图</td><td>缺文号 / 存档快照 / 标题链 / 可信度字段，不能生成正式核验报告；仅应急取数。</td><td>等 MCP 侧大结果落盘方案</td></tr>
+        <tr><td>MCP 通道加载新 Key 需重启 dsh</td><td>注册后脚本通道立即可用，但 MCP Bearer 读主进程环境变量，需重启后才携带新 Key。</td><td>机制性，README 已说明</td></tr>
+        <tr><td>新版本 1 天安全观察期</td><td>发布当天用户经市场更新可能提示等待；本机可加 exclude 跳过。</td><td>dsh 机制，属预期</td></tr>
+        <tr><td>PPT 编译首次需联网装依赖</td><td>无 python-pptx / XlsxWriter 时经 uv 隔离拉取（约 1 分钟，仅一次）。</td><td>依赖 uv 可用</td></tr>
+        <tr><td>母版侧代码注释人名残留</td><td>3.8.x 母版渲染器新增注释含 2 处人名（本包发布前已中性化）；母版待修。</td><td>已反馈母版侧</td></tr>
+      </table>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    dknowc-dsh · 产品文档 · 依据插件 v2.2.0（skill 3.8.1-dsh / 1.5.1-dsh / 1.3.7-dsh）与各 skill 母版整理 · 2026-10-15<br>
+    维护约定：skill 内容以 SkillHub 母版为准；版本定稿后同步维护本文档（与母版同步同批处理）
+  </div>
+
+</div>
+</body>
+</html>

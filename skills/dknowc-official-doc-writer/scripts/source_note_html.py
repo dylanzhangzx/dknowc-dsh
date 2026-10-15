@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""把写作流程的结构化正文/素材 JSON 转成可信搜索同款溯源报告。"""
+"""把写作流程的结构化正文/素材 JSON 转成产出物 HTML（正文 / 溯源核验报告 / 知识专库 三页）。"""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
@@ -60,10 +60,10 @@ def safe_output(value: str, title: str) -> Path:
         path = raw.resolve() if raw.is_absolute() else (OUTPUT_DIR / raw.name).resolve()
     else:
         safe_title = "".join("_" if char in '\\/:*?"<>| ' else char for char in title).strip("_")
-        # title 常已带 _溯源核验报告 后缀（溯源 JSON 的命名惯例），追加前先剥掉，
-        # 避免生成 "…_溯源核验报告_溯源核验报告.html"
+        # 产出物文件名＝用户需求（正文标题）确定的 XXX.html；兼容旧溯源 JSON 里
+        # 已带 _溯源核验报告 后缀的标题，先剥掉再加 .html，避免 "_溯源核验报告.html"
         safe_title = re.sub(r"(_溯源核验报告)+$", "", safe_title)
-        path = (OUTPUT_DIR / f"{safe_title[:80] or '溯源核验报告'}_溯源核验报告.html").resolve()
+        path = (OUTPUT_DIR / f"{safe_title[:80] or '文稿'}.html").resolve()
     if path.suffix.lower() not in {".html", ".htm"}:
         path = path.with_suffix(".html")
     try:
@@ -235,6 +235,8 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
                 "核验": first_value(item, "verification", "核验", "核验说明"),
                 # 所属搜索条件（多路检索时按来源分组筛选）与引用状态
                 "搜索条件": first_value(item, "search_key", "搜索条件"),
+                # 检索通道（深知深度搜索 / 深知可信搜索）：报告据此区分接口来源
+                "检索通道": first_value(item, "检索通道"),
                 "已引用": used,
             })
     # 知识专库链接区已随 3.6.0 未引用召回全量展示移除：召回内容都在报告材料面板中，
@@ -255,7 +257,7 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="生成深知可信搜索同款可信溯源报告 HTML")
+    parser = argparse.ArgumentParser(description="生成产出物 HTML（正文 / 溯源核验报告 / 知识专库 三页）")
     parser.add_argument("input", help="结构化可信溯源 JSON，必须位于 official-docs/input")
     parser.add_argument("--output", "-o", help="输出 HTML 文件名，默认写入 official-docs/output")
     parser.add_argument("--skip-link-check", action="store_true",
@@ -291,7 +293,7 @@ def main() -> None:
     question = str(data.get("question") or "").strip()
     rendered = renderer.render_html(payload, title, answer_override=answer, question_override=question)
     output_path.write_text(rendered, encoding="utf-8")
-    print(f"溯源核验报告 HTML 已生成: {output_path}")
+    print(f"产出物 HTML（正文/溯源核验报告/知识专库 三页）已生成: {output_path}")
 
 
 if __name__ == "__main__":

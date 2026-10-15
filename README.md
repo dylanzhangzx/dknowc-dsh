@@ -2,24 +2,24 @@
 
 深知可信办公全家桶 —— DeepSeek Harness（dsh）插件包。
 
-通过一个 bundle 交付彩智科技的三个深知 Skill（深知可信搜索 / 深知可信PPT / 深知公文写作），并捆绑深知可信工作台 MCP 作为应急兜底通道：**接口能力统一走 MCP（trusted_search / deep_query / doc_outline 等），作为脚本异常时的应急兜底**。
+通过一个 bundle 交付彩智科技的三个深知 Skill（深知可信搜索 / 深知可信PPT / 深知公文写作），接口能力统一走**脚本直连**（全量结构化返回），并捆绑深知可信工作台 MCP（trusted_search / deep_query / doc_outline）作为脚本异常时的应急兜底。
 
 ## 包含什么
 
 ```
 dknowc-dsh/
 ├── skills/
-│   ├── dknowc-trusted-search/        深知可信搜索（MCP 转接 trusted_search / deep_query）
-│   ├── dknowc-ppt-assistant/         深知可信PPT（素材检索走 MCP；SVG→原生PPTX 纯本地编译）
-│   └── dknowc-official-doc-writer/   深知公文写作（搜索走 MCP；范文大纲保留原脚本直连）
+│   ├── dknowc-trusted-search/        深知可信搜索（脚本直连 + deep_convert 转换层；三页产出物 HTML）
+│   ├── dknowc-ppt-assistant/         深知可信PPT（素材检索脚本直连；SVG→原生PPTX 纯本地编译）
+│   └── dknowc-official-doc-writer/   深知公文写作（两阶段检索脚本直连；公文 Word × 产出物 HTML 双开关交付）
 ├── src/index.js                      注册 3 个 skill 到 dsh ctx.skills
 └── cordis.patch.yml                  挂载 skill provider + mcp-client（Bearer 认证）
 ```
 
 | Skill | 能力 | 接口调用方式 |
 |---|---|---|
-| 深知可信搜索 | 咨询类政策问答 + 权威材料检索/深度研究（分级），溯源核验报告（图表一体化）+ 干净 Markdown | 脚本直连（`trusted_search.py` / `deep_query.py`）；MCP 兜底 `mcp__dknowc__trusted_search` / `mcp__dknowc__deep_query` |
-| 深知公文写作 | 正式公文起草/改写/多轮改稿/Word/红头交付，核验报告 + 研究资料 + 参考范文召回 | 脚本直连（`dkag_search.py`/`outline_reference.py`/`extract_reference.py`）；MCP 兜底 `mcp__dknowc__*` |
+| 深知可信搜索 | 咨询类政策问答 + 权威材料检索/深度研究（分级），单文件产出物 HTML 三页（正文/溯源核验报告/知识专库，图表一体化，研究资料层） | 脚本直连（`trusted_search.py` / `deep_query.py` + `deep_convert.py` 转换层）；MCP 兜底 `mcp__dknowc__trusted_search` / `mcp__dknowc__deep_query` |
+| 深知公文写作 | 正式公文起草/改写/多轮改稿，交付双开关：15 种法定公文出 Word（可红头）、执行过搜索出产出物 HTML 三页；研究资料层 + 参考范文召回 | 脚本直连（`dkag_search.py`/`deep_query.py`/`deep_convert.py`/`outline_reference.py`）；MCP 兜底 `mcp__dknowc__*` |
 | 深知可信PPT | 演示文稿制作：SVG 逐页创作→编译原生可编辑 .pptx，双版核验报告（提纲/成稿）+ 页面预览页 | 素材检索脚本直连（`trusted_search.py`）；编译纯本地（python-pptx，uv 隔离依赖） |
 
 ## dsh 版本兼容性
@@ -101,7 +101,7 @@ bundle 内的 skill 目录是**只读发布产物**，运行时产物（溯源 H
 └── <会话ID前8位>/
     └── official-docs/
         ├── search-results/   接口 JSON、MCP 原始返回、规范化 JSON、答案文件
-        ├── output/           溯源 HTML、干净 Markdown、Word/红头文档
+        ├── output/           产出物 HTML（正文/溯源核验报告/知识专库 三页）、Word/红头文档
         ├── input/            正文临时文件（公文写作）
         └── outline-results/  范文大纲 JSON（公文写作）
 ```
@@ -138,7 +138,9 @@ npm run check
 - `深知可信PPT` → 深知可信PPT Skill `public/skillhub/dknowc-ppt-assistant`
 - `深知公文写作` → 深知公文写作 `public/skillhub/dknowc-official-doc-writer`
 
-**修改流程**：任何 skill 改动优先改 skillhub 母版 → 重新同步到本包 `skills/` 目录 → 重新适配（frontmatter name 改 kebab-case、渠道码换 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05`、接口调用改 MCP 转接）。其他各渠道（DeepSeek Club / 夏平 / ClawHub / ModelScope / Qoder / Skills-SH / 华为等）的版本都是在 skillhub 母版基础上更换各自渠道码生成。
+**修改流程**：任何 skill 改动优先改 skillhub 母版 → 重新同步到本包 `skills/` 目录 → 重打 dsh 补丁（WS_ROOT 会话隔离与 `dknowc-output/` 路径前缀、dsh Key 三级门禁、SKILL.md 版本号 `-dsh` 后缀与 `<skillDir>` 前缀、渠道码换 `46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05`、移除母版专属脚本 `deliver_outputs.py`/`check_release.py`/`detect_workbuddy.py` 并把交付步骤改写为 dsh 工作区交付）。其他各渠道（DeepSeek Club / 夏平 / ClawHub / ModelScope / Qoder / Skills-SH / 华为等）的版本都是在 skillhub 母版基础上更换各自渠道码生成。
+
+**产品文档**：`dknowc-dsh-产品文档.html`（仓库根，10 节结构：概览 / 能力矩阵 / 全景流程 / 交付物 / 文件清单 / 红线 / 接口与Key / 分发渠道 / 版本历史 / 已知问题；不入 npm 包）。版本定稿后与母版同步同批维护。
 
 ## License
 
@@ -150,3 +152,18 @@ MIT
 - **移除深知可信咨询 skill**：与可信搜索功能重叠且效果不及，咨询类政策问答由可信搜索承接（检索作答 + 溯源）。
 - **检索通道反转为脚本直连**（跟随母版 3.7.5/1.4.0 决策）：MCP 返回为精简视图（缺文号/快照/标题链/可信度），脚本直连返回全量；Key 落盘迁至 `~/.config/dknowc/api_key`（dsh 环境变量清理不影响，注册后本会话即用）。
 - 三 skill 同步母版 1.4.2 / 1.3.4 / 3.7.7（溯源核验报告持续修复、图表一体化、参考范文召回、X-Dknowc-Attribution 来源声明 channel=dsh、积分制权益话术）。
+
+## v2.2.0 变更要点
+
+- **三 skill 同步母版大版本**：深知公文写作 3.8.1 / 深知可信搜索 1.5.1 / 深知可信PPT 1.3.7（对应 dsh 版本号 `3.8.1-dsh` / `1.5.1-dsh` / `1.3.7-dsh`）。
+- **产出物 HTML 三页架构**（公文写作 + 可信搜索，跟随母版 3.8.x/1.5.x 交付形态大改）：单文件 HTML 顶部切换 **正文（去索引）/ 溯源核验报告 / 知识专库** 三页，默认落在报告页；单一吸顶 banner（文稿名 + 三页切换 + 复制/导出 + 原问题 + 统计行，切页高度不变）；导出菜单（Markdown（正文）/ PDF（正文）/ PDF（溯源核验报告））；可信搜索不再生成 `.clean.md`（正文页与导出已覆盖）。
+- **公文写作交付双开关**：命中 15 种法定公文 → Word（可红头）；执行过深知搜索 → 产出物 HTML；两者可同时成立（task_router 交付矩阵）。
+- **核验报告数据正确性修复**（母版同步）：merge 句子指纹二次去重（同内容多标题变体只出一张卡）+ 标题链污染段剔除；检索通道标注全链路透传（深度搜索/可信搜索分路计数与来源声明，双通道拼接保留）；materials 按角标号升序重排（修胶囊错位）；深度搜索表格标签保留（修知识专库表格拍平）；check_materials 同标题多 URL 变体误判修复；研究资料 gate（研究型文种缺研究资料拒绝渲染）。
+- **可信搜索新增 deep_convert.py 转换层**：深度搜索 v3 原始产物先转通用形态再进 merge（merge 拒绝 v3 原始形态并提示）；研究资料层（核心事实总表 + 数据口径表，缺口驱动补搜）。
+- **可信PPT**：知识专库卡片横向溢出修复（minmax(0,1fr)）；交付清单纪律（三件套之外一律不交付）。
+- **dsh 侧修正**：修复 2.1.0 遗留的 `deliver_outputs.py` 幽灵引用（可信搜索 SKILL.md 步骤 7/8、可信PPT SKILL.md 与 generate-pptx Step 9——dsh 包内本就无此脚本，现统一改为 dsh 工作区交付表述）；修复可信PPT initialize.py 重复函数定义（dsh Key 门禁分支此前被同名函数覆盖为死代码）；可信搜索"检索产物位置"说明改为会话工作区口径（原误写为 skill 安装目录）；src/index.js 三条 skill 描述同步新交付形态（原残留 MCP 直连与"干净 Markdown"旧口径）。
+- **产品化清扫**：渲染器代码注释中的 2 处人名残留中性化（母版 3.8.x 新增注释带入）。
+
+## v2.1.0 变更要点
+
+- 同步注册链路契约（母版 3.7.9 / 1.4.5 / 1.3.6）：注册 body `source="agent"` 合同标记回退（修复老用户返 Key）、`X-Dknowc-Attribution` 头键名 `source`→`agentSource`、sendMessage 两分支（直发/验证链接）、X-MaaS 四个观测头。
