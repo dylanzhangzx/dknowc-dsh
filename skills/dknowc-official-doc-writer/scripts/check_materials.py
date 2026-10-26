@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """校验溯源核验报告 JSON 的完整性，防止"素材脱离检索结果、字段残缺、核验单失真"。
 
-背景：曾出现模型手写脚本人工挑拣材料、脱离合并产物，且手写溯源 JSON 缺
+背景：防止模型手写脚本人工挑拣材料、脱离合并产物，以及手写溯源 JSON 缺失
 self_check / recalled_materials / 标准字段，导致核验报告单多项"未记录"。本脚本在生成 HTML 前强制校验：
 
   1. 材料来源可回溯：每条 materials / recalled_materials 的标题/源网址能在
@@ -9,7 +9,10 @@ self_check / recalled_materials / 标准字段，导致核验报告单多项"未
   2. 字段完整性：materials 必须带 excerpts / type（source_url 允许缺省——接口未返回时
      按规则不填、不猜测），recalled_materials 非空；
   3. 角标对应：document_content 的 [n] 角标与 materials 一一对应，无越界；
-  4. self_check 完整：五项检查结果必须全部写入（不得缺失导致"未记录"）。
+  4. self_check 完整：五项检查结果必须全部写入（不得缺失导致"未记录"）；
+  5. 文号只认字段：正文每个文号必须能在 materials 的 `发文字号` 字段找到，
+     禁止从段落正文提取；
+  6. 篇幅：只校验用户明确要求或模板规定的字数；用户未提字数时不设默认区间。
 
 用法：
   python3 scripts/check_materials.py <溯源JSON> <合并产物JSON>
@@ -76,10 +79,7 @@ def build_source_index(merged: dict) -> tuple:
 
     标题索引：{去空格标题: {title, url}}——同标题多来源变体只留首条（仅作
     "标题兜底"展示用）；URL 集合收录**全部变体 URL**（含 policyFiles）。
-    2026-10-14 修复（豆包侧移植实测发现）：此前按标题 setdefault 只保留首条
-    URL，同一文件在门户栏目页与部门页各有 URL 变体时（如 zhengcefagui 与
-    gdj），引用非首条变体的材料被误报"source_url 不在合并产物中（可能编造）"，
-    校验永远 ok=false 卡死写作链（70 篇池 2 组同标题双 URL 变体必现）。"""
+    按标题 setdefault 只保留首条 URL 时，同一文件在门户栏目页与部门页各有 URL 变体（如 zhengcefagui 与 gdj），引用非首条变体的材料会被误报"source_url 不在合并产物中（可能编造）"，校验卡死写作链。"""
     index: dict = {}
     urls: set = set()
 
@@ -154,6 +154,101 @@ def check_citations(content: str, materials: list) -> list[str]:
     if unused:
         errors.append(f"以下材料未被正文引用（如确未引用应移入 recalled_materials）：{unused}")
     return errors
+
+
+DOCNUM_RE = re.compile(r"[〔\[【（(［]\s*(\d{4})\s*[〕\]】）)］]\s*(\d+)\s*号")
+LONG_FORM_MARKERS = ("总结报告", "调研报告", "研究报告", "分析报告", "政策研究",
+                     "产业研究", "工作总结", "汇报材料", "综合性总结")
+
+
+def _docnum_key(text) -> tuple:
+    """提取文号的年份+序号（忽略发文机关前缀），用于字段与正文的严格比对。"""
+    m = DOCNUM_RE.search(str(text or ""))
+    return (m.group(1), m.group(2)) if m else None
+
+
+def check_doc_numbers(content: str, materials: list) -> list[str]:
+    """文号只认 materials 的 `发文字号` 字段，正文不得从段落正文提取文号。
+
+    检查中出现过整批文章 `发文字号` 全为空、正文却写了文号的情况，且文号来自召回段落。按用户口径"只接受接口返回"，这种情况必须拦截。
+    """
+    errors = []
+    field_keys = set()
+    for mat in materials or []:
+        key = _docnum_key(mat.get("发文字号"))
+        if key:
+            field_keys.add(key)
+    seen = set()
+    for m in DOCNUM_RE.finditer(content or ""):
+        key = (m.group(1), m.group(2))
+        if key in field_keys or key in seen:
+            continue
+        seen.add(key)
+        token = re.sub(r"\s+", "", m.group(0))
+        errors.append(
+            f"正文文号“{token}”在 materials 的 发文字号 字段中找不到"
+            f"（不得从段落正文提取；字段为空时正文只写文件名）"
+        )
+    return errors
+
+
+def count_body_chars(content: str) -> int:
+    """正文汉字数：排除 Markdown 标题行，只统计正文汉字。"""
+    lines = [line for line in str(content or "").splitlines()
+             if not line.lstrip().startswith("#")]
+    return len(re.findall(r"[一-鿿]", "\n".join(lines)))
+
+
+def resolve_length_range(trace: dict):
+    """篇幅区间：只认 trace.length_target 或用户问题里的明确字数；没有则返回 None。
+
+    用户未提字数时不设默认下限/上限，按素材充分度自然收束。
+    """
+    target = trace.get("length_target")
+    if isinstance(target, (list, tuple)) and len(target) == 2:
+        try:
+            lo, hi = int(target[0]), int(target[1])
+            if lo > 0 and hi >= lo:
+                return lo, hi
+        except (TypeError, ValueError):
+            pass
+    if isinstance(target, dict):
+        try:
+            lo, hi = int(target.get("min")), int(target.get("max"))
+            if lo > 0 and hi >= lo:
+                return lo, hi
+        except (TypeError, ValueError):
+            pass
+    question = str(trace.get("question") or "")
+    m = re.search(r"(\d{3,5})\s*[-—至~～]\s*(\d{3,5})\s*字", question)
+    if m:
+        lo, hi = int(m.group(1)), int(m.group(2))
+        if lo > 0 and hi >= lo:
+            return lo, hi
+    m = re.search(r"(\d{3,5})\s*字", question)
+    if m:
+        n = int(m.group(1))
+        return int(n * 0.8), int(n * 1.2)
+    return None
+
+
+def check_length(trace: dict) -> list[str]:
+    """用户明确要求字数时，研究型/综合长篇正文汉字数必须落在要求区间内。"""
+    doc_type = str(trace.get("doc_type") or "")
+    if not any(marker in doc_type for marker in LONG_FORM_MARKERS):
+        return []
+    length_range = resolve_length_range(trace)
+    if length_range is None:
+        return []
+    lo, hi = length_range
+    count = count_body_chars(trace.get("document_content") or "")
+    if count < lo or count > hi:
+        return [
+            f"正文汉字数 {count} 不在用户要求的 {lo}–{hi} 范围（doc_type={doc_type}）——"
+            "低于下限先补已召回事实，仍不足则交短稿并说明缺口；高于上限先压缩重复与铺垫，"
+            "必保内容不得删。"
+        ]
+    return []
 
 
 def _norm_key(k: str) -> str:
@@ -231,6 +326,11 @@ def main() -> int:
     merged = load_json(Path(merged_path).expanduser())
 
     errors = []
+    if not str(trace.get("question") or "").strip():
+        errors.append(
+            "question 为空——溯源报告必须展示用户原问题全文；"
+            "多行/长 prompt 请用 build_trace_json --question-file 传入，禁止只传首行"
+        )
     index, source_urls = build_source_index(merged)
 
     materials = trace.get("materials") or []
@@ -244,8 +344,7 @@ def main() -> int:
 
     # ② 字段完整性
     # 注：source_url **允许缺省** —— search_guide.md 明确"接口未返回原网址时不填、不猜测"，
-    # 此处若强制报错就与规则直接冲突（曾出现接口未返回源网址、材料被正文引用后
-    # 校验必然失败、只能移出正文清单的情况）。
+    # 此处若强制报错就与规则直接冲突（接口未返回源网址、材料被正文引用后校验必然失败，只能移出正文清单）。
     # 来源可回溯性由上面的 check_material_source 用"合并产物标题/URL 反查"保证；报告端对
     # 无源网址的材料会在卡片上如实标注"待补链接"。
     for i, mat in enumerate(materials, 1):
@@ -258,6 +357,12 @@ def main() -> int:
 
     # ③ 角标对应
     errors.extend(check_citations(trace.get("document_content") or "", materials))
+
+    # ③b 文号只认接口字段（禁止从段落正文提取）
+    errors.extend(check_doc_numbers(trace.get("document_content") or "", materials))
+
+    # ③c 篇幅（仅用户明确要求字数时校验）
+    errors.extend(check_length(trace))
 
     # ④ self_check 完整
     errors.extend(check_self_check(trace.get("self_check")))
@@ -276,7 +381,7 @@ def main() -> int:
                 f"doc_type={doc_type} 属研究型/综合长篇文种，但未找到研究资料文件"
                 f"（{input_dir}/*研究资料*.md）——按 SKILL.md 搜索规则第 8/9 条先生成研究资料"
                 f"（初版：核心事实总表+数据口径表；定稿：角标与素材清单对齐，正文基于定稿写作），"
-                f"缺该层曾致正文只有 2509 字（有层实测 9045 字）")
+                f"缺少该层会导致正文过短")
 
     if errors:
         print(json.dumps({"ok": False, "errors": errors, "file": str(Path(args.trace_json))},
@@ -287,6 +392,7 @@ def main() -> int:
         "file": str(Path(args.trace_json)),
         "materials": len(materials),
         "recalled_materials": len(recalled),
+        "body_chars": count_body_chars(trace.get("document_content") or ""),
         "self_check": "完整" if trace.get("self_check") else "缺失",
         "note": "校验通过，可生成溯源核验报告 HTML",
     }, ensure_ascii=False, indent=2))

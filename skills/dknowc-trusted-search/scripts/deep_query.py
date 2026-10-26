@@ -292,7 +292,9 @@ def main() -> None:
     parser.add_argument("--json-only", action="store_true", help="仅输出接口原始 JSON")
     parser.add_argument("--output", "-o", help="深度搜索结果 JSON 文件名，写入 official-docs/search-results/（配合 --json-only 使用）")
     parser.add_argument("--show-materials", type=int, default=5, help="摘要中展示前 N 篇材料")
-    parser.add_argument("--timeout", type=int, default=300, help="请求超时秒数")
+    # 默认 600s（2026-10-20 同号修正）：深度链路网关超时已由 60s 放宽至 10 分钟（2026-09-24 群内
+    # 调整；实测单地域 63–101s、重题可达 3–10 分钟），默认 300s 有重题被客户端提前掐断的风险。
+    parser.add_argument("--timeout", type=int, default=600, help="请求超时秒数（默认 600，与链路 10 分钟上限对齐）")
     args = parser.parse_args()
 
     endpoint = _pick(

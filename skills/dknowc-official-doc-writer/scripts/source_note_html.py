@@ -161,7 +161,7 @@ SNAPSHOT_ENABLED = True
 
 
 def normalize_snapshot_url(url: str) -> str:
-    """快照路径容错：接口部分返回值缺 /A/ 层级（实测 60 条中 5 条，补全后即可访问），
+    """快照路径容错：接口部分返回值缺 /A/ 层级（部分返回值缺少该层级，补全后即可访问），
     统一规范化为 https://attach.dknowc.cn/snapshot/A/<2位>/<2位>/<哈希>.jpg。"""
     u = (url or "").strip()
     if u.startswith("https://attach.dknowc.cn/snapshot/") and "/snapshot/A/" not in u:
@@ -180,7 +180,7 @@ def verify_snapshots(articles: list[dict]) -> int:
     是否符合合法格式（https://attach.dknowc.cn/snapshot/A/…），不合法则弃用。
 
     不做网络可达检测：attach 前置雷池 WAF 的拦截与请求方 IP 风控相关
-    （检测机高频请求会被拦而普通用户正常），可达性实测会误杀好快照；
+    （检测机高频请求会被拦而普通用户正常），可达性检测可能误杀可用快照；
     快照文件本身的存在性由可信搜索侧的数据质量保障。
     """
     dropped = 0
@@ -214,11 +214,12 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
             matched = source_index.get(material_name) or source_index.get(normalize_title(material_name), {})
             source_url = first_value(item, "source_url", "sourceUrl", "源网址", "原文链接", "url") or matched.get("source_url", "")
             policy_url = first_value(item, "policyUrl", "policy_url", "knowledgeBase", "知识专库链接") or matched.get("policy_url", "")
-            doc_number = first_value(item, "doc_number", "文号") or matched.get("doc_number", "")
+            doc_number = (first_value(item, "发文字号", "doc_number", "文号")
+                          or matched.get("doc_number", ""))
             articles.append({
                 "文章标题": material_name,
                 "文号": doc_number,
-                "来源": first_value(item, "source", "来源", "publisher"),
+                "来源": first_value(item, "source", "来源", "publisher", "发布或实施机构"),
                 "发布日期": first_value(item, "date", "发布日期", "time"),
                 # 接口原始结构透传：发布日期可信度 + 段落（含段落标题，用于"原文位置"标题链）
                 "发布日期可信度": first_value(item, "发布日期可信度", "可信度", "confidence"),
@@ -228,10 +229,17 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
                 "源网址": source_url,
                 "知识专库原文": policy_url,
                 # 快照链接（接口 screenShotPath）：原文 404 时的存档兜底，渲染层择一展示。
-                # 接口刚上线数据不稳（实测部分快照 404/NoSuchKey），默认关闭，--enable-snapshot 打开。
+                # 接口数据可能不稳（部分快照 404/NoSuchKey），默认关闭，--enable-snapshot 打开。
                 "快照链接": normalize_snapshot_url(first_value(item, "snapshot_url", "快照链接", "screenShotPath", "screenshot_path")) if SNAPSHOT_ENABLED else "",
                 "policyUrl": first_value(item, "policyUrl", "policy_url"),
                 "类型": first_value(item, "type", "素材类型") or "材料",
+                # V2 新增文章级字段（D5 展示 / 追溯）
+                "发文字号": first_value(item, "发文字号", "doc_number", "文号"),
+                "生效日期": first_value(item, "生效日期", "effectiveDate"),
+                "失效日期": first_value(item, "失效日期", "expiryDate"),
+                "文章类型": first_value(item, "文章类型", "文章类别"),
+                "发布或实施机构": first_value(item, "发布或实施机构", "发布机关"),
+                "文件标签": first_value(item, "文件标签"),
                 "核验": first_value(item, "verification", "核验", "核验说明"),
                 # 所属搜索条件（多路检索时按来源分组筛选）与引用状态
                 "搜索条件": first_value(item, "search_key", "搜索条件"),
@@ -243,6 +251,10 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
     # JSON 中残留的 knowledge_bases 字段被忽略（兼容旧 JSON，不报错）。
     content = {"data": {"检索文章": articles}}
     payload = {"answer": answer, "question": title, "content": content}
+    if isinstance(data.get("检索记录"), list):
+        payload["检索记录"] = data.get("检索记录")
+        # 渲染入口会 unwrap 到 content 层，必须同步放进 content（与 selfCheck 同处理）
+        content["检索记录"] = data.get("检索记录")
     # 成稿自检结果（5 项）由生成流程写入溯源 JSON；未写入时渲染器如实显示"未记录"
     self_check = data.get("self_check") or data.get("selfCheck")
     if isinstance(self_check, dict):

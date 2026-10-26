@@ -24,15 +24,18 @@ dknowc-dsh/
 
 ## dsh 版本兼容性
 
-本插件**零 dsh SDK 依赖**（`src/index.js` 只用 Node 内置模块 + cordis 注入的 `ctx`），MCP client 由 dsh 宿主自带并随宿主版本自动对齐（`@deepseek-ai/dsh-mcp-client` 是 dsh CLI 的直接依赖），因此跨 dsh 大版本天然兼容。已在以下版本实测通过（插件加载、4 skill 注册、MCP 连接均正常）：
+本插件**零 dsh SDK 依赖**（`src/index.js` 只用 Node 内置模块 + cordis 注入的 `ctx`），MCP client 由 dsh 宿主自带并随宿主版本自动对齐（`@deepseek-ai/dsh-mcp-client` 是 dsh CLI 的直接依赖），因此跨 dsh 大版本天然兼容。已在以下版本实测通过（插件加载、skill 注册、MCP 连接均正常）：
 
+- dsh **0.2.1-rc.2**（npm `latest`，2026-10-19 实测：插件树加载零告警；`--dump-config` patch 合成正常；headless 一次性任务会话中 3 skill 出现在 `<available_skills>`（2.2.1 新描述）；MCP server dknowc 连接成功、5 个工具（trusted_search / deep_query / credible_chat / doc_outline / create_api_key）完整同步——见下方 0.2.x 门禁说明）
+- dsh 0.1.2-rc.1（SDK 破坏性变更版本）
+- dsh 0.1.1-rc.2
 - dsh 0.1.0-rc.7（本插件首发基线）
-- dsh 0.1.1-rc.2（npm `latest`，`npx @deepseek-ai/dsh` 默认拿到）
-- dsh 0.1.2-rc.1（npm `next`，SDK 破坏性变更版本）
 
 v1.4.0：四 skill 溯源核验报告整体重构（双视图单页/句后引文胶囊/材料专库视图/链接活性检测+存档快照兜底/核验结论分级）；公文范文大纲接入 MCP 第四工具 `doc_outline`；注册统一自动持久化（四 skill 共用同一 `~/.zshrc` 标记块）。
 
-> 注意：dsh 0.1.2 起 SDK 有破坏性变更（如 `dsh-settings` 移除部分导出），一批引用 SDK 内部包的第三方插件会加载失败，且 dsh 的加载机制是**任一插件导入失败即整个 profile 启动失败**。如升级 dsh 后无法启动，可先用 `dsh --profile web --patch <禁用清单.yml>` 临时禁用可疑插件定位问题（`- id: <插件id>` + `disabled: true`），本插件本身在 0.1.2 上无需任何改动。
+> 注意（dsh 0.1.2 时代）：SDK 破坏性变更（如 `dsh-settings` 移除部分导出）会让引用 SDK 内部包的第三方插件加载失败，且当时的加载机制是**任一插件导入失败即整个 profile 启动失败**。可先用 `dsh --profile web --patch <禁用清单.yml>` 临时禁用可疑插件定位问题；本插件零 SDK 依赖，历次破坏性变更均无需改动。
+>
+> **dsh 0.2.x 起机制改善**：宿主新增插件兼容性门禁——不兼容插件（peer requirements 不满足）**不再拖垮整树**，而是启动时单独跳过并给出明确告警与精确豁免口（`dsh plugin allow-version`）。2026-10-19 在 0.2.1-rc.2 实测：本插件零告警直接加载（无 peer requirements 冲突项），同环境 dshmarket 1.29.2 被门禁拒绝、升级 1.66.42 后恢复——第三方社区迁移走廊卡（`dsh-plugin-upgrade`，DSH 官方负责人公开推荐）梳理的 0.1.3→0.1.6 全部 25 条破坏性接缝（静默槽位/状态键删除、`agent/created` 监听器竞态、异步注册 INACTIVE_EFFECT、模型 id 删除等）经逐条比对均不涉及本插件接触面（纯同步 `apply()` 注册、无 UI 槽位、无会话 API、无模型引用、无 SDK import）。
 
 ## 安装
 
@@ -156,6 +159,19 @@ MIT
 ## v2.2.1 变更要点
 
 - 产品化修正：公文写作示例文件 `reference/sample_trace_report.html` 中内嵌的 2 处人名注释中性化（母版 3.8.x 渲染器注释带入，含示例 HTML；其余文件在 2.2.0 已清理）。内容与 2.2.0 一致，仅此一处清洁性修复。
+
+## v2.3.0 变更要点
+
+- **三 skill 同步母版大版本**：深知公文写作 3.9.2 / 深知可信搜索 1.6.0 / 深知可信PPT 1.5.0（dsh 版本号 `3.9.2-dsh` / `1.6.0-dsh` / `1.5.0-dsh`）。
+- **可信搜索全面切换 V2 接口**（三 skill 的检索客户端）：端点 `/open-api/maas/dependable/v2/search`；`searchType` 必填单值分路（政策依据 `policy` / 数据案例 `govSite`，混传报错）；参数定档 `segmentCount=4` / `MaterialLength=18000` / `filterPara=true`；成功判定 `ret==0 且 content.code==200`；`tid` 随产物落盘。V2 文章级新字段（发文字号/生效日期/失效日期/文章类型/文章Id）透传进来源卡关键性行。
+- **文号链路修复**（V2 配套）：merge 键链扩为 `文号 > 发文字号 > doc_number > writtenText`（中文键优先）——V2 切换起文章级文号在 merge 被丢的问题修复；正文文号只认材料清单「发文字号」字段（公文 G6 gate，`check_materials.py` 拦截从段落正文提取文号）；补搜改为纯缺口驱动（文号缺失不再构成补搜理由）。
+- **安全加固**（应用市场注入扫描中危修复，三 skill 渲染器同源）：表格清洗改 HTMLParser 元素级白名单（防 `<svg/onload>` 类畸形标签绕过）；全部外链协议白名单 `safe_url()`（仅 http/https）；页尾注入 JSON 字符级转义；公文 `format_document.py` 目录白名单 realpath 校验；畸形表格（数据行整片包 thead）自动修正。
+- **过程统计与装配契约**：merge 记录每路调用增量（`new_articles`/`added_paragraphs`），过程条显示「该路新增 N 篇 · 补充 K 段」；`--question-file` 用户原问题全文落盘传入（多行问题禁止只传首行，`check_materials.py` 对空 question 拦截）；补搜计数与真实调用次数对齐。
+- **搜索 1.6.0 专属**：要件式改写规则（资格/准入/受限类问题必须补要件式 query）；联网检索降级链（`--search-channel webSearch`，联网材料自动打「非官方来源」徽标）。
+- **PPT 1.5.0 专属**：质检判据定死（退出码 0 且 errors=0 即通过，warnings 不阻断；质检循环最多 3 轮、导出后不回头）；SKILL.md 定向瘦身（新 `references/initialization.md`）。
+- **公文 3.9.x 专属**：SKILL.md 396→143 行重构（细节拆入 `initialization/outline_rules/materials_pipeline/writing_rules/working_principles/genre_writing_notes` 六篇新 reference）；写作规则收紧（事实来源三分法、标准引用四查、调研方法只写实际执行、篇幅只服从用户明确要求——取消默认 3500-5000 门槛）；Word 补交不重渲染 HTML；深搜 `writtenText` 文号透传。
+- **注册话术透明化**：索要手机号前明确告知账号注册与本机保存凭证事实；话术事实要素不可增删、措辞可自然调整。
+- **dsh 侧**：与母版同步更新全部 dsh 补丁落点（公文 SKILL.md 新结构、新 reference 六篇、PPT initialization.md、deliver_outputs 相关步骤全部保持 dsh 交付口径）；V2 参数/分路规则同步；渲染器与文档中 6 处母版带入人名中性化（待反馈母版）。
 
 ## v2.2.0 变更要点
 

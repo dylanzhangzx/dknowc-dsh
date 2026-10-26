@@ -447,6 +447,10 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
     # 检索通道（深知深度搜索 / 深知可信搜索）：由检索脚本在产物上打标、merge 透传，
     # 供过程条/hero 按接口通道拆分计数；历史 JSON 无该字段时为空（渲染层回退旧文案）
     source["channel"] = first_str(item.get("检索通道"), item.get("channel"))
+    # 非官方来源（1.6.0 起）：联网路（searchChannel=webSearch）召回的非权威站点材料。
+    # 双口径判定：联网路脚本打标 非官方来源=True；或接口 dataAuthority 返回 数据权威性=非权威。
+    source["unofficial"] = bool(item.get("非官方来源")) or str(
+        item.get("数据权威性") or item.get("authority") or "").strip() in ("非权威", "non-authoritative")
     source["used"] = item.get("已引用", item.get("used", True))
     if not isinstance(source["used"], bool):
         source["used"] = True
@@ -780,7 +784,8 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
 # 过程回顾 / 热词（真实计算，不虚构流程）
 # ============================================================
 
-def compute_process_stats(sources: List[Dict[str, str]], answer: str) -> Dict[str, Any]:
+def compute_process_stats(sources: List[Dict[str, str]], answer: str,
+                         calls: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """过程回顾条数据：检索次数、每组检索的召回/采用数、入库与引用计数。
 
     全部来自素材自带的真实字段（search_key 分组、used 引用状态、正文角标计数），
@@ -801,15 +806,30 @@ def compute_process_stats(sources: List[Dict[str, str]], answer: str) -> Dict[st
             if ch:
                 chan_counts[ch] = chan_counts.get(ch, 0) + 1
         channel = max(chan_counts, key=chan_counts.get) if chan_counts else ""
+        # 每路调用增量（1.6.0）：merge 的 search_meta.calls 按标签对齐到分组行，
+        # 过程条展示『该路新增 N 篇 · 补充 K 段』——补搜的实际贡献不被分组统计吞掉
+        delta = ""
+        if calls:
+            matched = next((c for c in calls if str(c.get("label") or "").strip() == key), None)
+            if matched is None:
+                matched = next((c for c in calls
+                                if str(c.get("label") or "").strip()
+                                and key.startswith(str(c.get("label")).strip()[:12])), None)
+            if matched:
+                delta = f"新增 {matched.get('new_articles', 0)} 篇 · 补充 {matched.get('added_paragraphs', 0)} 段"
         cond_rows.append({
             "key": key,
             "total": len(group),
             "used": sum(1 for s in group if s.get("used", True)),
             "channel": channel,
+            "delta": delta,
         })
     n_searches = len(cond_rows) or (1 if sources else 0)
+    # 深度/可信互斥计数（2026-10-16 修复）：多数通道为拼接值（"深知深度搜索、深知可信搜索"）
+    # 的组同时含两个关键词，若不互斥会被两边各计一次——WB 实测"补搜 10 次"被虚报成 13 次，
+    # 与过程条明细行（if/else 口径）自相矛盾。此处与明细行同口径：含"深度"优先归深度。
     deep_routes = sum(1 for r in cond_rows if "深度" in r.get("channel", ""))
-    trusted_routes = sum(1 for r in cond_rows if "可信" in r.get("channel", ""))
+    trusted_routes = sum(1 for r in cond_rows if "可信" in r.get("channel", "") and "深度" not in r.get("channel", ""))
     used_count = sum(1 for s in sources if s.get("used", True))
     unused_count = len(sources) - used_count
     n_cite_marks = len(re.findall(r"\[(\d+)\]", answer))
@@ -860,6 +880,14 @@ def render_markdown_table(lines: List[str], citation_repl) -> str:
     return f'<div class="tbl-wrap"><table class="data-tbl"><thead><tr>{head_html}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
 
 
+def _safe_url(url: str) -> str:
+    """外链协议白名单（1.6.0）：仅允许 http/https，其余（javascript:/data: 等）置空不渲染。"""
+    value = str(url or "").strip()
+    if value.lower().startswith(("http://", "https://")):
+        return value
+    return ""
+
+
 def sanitize_table_html(text: str) -> str:
     """清洗接口表格 HTML：仅保留 table/thead/tbody/tr/td/th/br，去脚本样式与属性。"""
     cleaned = re.sub(r"(?is)<script.*?</script>", "", text)
@@ -874,7 +902,21 @@ def sanitize_table_html(text: str) -> str:
             return ""
         return f"<{closing}{name}>"
 
-    return re.sub(r"<\s*(/?)\s*([a-zA-Z0-9]+)(?:\s+[^>]*)?>", tag_repl, cleaned)
+    cleaned = re.sub(r"<\s*(/?)\s*([a-zA-Z0-9]+)(?:\s+[^>]*)?>", tag_repl, cleaned)
+    # thead 修复（1.6.0，对齐公文写作 3.9.0）：接口偶发把数据行整片包在 thead 里，
+    # 清洗后若直接透传会全部渲染成表头底色。逐表处理：表内任意 thead 含 ≥2 个 <tr>
+    # 时，按文档顺序取全部行重建为「首行 thead + 其余 tbody」，行内容不变。
+    def fix_table(m_t: re.Match[str]) -> str:
+        block = m_t.group(0)
+        rows = re.findall(r"(?is)<tr>.*?</tr>", block)
+        thead_rows = re.findall(r"(?is)<tr>.*?</tr>", 
+                                (re.search(r"(?is)<thead>(.*?)</thead>", block) or re.match(r"", "")).group(1)
+                                if re.search(r"(?is)<thead>(.*?)</thead>", block) else "")
+        if len(thead_rows) <= 1 or len(rows) <= 1:
+            return block
+        return "<table><thead>" + rows[0] + "</thead><tbody>" + "".join(rows[1:]) + "</tbody></table>"
+
+    return re.sub(r"(?is)<table>.*?</table>", fix_table, cleaned)
 
 
 def render_excerpt_html(text: str) -> str:
@@ -898,8 +940,9 @@ def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str
             return ""
         if jb.get("url"):
             btn_txt = "查看全文" if jb.get("url") else "查看存档全文"
-            link = (f'<a class="jb-src" href="{esc(jb["url"])}" target="_blank" rel="noopener noreferrer">'
-                    f'{ARROW_SVG}<span>{btn_txt}</span></a>')
+            _u = _safe_url(jb["url"])
+            link = (f'<a class="jb-src" href="{esc(_u)}" target="_blank" rel="noopener noreferrer">'
+                    f'{ARROW_SVG}<span>{btn_txt}</span></a>') if _u else ""
         else:
             link = ""
         # 原文直达区展示标题链（多段分块，各段带链——快速人工核验的核心抓手）
@@ -930,6 +973,9 @@ def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str
             quote = ""
         site_html = (f'<span class="jb-site"><span class="dot"></span>{esc(jb.get("site") or "")}</span>'
                      if (jb.get("site") or "").strip() else "")
+        if jb.get("unofficial"):
+            site_html = ('<span class="jb-unofficial" title="联网检索的非官方来源，仅供参考，建议以官方口径复核">非官方来源</span>'
+                         + site_html)
         return (
             f'<span class="jb" data-cite="{esc(cid)}">'
             f'<button class="jb-name" type="button" aria-expanded="false">{CARET_SVG}'
@@ -1078,6 +1124,7 @@ def build_chip_data(sources: List[Dict[str, str]]) -> Dict[str, Dict[str, str]]:
             "snapshot": source.get("snapshot") or "",
             "excerpt": (source.get("excerpt") or "").strip(),
             "segments": source.get("segments") or [],
+            "unofficial": bool(source.get("unofficial")),
         }
     return chip_map
 
@@ -1086,11 +1133,11 @@ def render_source_links(url: str, policy_url: str = "", snapshot: str = "") -> s
     """链接区：原文可回看 / 无源网址但有快照。接口返回的链接原样展示（不做活性探测，
     2026-10-08 起）；快照是接口对原文的存档副本，文案如实标注。"""
     links = []
-    if url and url != "接口未返回":
-        links.append(f'<a href="{esc(url)}" target="_blank" rel="noopener">查看全文 ↗</a>')
-    if snapshot:
-        # 有哪个显示哪个：快照统一展示"查看存档全文"，不做原文失效的状态解释
-        links.append(f'<a class="snap" href="{esc(snapshot)}" target="_blank" rel="noopener">查看存档全文 ↗</a>')
+    if _safe_url(url) and url != "接口未返回":
+        links.append(f'<a href="{esc(_safe_url(url))}" target="_blank" rel="noopener">查看全文 ↗</a>')
+    # 有哪个显示哪个：快照统一展示"查看存档全文"，不做原文失效的状态解释
+    if _safe_url(snapshot):
+        links.append(f'<a class="snap" href="{esc(_safe_url(snapshot))}" target="_blank" rel="noopener">查看存档全文 ↗</a>')
     # 回看通道只有原网址与快照（2026-09-29 起：外链知识专库属老能力，已移除）
     if not links:
         return ""
@@ -1221,7 +1268,7 @@ def render_src_card(jb: Dict[str, str], cid: str, dup: bool = False) -> str:
     title = re.sub(r"<br\s*/?>", " ", str(jb.get("title") or ""), flags=re.I)
     excerpt = (jb.get("excerpt") or "").strip()
     dup_cls = " dup-card" if dup else ""
-    link_html = (f'<a class="src-link" href="{esc(url)}" target="_blank" rel="noopener noreferrer">查看全文{ARROW_SVG}</a>' if url else "")
+    link_html = (f'<a class="src-link" href="{esc(_safe_url(url))}" target="_blank" rel="noopener noreferrer">查看全文{ARROW_SVG}</a>' if _safe_url(url) else "")
     toggle_html = (f'<button class="src-toggle" type="button"><span class="more">展开</span>'
                    f'<span class="less">收起</span>{CARET_SVG}</button>' if excerpt else "")
     body_html = f'<div class="src-body"><p>{esc(excerpt)}</p></div>' if excerpt else ""
@@ -1402,8 +1449,11 @@ def render_source_card(source: Dict[str, str], for_print: bool = False) -> str:
                       '标题为模型从原文动态抽取，非规则提取">高可信</span>')
     # 已引用材料显示角标编号；未引用召回材料显示"未引用"灰标（不占正文角标号）
     id_html = f'<span class="sc-id">[{esc(source["id"])}]</span>' if source.get("used", True) else '<span class="sc-unused">未引用</span>'
+    # 非官方来源徽标（1.6.0）：联网路召回的非权威站点材料，报告页与知识专库卡统一标注
+    unofficial_badge = ('<span class="sc-unofficial" title="联网检索的非官方来源，仅供参考，建议以官方口径复核">非官方来源</span>'
+                        if source.get("unofficial") else "")
     body_html = (f'<div class="sc-head">{id_html}'
-                 f'<span class="sc-type">{esc(source["type_label"])}</span>{conf_badge}{vk}</div>'
+                 f'<span class="sc-type">{esc(source["type_label"])}</span>{conf_badge}{unofficial_badge}{vk}</div>'
                  f'<h4>{esc(source.get("title"))}</h4>'
                  f'<div class="sc-meta">{esc(meta)}</div>'
                  f'{note_html}'
@@ -1439,7 +1489,9 @@ def render_process_bar(stats: Dict[str, Any], verification: Dict[str, Any]) -> s
     detail_rows = "".join(
         f'<div class="pd-row"><b>{esc(row["key"])}'
         + (f'（{"深度搜索" if "深度" in row.get("channel", "") else "可信搜索"}）' if row.get("channel") else "")
-        + f'</b><span>召回 {row["total"]} 条 · 正文采用 {row["used"]} 条</span></div>'
+        + f'</b><span>召回 {row["total"]} 条 · 正文采用 {row["used"]} 条'
+        + (f' · {esc(row["delta"])}' if row.get("delta") else '')
+        + '</span></div>'
         for row in stats["conds"]
     ) or '<div class="pd-row"><span>本次溯源 JSON 未记录各次检索条件</span></div>'
     detail_hint = f'{esc(short(first_query, 26))}…' if (stats["n_searches"] > 1 and first_query) else "查看检索明细"
@@ -1796,6 +1848,8 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#3f3d52;
 .jb-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .jb-label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--brand);letter-spacing:.5px}
 .jb-label svg{flex:none}
+.jb-unofficial{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;color:#9a3412;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:0 7px;margin-right:6px;white-space:nowrap}
+.sc-unofficial{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;color:#9a3412;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:0 7px;white-space:nowrap}
 .jb-site{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#70678a;background:#f6f4fa;
   border:1px solid var(--line);border-radius:999px;padding:3.5px 10px;max-width:100%;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap;margin:0 0 2px}
@@ -2378,6 +2432,8 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
                 skip_link_check: bool = False, snapshot_enabled: bool = True,
                 charts_data: Optional[Dict[str, Any]] = None,
                 research_notes: Optional[Dict[str, int]] = None) -> str:
+    # search_meta.calls（每路调用增量）在 unwrap 前捕获——unwrap 会把 content 外层剥掉（1.6.0）
+    _calls_meta = payload.get("search_meta") if isinstance(payload.get("search_meta"), dict) else {}
     payload = unwrap(payload)
     answer = normalize_citations(answer_override) if answer_override.strip() else extract_answer(payload)
     # 无 markdown 标题的答案：首个非空行若为短标题形态（≤60 字、非列表/表格/标题语法、
@@ -2398,7 +2454,7 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
     generated = generated_at.strftime("%Y-%m-%d %H:%M")
 
     verification = compute_verification(answer, sources, payload, generated_at)
-    process_stats = compute_process_stats(sources, answer)
+    process_stats = compute_process_stats(sources, answer, calls=_calls_meta.get('calls'))
     if research_notes:
         process_stats["research_notes"] = research_notes
     citation_warning = ""
@@ -2429,12 +2485,18 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
         if question_text and question_text != display_title else ""
     )
 
-    jb_tables_json = json.dumps(jb_tables, ensure_ascii=False).replace("</", "<\\/")
+    # 注入 JSON 转义（1.6.0，对齐公文写作 3.9.0）：< > & 全量转 \uXXXX 转义——既防
+    # </script> 提前闭合，也防 <!-- / <script 序列触发怪异解析；JSON.parse 原生可逆。
+    def _json_for_html(obj: Any) -> str:
+        return (json.dumps(obj, ensure_ascii=False)
+                .replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e"))
+
+    jb_tables_json = _json_for_html(jb_tables)
     jb_tables_script = (f'<script type="application/json" id="jb-tables">{jb_tables_json}</script>\n'
                         if jb_tables else "")
     # 导出用正文 Markdown（去角标，干净正文），供顶部"导出 ▾ → 导出 Markdown（正文）"下载
     export_payload = {"title": display_title, "markdown": strip_citation_markers(answer)}
-    export_json = json.dumps(export_payload, ensure_ascii=False).replace("</", "<\\/")
+    export_json = _json_for_html(export_payload)
     export_script = f'<script type="application/json" id="doc-export">{export_json}</script>\n' 
 
     meta_bits = []
@@ -2716,6 +2778,7 @@ def main() -> None:
     parser.add_argument("--title", default="溯源核验报告", help="页面标题")
     parser.add_argument("--answer-file", help="最终答案文件（关键结论带 [1][2] 角标）。复杂任务综合后必须传入，确保 HTML 展示的答案与交付一致。")
     parser.add_argument("--question", default="", help="用户原始问题，用于自动生成文件名。")
+    parser.add_argument("--question-file", help="用户原始问题全文文件（official-docs/search-results/ 内文件名或绝对路径）；多行/长问题必须用本参数传全文，禁止只传首行（1.6.0）")
     parser.add_argument("--self-check-file", help="答案自检结果 JSON（五项：fact_basis/binding/consistency/freshness/no_gap，值写 通过/未通过：原因）；未传时核验单如实显示'未记录'。")
     parser.add_argument("--skip-link-check", action="store_true", help="（兼容 no-op）链接活性检测已于 2026-10-08 移除，接口返回的链接原样进报告")
     parser.add_argument("--no-snapshot", action="store_true", help="关闭存档快照兜底展示（默认启用：原文失效时以 /A/ 修订后的存档快照回看）")
@@ -2763,6 +2826,11 @@ def main() -> None:
         )
         raise SystemExit(1)
 
+    if args.question_file:
+        _qf = Path(args.question_file).expanduser()
+        if not _qf.is_absolute():
+            _qf = (SEARCH_RESULTS_DIR / _qf.name).resolve()
+        args.question = _qf.read_text(encoding="utf-8").strip()
     question = args.question.strip() or extract_question(unwrapped)
     generated_at = datetime.now()
     if args.output:

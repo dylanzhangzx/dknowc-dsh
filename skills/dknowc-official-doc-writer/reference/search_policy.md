@@ -35,22 +35,22 @@
 
 ## 搜索工具边界
 
-本 Skill 的素材搜索按**两阶段执行（3.7.5 起）**，统一走脚本通道（需 API Key，3.7.5 起不再走 MCP）：
+本 Skill 的素材搜索按**两阶段执行**，统一走脚本通道（需 API Key；MCP 通道当前未启用）：
 
 **阶段一·首轮深度搜索（广度召回）**
 - 调用 `scripts/deep_query.py`（需 API Key）：
   ```bash
-  python3 scripts/deep_query.py "搜索词" --area 地域 --json-only --output deep_路名.json
+  python3 <skillDir>/scripts/deep_query.py "搜索词" --area 地域 --json-only --output deep_路名.json
   ```
-- 完整返回 JSON **立即落盘**到 `official-docs/search-results/deep_<路名>.json` 并 `json.load` 校验，再转换：
+- 完整返回 JSON **立即落盘**到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/deep_<路名>.json` 并 `json.load` 校验，再转换：
   ```bash
-  python3 scripts/deep_convert.py official-docs/search-results/deep_<路名>.json --area 地域 --purpose "搜索目的"
+  python3 <skillDir>/scripts/deep_convert.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/deep_<路名>.json --area 地域 --purpose "搜索目的"
   ```
-  转换产物与 `--clean` 同构（顶层 `articles`、段落带 `id`）；真实返回**含快照（screenShotPath）、段落标题（标题链）、发布日期可信度**，如实保留；**缺独立"文号"字段**（文号在段落内容中），留待补搜匹配。
+  转换产物与 `--clean` 同构（顶层 `articles`、段落带 `id`）；真实返回**含快照（screenShotPath）、段落标题（标题链）、发布日期可信度**，如实保留；文章级文号字段 **writtenText** 已返回（`deep_convert.py` 映射为「发文字号」；部分文章携带，含少量公告类编号）。
 
 **阶段二·可信搜索补搜（精准补强，缺口驱动）**
-- 深度搜索**缺独立"文号"字段**（政策文号在段落内容中）——**政策依据型必补搜**（补搜产出 policyFiles，正文引用政策文号靠其匹配）；数据/案例按研究资料口径表缺口（未给出/未确认/多口径未裁决）决定是否补搜。
-- 补搜走可信搜索脚本 `dkag_search.py --clean`（参数见 SKILL.md 搜索命令节）。
+- 深度搜索已在文章级返回文号（writtenText→发文字号），**补搜一律按缺口驱动**：深搜已召回关键政策文件且文号字段非空时不必补；仍缺关键文件/政策原文/数据口径时才补（政策路 `--search-type policy`），数据/案例同理。
+- 补搜走可信搜索脚本 `dkag_search.py --clean`（参数见本文件执行命令节）。
 - 补搜产物与深度搜索产物合并（`merge_search_results.py`）后进入素材分类；合并后按现有流程（素材四分类、研究资料、溯源报告）执行。
 
 共同约束：query 构造（对象+关注方向，不列举信息需求）、素材四分类、补搜规则、地域边界在阶段一/二完全一致；阶段一深度搜索与阶段二补搜可信搜索统一走脚本通道。禁止默认使用以下工具或方式替代深知搜索：
@@ -58,7 +58,7 @@
 
 只有用户明确授权“改用 Web 搜索”“用公开官网检索”“不用深知搜索，网上查”等场景，才允许使用外部搜索。外部搜索结果必须单独标注为“公开网页补充材料”，不得写入【知识专库链接】，不得伪装为深知搜索素材。
 
-如果深知搜索异常、空结果或素材不足，必须先暂停并请用户选择下一步，不得自行切换到 Web Search/Web Fetch（搜索脚本失败重试一次后仍失败，如实告知用户并暂停等待确认，不属切换外部搜索）。**例外（3.7.5 修复）：阶段一某一路深度搜索失败时，仅该路回退用可信搜索 `dkag_search.py` 重搜该路素材类型**（其他路不受影响、不整批回退），回退产物进入合并。
+如果深知搜索异常、空结果或素材不足，必须先暂停并请用户选择下一步，不得自行切换到 Web Search/Web Fetch（搜索脚本失败重试一次后仍失败，如实告知用户并暂停等待确认，不属切换外部搜索）。**例外：阶段一某一路深度搜索失败时，仅该路回退用可信搜索 `dkag_search.py` 重搜该路素材类型**（其他路不受影响、不整批回退），回退产物进入合并。
 
 ## 自由搜索（webSearch）使用边界
 
@@ -89,7 +89,7 @@ query 从**任务对象**出发构造——不从素材类目出发，也不从�
 
 - 句式带精确限定：时间+地域+对象/文件类型，如「巴彦淖尔市2026年草原补奖资金下达情况和乌拉特前旗2026年休牧公告原文」。
 - 目标为原文级材料（公告原文、方案全文），不用主题句重复泛搜。
-- 已知目标文件名时，直接用**标题原文**做 query（实测标题原文一发即中，关键词组合可能排不进前列）。
+- 已知目标文件名时，优先用**标题原文**做 query；关键词组合可能排不进前列。
 
 ## 补搜自主与越界确认
 
@@ -98,6 +98,12 @@ query 从**任务对象**出发构造——不从素材类目出发，也不从�
 - 越界必须停下确认：补搜需要新地域、换通道（如开 webSearch 自由搜索）、或循环后关键事实仍未闭环——停止并把缺口如实列给用户确认，不得自行改用其他来源。
 
 ## 搜索方案框架
+
+**方案固定为 3 个检索方向**：政策依据型、数据支撑型、参考案例型；每个方向只列 1 条启动 query（地域限定、比较对象写在 query 内）。
+
+- **禁止按地域层级（国家/省/市）或子主题把 3 个方向拆成更多方案项。** 地域层级由深度搜索内部拆子查询、或在补搜阶段按缺口覆盖；补搜不预先列入方案。
+- 反例：把政策依据拆成"国家/广东/深圳"三项、另加"算力平台"，方案显示 6 项、实际调用 7 次，用户无法与确认方案对账。
+- 用户确认的就是这 3 条 query；确认后补搜在边界内自动执行并记入研究资料。
 
 执行搜索前必须向用户展示搜索方案，至少包括：
 
@@ -120,6 +126,8 @@ query 从**任务对象**出发构造——不从素材类目出发，也不从�
 用户确认后再执行深知搜索脚本；用户调整后，按调整后的方案执行。不得在确认后改用 Web Search/Web Fetch。
 
 执行搜索时必须保留用户确认方案中的“搜索目的”。内部调用 `scripts/dkag_search.py` 时，将该搜索项的搜索目的传入 `--purpose`，脚本会写入 `search_meta.purpose`。`--purpose` 属于内部执行参数，不得出现在用户可见搜索方案中。
+
+**同一方案项的所有调用（深度搜索路 ＋ 该方向的补搜）必须使用同一个 `--purpose`**（即 3 个方向之一），合并产物据此按 3 个方案项分组；不得每次调用自定义不同 purpose，否则知识专库会出现 7 个碎片分组、与方案对不上。
 
 ## 搜索执行节奏
 
@@ -189,32 +197,32 @@ query 从**任务对象**出发构造——不从素材类目出发，也不从�
 
 - 时间过滤：`--time` 仅用于明确的单个时间点或年份，如 `2025年`、`2025年08月`、`2025年08月15日`。不要使用 `2023-2025`、`2023年-2025年` 这类范围；需要覆盖多年时，优先不加 `--time`，或拆成多次单年检索。
 - 规范性文件清单：默认随结果返回（`--no-policy` 关闭，一般不关闭）
-- 搜索素材类型：使用 `--search-type` 指定，支持 `policy`、`affair`、`govSite`、`qa`、`private`。写作场景默认只使用 `policy`、`govSite`、必要时使用 `affair`。
+- 搜索素材类型：使用 `--search-type` 指定，支持 `policy`、`affair`、`govSite`、`qa`、`private`。写作场景默认只使用 `policy`、`govSite`、必要时使用 `affair`。**每次调用只传一个类型，禁止混传**（混传会共用结果名额、挤占政策文件，降低文号覆盖）；同一查询需要两类来源时，分别调用 `policy` 与 `govSite` 两次（可并行），结果合并。
 - 动态搜索渠道：当使用 `--search-type govSite` 时，可加 `--search-channel govSearch`，优先召回政府官网、政务站点和官方渠道材料。`--search-channel webSearch` 为自由搜索（全网），仅限"文风与体例参考"场景且经用户确认后使用，边界见上文"自由搜索（webSearch）使用边界"，无需搭配 `--search-type govSite`。
 - 全文召回：仅对参考范文使用 `--full`，不要同时加 `--clean`
-- 段落数量：本 skill 固定使用 `segmentCount=2`，每篇材料最多返回 2 个相关段落
+- 段落数量：脚本默认 `segmentCount=4`（可用 `--segment-count` 调整；经参数对比确定），每篇材料最多返回该数量的相关段落
 - 精简输出：本 skill 固定使用 `simplified=false`，用于写作场景保留更多候选材料，再由 Agent 做素材筛选
-- 材料长度：脚本默认使用 `MaterialLength=12000`，控制单次召回材料总长度。除非用户明确要求深度研究或材料明显不足，不要主动调大。
-- 指定数据源：`searchSourceUrl`、`searchSourceId` 当前不纳入默认流程。现有测试中该参数对召回范围约束不稳定，不得作为筛选指定官网或指定资料库的可靠手段写入搜索方案。
+- 材料长度：脚本默认使用 `MaterialLength=18000`，控制单次召回材料总长度。除非用户明确要求深度研究或材料明显不足，不要主动调大。
+- 指定数据源：`searchSourceUrl`、`searchSourceId` 当前不纳入默认流程。该参数对召回范围约束不稳定，不得作为筛选指定官网或指定资料库的可靠手段写入搜索方案。
 
 ## 执行命令
 
 单次搜索：
 
 ```bash
-python3 scripts/dkag_search.py "搜索词" --area 地域 --time 时间 --clean --output result_地域.json
+python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --time 时间 --clean --output result_地域.json
 ```
 
 如无明确单个时间点，省略 `--time`：
 
 ```bash
-python3 scripts/dkag_search.py "搜索词" --area 地域 --clean --output result_地域.json
+python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --clean --output result_地域.json
 ```
 
 多次搜索合并：
 
 ```bash
-python3 scripts/merge_search_results.py result1.json result2.json --output merged.json
+python3 <skillDir>/scripts/merge_search_results.py result1.json result2.json --output merged.json
 ```
 
 如需要补充政策文件全称或发文字号，可用文章标题补搜一次（规范性文件清单默认返回，从中取 writtenText 文号）。
@@ -222,19 +230,19 @@ python3 scripts/merge_search_results.py result1.json result2.json --output merge
 政策依据型搜索：
 
 ```bash
-python3 scripts/dkag_search.py "搜索词" --area 地域 --search-type policy --clean --output result_policy.json
+python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --search-type policy --clean --output result_policy.json
 ```
 
 政府站点动态、数据和案例搜索：
 
 ```bash
-python3 scripts/dkag_search.py "搜索词" --area 地域 --search-type govSite --search-channel govSearch --clean --output result_govsite.json
+python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --search-type govSite --search-channel govSearch --clean --output result_govsite.json
 ```
 
 政务事项、办事口径搜索：
 
 ```bash
-python3 scripts/dkag_search.py "搜索词" --area 地域 --search-type affair --clean --output result_affair.json
+python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --search-type affair --clean --output result_affair.json
 ```
 
 ## 素材四分类

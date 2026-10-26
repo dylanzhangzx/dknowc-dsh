@@ -3,7 +3,8 @@
 DKAG 素材召回接口脚本
 用于根据查询关键词召回相关公文素材
 
-使用深知可信搜索接口：/dependable/search/
+使用深知可信搜索 V2 接口：/open-api/maas/dependable/v2/search
+（3.9.0 起全面切换 V2，不再保留 V1 代码路径）
 """
 
 import argparse
@@ -32,7 +33,7 @@ QUERY_TOO_SHORT_ERROR = f"错误：查询关键词过短，最少需要 {MIN_QUE
 # API Key 与搜索结果路径
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 API_KEY_ENV = "DKNOWC_API_KEY"
-DEFAULT_BASE_URL = "https://open.dknowc.cn/dependable/search/"
+DEFAULT_BASE_URL = "https://open.dknowc.cn/open-api/maas/dependable/v2/search"
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
@@ -44,9 +45,12 @@ if not _ws:
 WS_ROOT = Path(_ws).resolve()
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 CONFIG_HELP_URL = "https://platform.dknowc.cn/"
-FIXED_SEGMENT_COUNT = 2
-FIXED_SIMPLIFIED = False
-DEFAULT_MATERIAL_LENGTH = 12000
+DEFAULT_SEGMENT_COUNT = 4          # 默认段数 4（经 2/4/8 参数对比，4/18000 质量最优）
+DEFAULT_SIMPLIFIED = False
+DEFAULT_MATERIAL_LENGTH = 18000    # 与 segmentCount=4 配套（经参数对比选定）
+DEFAULT_SEARCH_TYPE = "policy"   # V2 必填 searchType；每次调用只传一个，未指定时默认 policy
+DEFAULT_FILTER_PARA = True         # 剔除弱相关（R 级）段落
+DEFAULT_QUERY_TOP_AREA = False     # 上级地域材料走单独构路，不依赖接口开关
 VALID_SEARCH_TYPES = {"policy", "affair", "govSite", "qa", "private"}
 VALID_SEARCH_CHANNELS = {"govSearch", "webSearch", "wxSearch"}
 
@@ -284,7 +288,7 @@ def clean_dkag_response(api_response: dict) -> dict:
                 "发布日期": art.get("发布日期", ""),
                 "数据源": art.get("数据源", "未知来源"),
                 "段落": [],
-                # 检索通道标记：本产物来自深知可信搜索（dependable/search）。
+                # 检索通道标记：本产物来自深知可信搜索（V2 生产入口）。
                 # 溯源报告据此区分"深度搜索 / 可信搜索"两个接口来源与各自路数。
                 "检索通道": "深知可信搜索",
             }
@@ -310,6 +314,13 @@ def clean_dkag_response(api_response: dict) -> dict:
                 if art.get(key):
                     cleaned_art["快照链接"] = str(art[key]).strip()
                     break
+            # V2 新增文章级字段：原样透传（知识专库卡片展示 / 写作引用 / 素材分类使用）
+            for field in ("文章类型", "生效日期", "失效日期", "发文字号",
+                          "文件标签", "发布或实施机构", "文章Id", "知识专库链接"):
+                if art.get(field) not in (None, ""):
+                    cleaned_art[field] = art[field]
+            if art.get("知识专库链接"):
+                cleaned_art.setdefault("知识专库原文", str(art["知识专库链接"]).strip())
 
             # 遍历段落并清洗
             paragraphs = art.get("段落", [])
@@ -339,12 +350,15 @@ def clean_dkag_response(api_response: dict) -> dict:
                 content = content.strip()
 
                 if content:
-                    # 分配全局唯一的自增 ID
-                    cleaned_art["段落"].append({
+                    # 分配全局唯一的自增 ID；V2 段落匹配等级原样保留（写作引用参考，不向用户展示）
+                    paragraph = {
                         "id": global_id_counter,
                         "标题": p_title,
                         "内容": content
-                    })
+                    }
+                    if p.get("匹配等级"):
+                        paragraph["匹配等级"] = str(p["匹配等级"]).strip()
+                    cleaned_art["段落"].append(paragraph)
                     global_id_counter += 1
 
             # 只有当文章清洗后仍有有效段落时才添加
@@ -396,12 +410,15 @@ def dkag_search(
     search_types: Optional[list[str]] = None,
     search_channels: Optional[list[str]] = None,
     material_length: Optional[int] = DEFAULT_MATERIAL_LENGTH,
+    segment_count: int = DEFAULT_SEGMENT_COUNT,
+    filter_para: bool = DEFAULT_FILTER_PARA,
+    query_top_area: bool = DEFAULT_QUERY_TOP_AREA,
 ) -> dict:
     """
-    调用深知可信搜索接口召回素材
+    调用深知可信搜索 V2 接口召回素材
 
     API 文档：
-    - 请求路径: https://open.dknowc.cn/dependable/search/
+    - 请求路径: https://open.dknowc.cn/open-api/maas/dependable/v2/search
     - 请求方式: POST
     - Content-Type: application/json
     - 认证方式: api-key 请求头
@@ -414,15 +431,19 @@ def dkag_search(
         purpose: 搜索方案中的搜索目的，用于素材来源说明中的知识专库链接显示名。
         api_key: API 密钥（可选，如不传则从 DKNOWC_API_KEY 读取）
         clean: 是否对返回结果进行数据清洗（默认 False）
-        policy: 是否返回规范性文件清单policyFiles（默认 False）
+        policy: 是否返回规范性文件清单policyFiles（默认 True）
         full: 是否返回文章全文（return_full_content，默认 False）
-        search_types: 指定搜索素材类型，如 policy、affair、govSite、qa、private
+        search_types: 指定搜索素材类型，如 policy、affair、govSite、qa、private；
+                      V2 必填，每次调用只传一个，未指定时默认 policy；
+                      需要不同来源时请分路并行调用后合并
         search_channels: 指定动态搜索渠道，如 govSearch、webSearch、wxSearch
         material_length: 控制返回素材总长度，默认 12000
-        本 skill 固定使用 segmentCount=2，每篇材料最多返回 2 个相关段落。
+        segment_count: 每篇材料最多返回的相关段落数，默认 2（可调，用于参数调优）
+        filter_para: 是否剔除弱相关（R 级）段落，默认 True
+        query_top_area: 是否由接口带出上级地域材料，默认 False（上级材料走单独构路）
 
     Returns:
-        搜索结果字典
+        搜索结果字典（含 tid，便于平台侧排查）
     """
     # 验证查询关键词
     if len(query) > MAX_QUERY_LENGTH:
@@ -458,28 +479,36 @@ def dkag_search(
             VALID_SEARCH_CHANNELS,
             "searchChannel"
         )
+        if len(normalized_search_types) > 1:
+            raise ValueError(
+                "每次调用只传一个 searchType（policy / govSite / affair / qa / private）；"
+                "需要不同来源时请分路并行调用后合并结果"
+            )
         normalized_material_length = normalize_material_length(material_length)
+        if not isinstance(segment_count, int) or segment_count < 1:
+            raise ValueError("segmentCount 必须为正整数")
     except ValueError as e:
         return {
             "error": True,
             "message": str(e)
         }
 
-    # 构建请求体（新接口格式）
+    # 构建请求体（V2 格式：searchType 必填；segmentCount/filterPara/queryTopArea 可调）
     payload = {
         "query": query,
         "eff_time": [normalized_time] if normalized_time else [""],
         "service_area": [area] if area else [""],
+        "searchType": normalized_search_types or [DEFAULT_SEARCH_TYPE],
         "knowBase": True,
         "policy": policy,
         "return_full_content": full,
-        "segmentCount": FIXED_SEGMENT_COUNT,
-        "simplified": FIXED_SIMPLIFIED,
-        "MaterialLength": normalized_material_length
+        "segmentCount": segment_count,
+        "simplified": DEFAULT_SIMPLIFIED,
+        "MaterialLength": normalized_material_length,
+        "filterPara": bool(filter_para),
+        "queryTopArea": bool(query_top_area),
     }
 
-    if normalized_search_types:
-        payload["searchType"] = normalized_search_types
     if normalized_search_channels:
         payload["searchChannel"] = normalized_search_channels
 
@@ -508,46 +537,72 @@ def dkag_search(
         "policy": policy,
         "full": full,
         "clean": clean,
-        "segmentCount": FIXED_SEGMENT_COUNT,
-        "simplified": FIXED_SIMPLIFIED,
+        "segmentCount": segment_count,
+        "simplified": DEFAULT_SIMPLIFIED,
         "MaterialLength": normalized_material_length,
-        "searchType": normalized_search_types,
-        "searchChannel": normalized_search_channels
+        "searchType": payload["searchType"],
+        "searchChannel": normalized_search_channels,
+        "filterPara": bool(filter_para),
+        "queryTopArea": bool(query_top_area),
+        "tid": None,
     }
 
-    # 发送请求（429 全部按额度用尽处理，不重试——见 detect_quota_exhausted 注释）
+    # 发送请求（429/402 全部按额度用尽处理，不重试——见 detect_quota_exhausted 注释）
     try:
         response = requests.post(DEFAULT_BASE_URL, data=json.dumps(payload), headers=headers, timeout=30)
         response.raise_for_status()
         result = response.json()
-        
-        # 新接口返回结构：content.检索文章
-        # 需要转换成旧接口的格式以保持兼容
-        if "content" in result and "检索文章" in result.get("content", {}):
-            # 包装成旧格式
-            result = {
-                "content": {
-                    "data": result["content"]
-                }
-            }
-
-        if result.get("ret") not in (None, 0, "0") or result.get("errcode") not in (None, 0, "0"):
-            errmsg = result.get("errmsg")
-            biz_status = result.get("bizStatus")
-            quota_exhausted = detect_quota_exhausted(errmsg=errmsg, biz_status=biz_status)
+        if not isinstance(result, dict):
             return {
                 "error": True,
-                "quota_exhausted": quota_exhausted,
-                "message": ("深知搜索积分已用尽，请到 MaaS 管理平台实名认证再领积分或充值后重试"
-                            if quota_exhausted else "深知搜索接口返回异常"),
-                "user_message": user_message_for_error(quota_exhausted=quota_exhausted),
-                "ret": result.get("ret"),
-                "errcode": result.get("errcode"),
-                "errmsg": errmsg,
-                "bizStatus": biz_status,
-                "maas_platform_url": MAAS_PLATFORM_URL if quota_exhausted else None,
-                "search_meta": search_meta
+                "message": "深知搜索接口返回格式异常",
+                "search_meta": search_meta,
             }
+
+        # V2 返回结构：{tid, ret, content:{code, msg, data:{检索文章, policyFiles}}}
+        # 成功判定：ret==0（或无）且 content.code==200；业务错为 HTTP 200 + content.code=500 + 中文 msg。
+        search_meta["tid"] = result.get("tid")
+        content = result.get("content")
+        if isinstance(content, dict):
+            content_code = content.get("code")
+            if result.get("ret") not in (None, 0, "0") or content_code not in (None, 200, "200"):
+                msg = str(content.get("msg") or result.get("msg") or result.get("errmsg") or "").strip()
+                quota_exhausted = detect_quota_exhausted(errmsg=msg, biz_status=result.get("bizStatus"))
+                return {
+                    "error": True,
+                    "quota_exhausted": quota_exhausted,
+                    "message": msg or "深知搜索接口返回异常",
+                    "user_message": user_message_for_error(
+                        status_code=(500 if str(content_code) == "500" else None),
+                        quota_exhausted=quota_exhausted,
+                    ),
+                    "tid": result.get("tid"),
+                    "ret": result.get("ret"),
+                    "content_code": content_code,
+                    "msg": msg,
+                    "maas_platform_url": MAAS_PLATFORM_URL if quota_exhausted else None,
+                    "search_meta": search_meta
+                }
+        else:
+            # 扁平错误形态（如未包裹的 401）：{code, msg}，无 content
+            flat_code = result.get("code")
+            if flat_code not in (None, 0, 200, "200"):
+                msg = str(result.get("msg") or "").strip()
+                quota_exhausted = detect_quota_exhausted(status_code=flat_code, errmsg=msg)
+                return {
+                    "error": True,
+                    "quota_exhausted": quota_exhausted,
+                    "message": msg or "深知搜索接口返回异常",
+                    "user_message": user_message_for_error(
+                        status_code=flat_code if flat_code in (401, 403, 402, 429, 500) else None,
+                        quota_exhausted=quota_exhausted,
+                    ),
+                    "tid": result.get("tid"),
+                    "code": flat_code,
+                    "msg": msg,
+                    "maas_platform_url": MAAS_PLATFORM_URL if quota_exhausted else None,
+                    "search_meta": search_meta
+                }
 
         knowledge_base_url = extract_knowledge_base_url(result)
 
@@ -555,6 +610,7 @@ def dkag_search(
         if clean:
             cleaned_result = clean_dkag_response(result)
             cleaned_result["search_meta"] = search_meta
+            cleaned_result["tid"] = search_meta.get("tid")
             attach_knowledge_base_aliases(cleaned_result, knowledge_base_url or cleaned_result.get("knowledgeBase", ""))
             return cleaned_result
         result["search_meta"] = search_meta
@@ -604,7 +660,8 @@ def main():
     parser.add_argument(
         "--search-type",
         action="append",
-        help="指定搜索素材类型，可重复传入或用逗号分隔：policy, affair, govSite, qa, private"
+        help="指定单一搜索素材类型（每次调用只传一个）：policy, affair, govSite, qa, private；"
+             "需要不同来源时请分路并行调用后合并"
     )
     parser.add_argument(
         "--search-channel",
@@ -617,9 +674,26 @@ def main():
         default=DEFAULT_MATERIAL_LENGTH,
         help=f"控制返回素材总长度（默认: {DEFAULT_MATERIAL_LENGTH}）"
     )
+    parser.add_argument(
+        "--segment-count",
+        type=int,
+        default=DEFAULT_SEGMENT_COUNT,
+        help=f"每篇材料最多返回的相关段落数（默认: {DEFAULT_SEGMENT_COUNT}；用于参数调优）"
+    )
+    parser.add_argument(
+        "--no-filter-para",
+        dest="filter_para",
+        action="store_false",
+        help="不过滤弱相关（R 级）段落；默认过滤"
+    )
+    parser.add_argument(
+        "--top-area",
+        action="store_true",
+        help="开启 queryTopArea（由接口带出上级地域材料）；默认关闭，上级材料走单独构路"
+    )
     parser.add_argument("--output", "-o", help="输出 JSON 文件路径（可选，默认输出到标准输出）")
 
-    parser.set_defaults(policy=True)
+    parser.set_defaults(policy=True, filter_para=True)
     args = parser.parse_args()
 
     # 调用搜索。配置缺失、API Key 缺失等启动阶段异常也输出为结构化 JSON，便于 Agent 稳定转述配置引导。
@@ -635,7 +709,10 @@ def main():
             full=args.full,
             search_types=args.search_type,
             search_channels=args.search_channel,
-            material_length=args.material_length
+            material_length=args.material_length,
+            segment_count=args.segment_count,
+            filter_para=args.filter_para,
+            query_top_area=args.top_area,
         )
     except Exception as exc:
         result = {

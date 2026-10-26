@@ -110,7 +110,7 @@
 
 - `--area`、`--search-type`、`--no-policy`、`--search-channel`、`--clean`、`--output` 等脚本参数
 - “参数”列或“参数：...”字段
-- `python3 scripts/dkag_search.py ...` 形式的命令
+- `python3 <skillDir>/scripts/dkag_search.py ...` 形式的命令
 - 输出文件名、JSON 文件名或内部保存路径
 
 ```
@@ -136,9 +136,11 @@
 说明：表述参考不单独搜索，将从上述材料中吸收公文表达和结构。方案确认后，边界内的缺口补搜自动执行并记入研究资料；越界（新地域、换通道）会先向您确认。
 ```
 
-用户确认后再执行搜索；如用户调整地域、query 或素材类型，按调整后的方案执行。执行时必须把每条搜索项的“搜索目的”作为内部 `--purpose` 传给搜索脚本，用于检索目的记录；不得把 `--purpose` 展示给用户。
+**模板固定为 3 项**（政策依据 / 数据支撑 / 参考案例），每个方向只列 1 条启动 query；不得按国家/省/市层级或子主题拆成更多方案项（地域层级写在 query 内，或由补搜按缺口覆盖）。补搜不预先列入方案，确认后自动执行。
 
-内部执行时，Agent 统一走脚本通道（需 API Key，3.7.5 起不再走 MCP），**两阶段（3.7.5 起）**：阶段一用 `scripts/deep_query.py`（返回落盘后 `scripts/deep_convert.py` 转换）、阶段二补搜用 `scripts/dkag_search.py`。内部参数选择不得要求用户理解，也不得作为搜索方案的一部分展示。同一次方案内的多个搜索项默认并行执行（每路独立 `--output` 与 `--purpose`，单批不超过 4 路），单次调用内用后台任务并行、`wait` 等全部结束后逐路检查结果；失败路单独串行重试一次，任意一路余额用尽即整批停止（详见 `reference/search_policy.md` 搜索执行节奏）。
+用户确认后再执行搜索；如用户调整地域、query 或素材类型，按调整后的方案执行。执行时必须把每条搜索项的“搜索目的”作为内部 `--purpose` 传给搜索脚本，用于检索目的记录；不得把 `--purpose` 展示给用户。**同一方案项的深度搜索路与其补搜必须共用同一个 `--purpose`**，保证合并产物按 3 个方案项分组。
+
+内部执行时，Agent 统一走脚本通道（需 API Key；MCP 通道当前未启用），**两阶段**：阶段一用 `scripts/deep_query.py`（返回落盘后 `scripts/deep_convert.py` 转换）、阶段二补搜用 `scripts/dkag_search.py`。内部参数选择不得要求用户理解，也不得作为搜索方案的一部分展示。同一次方案内的多个搜索项默认并行执行（每路独立 `--output` 与 `--purpose`，单批不超过 4 路），单次调用内用后台任务并行、`wait` 等全部结束后逐路检查结果；失败路单独串行重试一次，任意一路余额用尽即整批停止（详见 `reference/search_policy.md` 搜索执行节奏）。
 
 ---
 
@@ -165,7 +167,7 @@
 ### 步骤2：用户确认后，用「目标范文的完整标题」作 query 全文召回
 
 ```bash
-python3 scripts/dkag_search.py "[目标范文完整标题]" --full --output ref_full_<任务>.json
+python3 <skillDir>/scripts/dkag_search.py "[目标范文完整标题]" --full --output ref_full_<任务>.json
 ```
 
 - query 就用**目标那篇范文的完整标题**（标题越精确、目标篇越靠前）。
@@ -187,10 +189,10 @@ python3 scripts/dkag_search.py "[目标范文完整标题]" --full --output ref_
 
 ```bash
 # ① 先列出候选题，确认目标篇标题（返回顺序即优先级）
-python3 scripts/extract_reference.py official-docs/search-results/ref_full_<任务>.json --list
+python3 <skillDir>/scripts/extract_reference.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/ref_full_<任务>.json --list
 
 # ② 提取目标篇——按返回顺序逐篇比对标题，命中第一篇即取，只落这一篇
-python3 scripts/extract_reference.py official-docs/search-results/ref_full_<任务>.json \
+python3 <skillDir>/scripts/extract_reference.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/ref_full_<任务>.json \
     --title "<目标范文完整标题>" --task "<任务名>"
 ```
 
@@ -198,7 +200,7 @@ python3 scripts/extract_reference.py official-docs/search-results/ref_full_<任�
 
 - 按返回顺序**逐篇比对标题**，**命中第一篇即取**，后面的不再看；
 - 匹配方式：`exact`（标题完全一致，首选）→ `normalized`（去空白/发文机关前缀/公文缀词后一致，如"关于印发《X办法》的通知"对上"深圳市XX局关于印发《X办法》的通知"）→ `contains`（一方包含另一方，最宽松兜底）；返回 JSON 的 `match` 字段如实标注，**非 `exact` 时须自行确认命中的确为目标篇**；
-- 只把**目标那一篇**的全文写入 `official-docs/input/参考范文_<任务>.md`（含标题、来源、日期、原文链接、字数 + 正文）；
+- 只把**目标那一篇**的全文写入 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/参考范文_<任务>.md`（含标题、来源、日期、原文链接、字数 + 正文）；
 - 匹配失败或无全文时返回 `ok:false` 并列出候选标题，此时如实告知用户，回到步骤1 重新选择或跳过。
 
 ### 步骤4：确认提取成功后告知用户
@@ -216,36 +218,36 @@ python3 scripts/extract_reference.py official-docs/search-results/ref_full_<任�
 
 ---
 
-## 五、两阶段检索执行流程（纯脚本通道，3.7.5 起不再走 MCP）
+## 五、两阶段检索执行流程（纯脚本通道）
 
-搜索方案确认后，按**两阶段**执行（3.7.5 起，多路仍按并行规则；统一走脚本，需 API Key——MCP「深知可信工作台」大结果落盘方案改造完成后另行加回）：
+搜索方案确认后，按**两阶段**执行（多路仍按并行规则；统一走脚本，需 API Key；MCP 通道当前未启用）：
 
 **阶段一·首轮深度搜索（3 路按素材类型）**
 
-1. 每路调用 `python3 scripts/deep_query.py "<query>" --area <地域> --json-only --output deep_<路名>.json`（需 API Key）。参数：`query`（按 Query 生成原则，**对象+关注方向，不限定到具体文件名/文号**）、`--area`（默认单地域；多地比较场景可逗号分隔传多地域，服务端自动拆子查询）。完整返回 JSON 由脚本**直接落盘**到 `official-docs/search-results/deep_<路名>.json`，脚本随后自动 `json.load` 校验；解析出 0 篇或 JSON 非法会直接报错退出。
-2. **每路返回后，立即单独落盘并校验**：完整返回 JSON 原样保存在 `official-docs/search-results/deep_<路名>.json`，随后立即用 Python `json.load` 校验合法性。**未落盘校验通过前，不得发起下一路**；**不得"先把结果攒在对话里、等整批完成后统一落盘"**——宿主对工具结果有清理机制，延迟落盘的结果会"过期"无法读取，路数越多、越依赖"先攒后写"，越容易整批拿不到结果。
+1. 每路调用 `python3 <skillDir>/scripts/deep_query.py "<query>" --area <地域> --json-only --output deep_<路名>.json`（需 API Key）。参数：`query`（按 Query 生成原则，**对象+关注方向，不限定到具体文件名/文号**）、`--area`（默认单地域；多地比较场景可逗号分隔传多地域，服务端自动拆子查询）。完整返回 JSON 由脚本**直接落盘**到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/deep_<路名>.json`，脚本随后自动 `json.load` 校验；解析出 0 篇或 JSON 非法会直接报错退出。
+2. **每路返回后，立即单独落盘并校验**：完整返回 JSON 原样保存在 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/deep_<路名>.json`，随后立即用 Python `json.load` 校验合法性。**未落盘校验通过前，不得发起下一路**；**不得"先把结果攒在对话里、等整批完成后统一落盘"**——宿主对工具结果有清理机制，延迟落盘的结果会"过期"无法读取，路数越多、越依赖"先攒后写"，越容易整批拿不到结果。
 3. 运行转换：
 
 ```bash
-python3 scripts/deep_convert.py official-docs/search-results/deep_<路名>.json --area 地域 --purpose "该路搜索目的"
+python3 <skillDir>/scripts/deep_convert.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/deep_<路名>.json --area 地域 --purpose "该路搜索目的"
 ```
 
-4. 转换产物（`result_deep_<路名>.json`）与脚本通道 `--clean` 输出**同构**（顶层 `articles`/`total_articles`/`total_paragraphs`/`search_meta`，段落带自增 `id`）；**含快照/段落标题/发布日期可信度**，**缺独立"文号"字段**（文号在段落内容中）。脚本解析出 0 篇材料会直接报错退出（不会写入空结果）。
+4. 转换产物（`result_deep_<路名>.json`）与脚本通道 `--clean` 输出**同构**（顶层 `articles`/`total_articles`/`total_paragraphs`/`search_meta`，段落带自增 `id`）；**含快照/段落标题/发布日期可信度与文章级文号**（writtenText，`deep_convert.py` 映射为「发文字号」，部分政策类文章携带）。脚本解析出 0 篇材料会直接报错退出（不会写入空结果）。
 
 **阶段二·可信搜索补搜（缺口驱动）**
 
-5. 深度搜索返回**含快照/段落标题/发布日期可信度**（`deep_convert.py` 已保留），但**缺独立"文号"字段**（政策文号在段落内容中）——**政策依据型必补搜**（补搜产出 policyFiles，正文引用政策文号靠其匹配）；数据/案例按研究资料口径表缺口（未给出/未确认/多口径未裁决）决定是否补搜。
-6. 补搜调用 `python3 scripts/dkag_search.py "<query>" --area <地域> --time <时间> --purpose "<搜索目的>" --clean --output result_<路名>.json`（参数见 SKILL.md 搜索命令节；`segmentCount=2`、`simplified=false` 固定）。返回**立即完整落盘**到 `official-docs/search-results/` 并 `json.load` 校验。
-7. **合并**：阶段一深度产物与阶段二补搜产物用 `merge_search_results.py` 合并后进入素材分类；两阶段产物都纳入溯源核验报告材料面板（深度产物缺独立文号的，政策依据型由补搜的 policyFiles 匹配补上）。
+5. 深度搜索返回**含快照/段落标题/发布日期可信度**（`deep_convert.py` 已保留），文章级文号 **writtenText** 已返回并映射为「发文字号」——**补搜一律按缺口驱动**：关键政策文件/政策原文/数据口径仍缺才补，不再为拿文号而必补；数据/案例按研究资料口径表缺口决定。
+6. 补搜调用 `python3 <skillDir>/scripts/dkag_search.py "<query>" --area <地域> --time <时间> --purpose "<搜索目的>" --clean --output result_<路名>.json`（参数见 `reference/search_policy.md` 执行命令节；默认 `segmentCount=4`、`simplified=false`）。返回**立即完整落盘**到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/` 并 `json.load` 校验。
+7. **合并**：阶段一深度产物与阶段二补搜产物用 `merge_search_results.py` 合并后进入素材分类；两阶段产物都纳入溯源核验报告材料面板（同一文件深搜与补搜都召回时字段取并集，文号以非空字段为准）。
 
 **两阶段共同约束**：
 
 - 调用失败（Unauthorized/超时/超限等）时，**先串行重试该路一次**——并发多路时的鉴权失败多为 token 竞争瞬态错误，串行重试大概率成功。
-- **深度搜索失败回退（3.7.5 修复）**：阶段一某一路深度搜索失败（接口报错/超时/返回 0 篇/JSON 非法，串行重试一次仍失败）时，**仅该路回退用 `dkag_search.py` 可信搜索重搜该路素材类型**，其他路不受影响、不整批回退；回退产物与该路未回退产物一并合并进素材分类。所有路都失败才如实告知用户并暂停等待确认；不得擅自改用 Web 搜索或跳过检索。
-- **长文与精读口径**：召回段落固定 `segmentCount=2`（每篇最多 2 个相关段落），**不含全文**。政策依据的条款精读、事实核对以召回段落为准；**不得为"补全政策全文"对整批结果跑 `--full`**。**唯一的 `--full` 用途是参考范文召回**：当某篇召回文章与用户要写的材料高度相似、对其结构或论述逻辑有明显参考价值时，按第四节"参考范文召回流程"取该篇全文作参考——它与范文大纲接口并存、互不替代（大纲给结构建议，参考范文给同类成文的实际写法）。未走参考范文流程而段落不足时，如实告知用户该篇未能获取全文，不得凭印象补写。
+- **深度搜索失败回退**：阶段一某一路深度搜索失败（接口报错/超时/返回 0 篇/JSON 非法，串行重试一次仍失败）时，**仅该路回退用 `dkag_search.py` 可信搜索重搜该路素材类型**，其他路不受影响、不整批回退；回退产物与该路未回退产物一并合并进素材分类。所有路都失败才如实告知用户并暂停等待确认；不得擅自改用 Web 搜索或跳过检索。
+- **长文与精读口径**：召回段落默认 `segmentCount=4`（可调，每篇最多返回该数量的相关段落），**不含全文**。政策依据的条款精读、事实核对以召回段落为准；**不得为"补全政策全文"对整批结果跑 `--full`**。**唯一的 `--full` 用途是参考范文召回**：当某篇召回文章与用户要写的材料高度相似、对其结构或论述逻辑有明显参考价值时，按第四节"参考范文召回流程"取该篇全文作参考——它与范文大纲接口并存、互不替代（大纲给结构建议，参考范文给同类成文的实际写法）。未走参考范文流程而段落不足时，如实告知用户该篇未能获取全文，不得凭印象补写。
 - **通道唯一**：检索统一走脚本通道（`deep_query.py` / `dkag_search.py`），不得混用其他工具；返回落盘按第 2/6 步校验规则执行，不得以落盘麻烦为由绕道。
 
-范文大纲同理：统一调用 `scripts/outline_reference.py`（需 API Key，3.7.5 起不再用 `doc_outline` 工具）。返回结构与脚本一致，直接进入大纲确认流程。
+范文大纲同理：统一调用 `scripts/outline_reference.py`（需 API Key）。返回结构与脚本一致，直接进入大纲确认流程。
 
 ## 六、写法参考兜底：文风体例参考（webSearch）
 
@@ -266,7 +268,7 @@ python3 scripts/deep_convert.py official-docs/search-results/deep_<路名>.json 
 内部执行（不向用户展示）：
 
 ```bash
-python3 scripts/dkag_search.py "检索词" --area 地域 --search-channel webSearch --clean --output result_webref.json
+python3 <skillDir>/scripts/dkag_search.py "检索词" --area 地域 --search-channel webSearch --clean --output result_webref.json
 ```
 
 使用纪律（详见 `reference/search_policy.md` 自由搜索边界）：
@@ -323,21 +325,21 @@ python3 scripts/dkag_search.py "检索词" --area 地域 --search-channel webSea
 
 ## 八、产出物 HTML（正文 / 溯源核验报告 / 知识专库）
 
-执行过搜索时，正式公文 Word（及产出物 HTML 的正文页）不在正文中添加素材清单和知识专库链接。撰写完成后，生成 **产出物 HTML `XXX.html`（文件名按用户需求确定）**，单文件顶部切换三页：**正文页**（只放干净正式内容，不带任何角标、素材清单或链接）、**溯源核验报告页**（第一屏即核验报告单：依据溯源、引用对应、材料新旧、材料构成、交付前检查五项指标，文案为自然说法；含过程回顾条；并重排**带 `[1]`/`【1】`角标的正文**，角标可点击跳来源，核验内容只在此页）、**知识专库页**（来源文章面板：每张来源文章展示接口返回的原文标题链（如"标题：一、重点支持方向 › 方向2…"，即该段在原文件中的章节位置）、摘录块上方标注"▍ 原文原段（非 AI 生成）"、发布日期可信度为"高"的来源文章加"高可信"徽标、超 4 行摘录折叠并显示"展开全文"；多路检索时面板顶部按搜索条件生成筛选胶囊（单选 + 全部，另有"未引用"一项）；接口召回但正文未采用的相关来源文章进入"未引用素材"分组（不占正文角标编号，标"可查看原文"而非"已核验"）；移动端点正文角标弹出"正文表述 ↔ 原文原段"上下对照弹层）。产出物固定为 HTML，不生成 Word 版。
+执行过搜索时，正式公文 Word（及产出物 HTML 的正文页）不在正文中添加素材清单和知识专库链接。撰写完成后，生成 **产出物 HTML `XXX.html`（文件名按用户需求确定）**，单文件顶部切换三页：**正文页**（只放干净正式内容，不带任何角标、素材清单或链接）、**溯源核验报告页**（第一屏即核验报告单：依据溯源、引用对应、材料新旧、材料构成（按内容类型）、交付前检查五项指标，文案为自然说法；含过程回顾条；并重排**带 `[1]`/`【1】`角标的正文**，角标可点击跳来源，核验内容只在此页）、**知识专库页**（来源文章面板：每张来源文章展示接口返回的原文标题链（如"标题：一、重点支持方向 › 方向2…"，即该段在原文件中的章节位置）、摘录块上方标注"▍ 原文原段（非 AI 生成）"、发布日期可信度为"高"的来源文章加"高可信"徽标、所有召回段落全量展示（不做展开/收起折叠）；多路检索时面板顶部按搜索条件生成筛选胶囊（单选 + 全部，另有"未引用"一项）；接口召回但正文未采用的相关来源文章进入"未引用素材"分组（不占正文角标编号，标"可查看原文"而非"已核验"）；移动端点正文角标弹出"正文表述 ↔ 原文原段"上下对照弹层）。产出物固定为 HTML，不生成 Word 版。
 
 生成方式：
 
-1. 先将正文与材料整理为结构化 JSON，保存到 `official-docs/input/标题_溯源核验报告.json`，其中正文写入 `document_content`，正文引用使用 `[1]`、`[2]` 等角标——这是硬性要求：materials 非空时正文必须带角标并一一对应，`source_note_html.py` 校验到正文无角标会拒绝生成并报错，须修正 JSON 后重跑。JSON 必须用 Python `json.dump`（`ensure_ascii=False`）生成或用程序校验后再落盘，**禁止手工拼接**——正文与摘录里的中文引号（如 `"十四五"`）会直接破坏手拼 JSON 的合法性。
+1. 先将正文与材料整理为结构化 JSON，保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_溯源核验报告.json`，其中正文写入 `document_content`，正文引用使用 `[1]`、`[2]` 等角标——这是硬性要求：materials 非空时正文必须带角标并一一对应，`source_note_html.py` 校验到正文无角标会拒绝生成并报错，须修正 JSON 后重跑。JSON 必须用 Python `json.dump`（`ensure_ascii=False`）生成或用程序校验后再落盘，**禁止手工拼接**——正文与摘录里的中文引号（如 `"十四五"`）会直接破坏手拼 JSON 的合法性。
 2. 再调用 `scripts/source_note_html.py` 生成 HTML：
 
 ```bash
-python3 scripts/source_note_html.py official-docs/input/标题_溯源核验报告.json --output 标题.html
+python3 <skillDir>/scripts/source_note_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_溯源核验报告.json --output 标题.html
 ```
 
-未指定目录的 `--output` 会保存到 `official-docs/output/`；不指定 `--output` 时默认文件名由正文标题生成，形如 `标题.html`。也可以显式写为：
+未指定目录的 `--output` 会保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`；不指定 `--output` 时默认文件名由正文标题生成，形如 `标题.html`。也可以显式写为：
 
 ```bash
-python3 scripts/source_note_html.py official-docs/input/标题_溯源核验报告.json --output official-docs/output/标题.html
+python3 <skillDir>/scripts/source_note_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_溯源核验报告.json --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/标题.html
 ```
 
 生成边界：
@@ -413,7 +415,7 @@ JSON 示例：
 - `materials[].type` 使用四分类取值：`政策依据型` / `数据支撑型` / `参考案例型` / `表述参考型`，报告按类型分色展示并支持筛选；类型缺失时来源文章降级为灰色"材料"。
 - `materials` 中每条素材至少包含 `material_name`、`source`、`section`、`support`；来自深知可信搜索的材料还必须把原始结果的 `源网址` 原样写入 `source_url`，不得依赖规范化标题反查。接口未返回原网址时不填、不猜测。存在数据口径、发布日期、文号或强判断时，应补充 `verification`，并使用“已完成……核验”口径，不得写“建议核对”“需人工核验”“以官方最新口径为准”等削弱可信度的措辞。
 - `materials[]` 与 `recalled_materials[]` 每条必须带 `snapshot_url`（可选，接口 screenShotPath 快照链接，原文链接失效时的存档回看）、`search_key`（该材料来自哪一次搜索的阅读友好名，如“北京·养老政策”；同一次搜索的材料用同一个 key）。多路检索时报告据此在材料面板生成检索筛选胶囊，单路检索时自动隐藏。
-- 政策类材料必须从同响应的 `policyFiles` 核对文号并写入 `doc_number`：所选材料对应条目的 `writtenText` 为空时，从**同文件的其他标题变体条目**回填（"联合印发…"/"关于印发…的通知"等变体，文件名主体相同即同一文件，模型认变体），仍无则不写；不得猜测文号。检索库对同一文件常有多个抓取条目，文号挂在发文版条目上，逐条精确匹配会漏（曾出现 27 条材料文号全空的情况）。**`doc_number` 只允许标准文号格式（如 `医保发〔2026〕12号`，含"〔年份〕序号"）**——禁止写"中办、国办印发""XX配套实施"等描述性文字充当文号（渲染层对非标准格式不显示）。
+- 政策类材料必须从同响应的 `policyFiles` 核对文号并写入 `doc_number`：所选材料对应条目的 `writtenText` 为空时，从**同文件的其他标题变体条目**回填（"联合印发…"/"关于印发…的通知"等变体，文件名主体相同即同一文件，模型认变体），仍无则不写；不得猜测文号。检索库对同一文件常有多个抓取条目，文号挂在发文版条目上，逐条精确匹配会漏，需按同文件标题变体回填，避免整批材料文号为空。**`doc_number` 只允许标准文号格式（如 `医保发〔2026〕12号`，含"〔年份〕序号"）**——禁止写"中办、国办印发""XX配套实施"等描述性文字充当文号（渲染层对非标准格式不显示）。
 - `snapshot_url` 与 `段落` 从搜索结果（脚本通道 `--clean` 同构产物，字段名 `快照链接`/`段落`）**对应材料原样复制**，不得整理时丢弃——快照是原文失效时的存档回看，段落是标题链与摘录比对的数据源。
 - 整理 JSON 时必须把接口返回的 `段落`（含每段 `标题` 与 `内容`）和 `发布日期可信度` 字段**原样保留**到对应素材：段落标题用于来源文章的“标题：…”原文位置链（标注该段在原文件中的章节位置），可信度为“高”时来源文章展示“高可信”徽标。丢弃这些字段会导致报告缺失标题链与质量标识，属整理失误。
 - `recalled_materials` 放接口召回但正文未采用的相关材料：排除明显无关的文章后**全量放入**，不做人工精选——供用户检查“没采纳的有没有更好”。结构与 `materials` 相同（含 `search_key`、`段落`、`source_url`）。未引用材料缺 `source_url` 时照实不填，报告在其卡片标注“待补链接”；“依据溯源”与“已核验”只统计正文引用的材料，未引用材料不影响核验结论。

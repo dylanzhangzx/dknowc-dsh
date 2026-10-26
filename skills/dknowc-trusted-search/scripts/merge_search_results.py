@@ -120,8 +120,18 @@ def _merge_article(target: Dict[str, Any], incoming: Dict[str, Any]) -> None:
     for ch_key in ("检索通道", "channel"):
         cur_ch = str(target.get(ch_key) or "").strip()
         inc_ch = str(incoming.get(ch_key) or "").strip()
-        if inc_ch and inc_ch not in cur_ch:
-            target[ch_key] = cur_ch + ("、" + inc_ch if cur_ch else inc_ch)
+        # 按 token（顿号分隔）去重后拼接（2026-10-16 修复）：原用子串判断，
+        # "深知可信搜索" 遇 "深知深度搜索、深知可信搜索" 时整串不是子串，会把已含的
+        # token 再拼一次，产生 "深知深度搜索、深知深度搜索、深知可信搜索" 这类重复值。
+        if inc_ch:
+            toks = [t.strip() for t in cur_ch.split("、") if t.strip()]
+            for t in inc_ch.split("、"):
+                t = t.strip()
+                if t and t not in toks:
+                    toks.append(t)
+            merged_ch = "、".join(toks)
+            if merged_ch != cur_ch:
+                target[ch_key] = merged_ch
     # 搜索条件（分组标签）：**不拼接**，保留首路标签作为分组归属。
     # 旧实现把两路标签拼成 "上海市落户政策、上海：人才引进申办条件" 这类组合标签，
     # 会把 7 路撑成 10 个分组，过程回顾条的"检索 N 次"随之虚高，材料专库也出现怪分组
@@ -157,11 +167,21 @@ def _to_article(item: Dict[str, Any], default_key: str = "") -> Dict[str, Any]:
         if snap:
             article["screenShotPath"] = snap
             break
-    if _first_value(item, "文号", "doc_number"):
-        article["文号"] = _first_value(item, "文号", "doc_number")
+    # 文号键链（2026-10-23）：「发文字号」是 V2 可信路文章级实际键名（policy 路实测返回，
+    # 如 商办消费函〔2021〕58号）——缺它则 V2 文号全靠 policyFiles 本地匹配兜底（writtenText
+    # 偶发为空，兜底不稳）；`writtenText` 为深搜接口 10-23 新增文章级键（标题命中 policyFiles
+    # 才有，部分覆盖）。中文键优先、英文键垫底，全部缺键时行为不变
+    if _first_value(item, "文号", "发文字号", "doc_number", "writtenText"):
+        article["文号"] = _first_value(item, "文号", "发文字号", "doc_number", "writtenText")
     # 检索通道透传（1.5.0）：检索脚本在产物文章级打的 检索通道 标注，渲染按接口通道拆分计数
     if _first_value(item, "检索通道", "channel"):
         article["检索通道"] = _first_value(item, "检索通道", "channel")
+    # 非官方来源透传（1.6.0）：联网路（searchChannel=webSearch）脚本打标 非官方来源=True，
+    # 及接口 dataAuthority 返回的 数据权威性（实测联网结果为"非权威"）——渲染层按双口径打徽标
+    if item.get("非官方来源"):
+        article["非官方来源"] = True
+    if _first_value(item, "数据权威性", "authority"):
+        article["数据权威性"] = _first_value(item, "数据权威性", "authority")
     key = _first_value(item, "搜索条件", "search_key", "deep_group") or default_key
     if key:
         article["搜索条件"] = key
@@ -169,7 +189,8 @@ def _to_article(item: Dict[str, Any], default_key: str = "") -> Dict[str, Any]:
 
 
 def _collect_route(input_path: Path, search_key: str,
-                   articles: List[Dict[str, Any]], policy_files: List[Dict[str, Any]]) -> None:
+                   articles: List[Dict[str, Any]], policy_files: List[Dict[str, Any]],
+                   route_idx: int = -1) -> None:
     """处理一路输入：可信形态（content.data.检索文章）或深度形态（data.searches）。"""
     data = json.loads(input_path.read_text(encoding="utf-8"))
     policy_holder = data.get("content") if isinstance(data.get("content"), dict) else data
@@ -184,7 +205,10 @@ def _collect_route(input_path: Path, search_key: str,
     if isinstance(search_articles, list):
         for item in search_articles:
             if isinstance(item, dict):
-                articles.append(_to_article(item, search_key or "本次检索"))
+                _a = _to_article(item, search_key or "本次检索")
+                if route_idx >= 0:
+                    _a["_route_idx"] = route_idx  # 每路调用增量统计用（1.6.0），输出前剥离
+                articles.append(_a)
         return
 
     d = data.get("data") if isinstance(data.get("data"), dict) else {}
@@ -213,18 +237,31 @@ def main() -> None:
     by_key: Dict[str, Dict[str, Any]] = {}
     total_in = 0
 
-    for input_path_str, key in zip(args.input, keys):
+    for _ri, (input_path_str, key) in enumerate(zip(args.input, keys)):
         raw_path = Path(input_path_str).expanduser()
         if not raw_path.is_absolute():
             raw_path = (SEARCH_RESULTS_DIR / raw_path.name).resolve()
         if not raw_path.is_file():
             raise SystemExit(f"错误：输入文件不存在: {raw_path}")
         before = len(articles)
-        _collect_route(raw_path, key, articles, policy_files)
+        _collect_route(raw_path, key, articles, policy_files, route_idx=_ri)
         total_in += len(articles) - before
+
+    # 每路调用增量统计（1.6.0，过程可信度）：该路带来多少篇新材料（new_articles）、
+    # 给已有材料补充了多少段（added_paragraphs）——过程条按真实调用次数展示每条补搜的
+    # 实际贡献，避免按分组主通道统计时把补搜吞掉（对齐公文写作 3.9.0）。
+    call_stats: List[Dict[str, Any]] = [
+        {"label": (keys[i] or Path(args.input[i]).name), "file": Path(args.input[i]).name,
+         "articles_in": 0, "new_articles": 0, "added_paragraphs": 0}
+        for i in range(len(args.input))
+    ]
 
     # 合并式去重
     for art in articles:
+        _ri = art.get("_route_idx")
+        art.pop("_route_idx", None)
+        if isinstance(_ri, int) and 0 <= _ri < len(call_stats):
+            call_stats[_ri]["articles_in"] += 1
         title = str(art.get("文章标题") or "").strip()
         url = str(art.get("源网址") or "").strip()
         norm = _norm_title(title)
@@ -232,9 +269,16 @@ def main() -> None:
         if not key:
             continue
         if key in by_key:
+            _before = len(by_key[key].get("段落") or [])
             _merge_article(by_key[key], art)
+            _delta = max(0, len(by_key[key].get("段落") or []) - _before)
+            if isinstance(_ri, int) and 0 <= _ri < len(call_stats):
+                call_stats[_ri]["new_articles"] += 0
+                call_stats[_ri]["added_paragraphs"] += _delta
         else:
             by_key[key] = art
+            if isinstance(_ri, int) and 0 <= _ri < len(call_stats):
+                call_stats[_ri]["new_articles"] += 1
     merged = list(by_key.values())
 
     # —— 近似重复去重（句子指纹，1.5.0）——
@@ -291,8 +335,17 @@ def main() -> None:
                         continue
                     if not keep.get(f) and v:
                         keep[f] = v
-                if (drop.get("检索通道") or "") and drop["检索通道"] not in (keep.get("检索通道") or ""):
-                    keep["检索通道"] = (keep.get("检索通道") or "") + (("、" + drop["检索通道"]) if keep.get("检索通道") else drop["检索通道"])
+                # 通道拼接同款 token 去重（2026-10-16，与字段并集处同口径）
+                _inc = (drop.get("检索通道") or "").strip()
+                if _inc:
+                    _toks = [t.strip() for t in (keep.get("检索通道") or "").split("、") if t.strip()]
+                    for _t in _inc.split("、"):
+                        _t = _t.strip()
+                        if _t and _t not in _toks:
+                            _toks.append(_t)
+                    _merged = "、".join(_toks)
+                    if _merged != (keep.get("检索通道") or ""):
+                        keep["检索通道"] = _merged
                 merged.pop(drop_idx)
                 _fps.pop(drop_idx)
                 _near_dup += 1
@@ -407,6 +460,8 @@ def main() -> None:
         ],
     }
     result["search_meta"]["pool_summary"] = pool_summary
+    # 每路调用增量（1.6.0）：渲染过程条按真实调用次数展示每条补搜的实际贡献
+    result["search_meta"]["calls"] = call_stats
 
     # official-docs/ 不随发布包携带（平台不接受 .gitkeep，目录由脚本运行期自动创建）
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -414,6 +469,9 @@ def main() -> None:
     print(f"✓ 合并完成：{len(args.input)} 路 / 输入 {total_in} 篇 → 合并去重后 {len(merged)} 篇"
           f"（policyFiles {len(pf_out)} 条）→ {out}")
     print("  合并产物与 trusted_search.py 单路输出同构，可直接作为 render_trace_html.py 的 input_json。")
+    print("── 每路调用增量（过程可信度：该路新增 N 篇 · 为已有材料补充 K 段）──")
+    for _c in call_stats:
+        print(f"    · {_c['label']}：输入 {_c['articles_in']} 篇 → 新增 {_c['new_articles']} 篇 · 补充 {_c['added_paragraphs']} 段")
     print("── 材料池清单（证据侧覆盖：写答案大纲前先扫描，识别与用户情形相关、但问题字面未覆盖的主题）──")
     print("  机构分布：" + "；".join(f"{k}×{v}" for k, v in list(pool_summary["orgs"].items())[:12]))
     if doc_numbers:

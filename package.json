@@ -1,6 +1,6 @@
 {
   "name": "dknowc-dsh",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "深知可信办公全家桶：深知可信搜索、深知可信PPT、深知公文写作（skill 脚本直连 + 深知可信工作台 MCP 兜底），面向 DeepSeek Harness (dsh)",
   "type": "module",
   "main": "src/index.js",

@@ -1,4 +1,4 @@
-# 深知公文写作（SkillHub Public 版）
+# 深知公文写作（dsh 版）
 
 这是深知公文写作的 SkillHub 分发版本。功能逻辑与主干完整版保持一致，但不内置深知搜索 API Key。API Key 只对需要深知搜索的任务（查政策依据、数据支撑、案例参考、最新政策情况）是前置条件；不涉及搜索的简单通知、改写润色、只生成 Word 等任务可直接使用，不要求配置 Key。需要搜索时，由 Agent 通过 MaaS 注册接口完成手机号注册、验证码确认和 API Key 获取，并写入本机 Key 专用配置文件（`~/.config/dknowc/api_key`）。
 
@@ -9,6 +9,7 @@
 - 公文写作流程：由 `SKILL.md` 进行任务路由，按任务复杂度选择直接生成、追问、搜索、审查或严格流水线。
 - 搜索策略：`reference/search_policy.md` 保留深知搜索逻辑、素材四分类和来源限制。
 - 任务路由：`reference/task_router.md` 定义简单任务、常规任务、复杂任务和高风险任务的处理方式。
+- 文种写法：`reference/genre_writing_notes.md` 按文种补充“怎么写、哪些不要补”，与 `reference/standards/*.md` 的格式标准配合使用。
 - 质量审查：`reference/review_checklist.md` 定义公文内容、可信溯源、文种专项和 Word 输出检查项。
 - Word 排版：通过 `scripts/format_document.py` 生成普通格式 `.docx`，支持标准 Markdown 表格和宽表横向页面。
 - 产出物 HTML：执行过搜索时，通过 `scripts/source_note_html.py` 和 `scripts/render_trace_html.py` 生成单文件产出物 HTML（顶部切换 **正文（去索引） / 溯源核验报告 / 知识专库** 三页）：正文页为干净正式正文（与 Word 正文一致）；溯源核验报告页含 **AI 自验收**（过程回顾条）、核验单与带角标的正文（角标为可点击引文胶囊）；知识专库页按检索分组展示来源材料；原文链接原样给出、附存档快照兜底。顶栏「导出」可导出正文 Markdown（.md）或 PDF（正文 / 溯源核验报告）。文件名按用户需求（正文标题）生成，形如 `XXX.html`。
@@ -44,7 +45,7 @@ API Key 按需配置：
 
 ## 需要搜索时，注册并配置深知搜索 API Key
 
-只有当前任务需要深知搜索（政策依据、数据支撑、案例参考，或查最新政策、最新情况）时，才需要配置 API Key（3.7.5 起统一走脚本通道，不再走 MCP）。配置 API Key 后，深知公文写作可调用深知可信搜索，从权威文件库中检索政策依据、权威数据和典型案例，检索结果附原文来源，便于写作时引用和核验。不涉及搜索的写作任务无需配置 Key，可直接使用。引导与注册各环节的固定话术（含报错处理）见 `reference/onboarding_scripts.md`；向用户介绍搜索能力可参考 `reference/search_intro.md`，用户犹豫时可用 `reference/sample_search_result.md` 与 `reference/sample_trace_report.html` 展示效果（示例数据，仅供展示）。
+只有当前任务需要深知搜索（政策依据、数据支撑、案例参考，或查最新政策、最新情况）时，才需要配置 API Key（当前版本统一走脚本通道；MCP 通道暂未启用）。配置 API Key 后，深知公文写作可调用深知可信搜索，从权威文件库中检索政策依据、权威数据和典型案例，检索结果附原文来源，便于写作时引用和核验。不涉及搜索的写作任务无需配置 Key，可直接使用。引导与注册各环节的固定话术（含报错处理）见 `reference/onboarding_scripts.md`；向用户介绍搜索能力可参考 `reference/search_intro.md`，用户犹豫时可用 `reference/sample_search_result.md` 与 `reference/sample_trace_report.html` 展示效果（示例数据，仅供展示）。
 
 SkillHub 版默认使用：
 
@@ -58,7 +59,7 @@ SkillHub 版默认使用：
 node <skillDir>/scripts/register.mjs send --phone 13812345678
 ```
 
-发码有两个分支，都必须支持（2026-10-09 注册链路改造，user-auth maas-1.1.6）：
+发码有两个分支，都必须支持（注册链路）：
 
 - **退出 0（`status=true`，短信直发）**：转述脚本输出的 `user_message`（含脱敏手机号与"最新一条"提示），暂停并请用户提供收到的 6 位验证码。
 - **退出 2（`code="CAPTCHA_REQUIRED"`，短信尚未发送）**：转述 `user_message` 并原样给出脚本返回、经安全校验的验证链接，暂停等待用户在页面完成验证并回复短信验证码。用户在页面完成验证后不得再调 send；只说"验证好了"时仅追问短信码。链接一次性、约 10 分钟有效。（退出 2 也可能是参数错误，需结合 JSON 的 `code` 字段判断。）
@@ -87,7 +88,7 @@ https://platform.dknowc.cn/auth/#/login
 搜索接口固定为：
 
 ```text
-https://open.dknowc.cn/dependable/search/
+https://open.dknowc.cn/open-api/maas/dependable/v2/search
 ```
 
 API Key 只能通过环境变量 `DKNOWC_API_KEY` 注入或本机专用配置文件（`~/.config/dknowc/api_key`）持久化，不得硬编码，不得写入公开包。脚本读取顺序为进程环境变量优先、缺失时自动读取配置文件，历史 `~/.zshrc` 中的 Key 块仅作迁移期兜底，无需重启宿主。
@@ -96,25 +97,18 @@ API Key 只能通过环境变量 `DKNOWC_API_KEY` 注入或本机专用配置文
 
 交付形态由两个独立开关决定（详见 `reference/task_router.md`）：
 
-- **是否命中文公文范式** → 决定要不要 Word：命中 15 种法定公文（决议、决定、命令、公报、公告、通告、意见、通知、通报、报告、请示、批复、议案、函、纪要，含复函与提醒函）时生成 `.docx`；用户明确要求 Word/红头时也生成 Word。
+- **是否命中公文范式** → 决定要不要 Word：命中 15 种法定公文（决议、决定、命令、公报、公告、通告、意见、通知、通报、报告、请示、批复、议案、函、纪要，含复函与提醒函）时生成 `.docx`；用户明确要求 Word/红头时也生成 Word。
 - **是否执行过深知搜索** → 决定要不要产出物 HTML：只要用过深知可信搜索或深度搜索，就生成单文件产出物 HTML（正文 / 溯源核验报告 / 知识专库 三页）。
 
 两者可同时成立。非公文且执行过搜索时，交付产出物 HTML 并询问用户是否需要另出 Word。
 
 ## 版本说明
 
-当前 dsh 版基于 SkillHub 母版 `3.8.1`（版本号 `3.8.1-dsh`）。
+当前 dsh 版基于 SkillHub 母版 `3.9.2`（版本号 `3.9.2-dsh`）。
 
-检索通道：统一走脚本通道（`deep_query.py` / `dkag_search.py` / `outline_reference.py`，需 API Key）。3.7.5 起不再走 MCP「深知可信工作台」通道——MCP 侧大结果落盘方案改造完成后另行加回。
+检索通道：统一走脚本通道（`deep_query.py` / `dkag_search.py` / `outline_reference.py`，需 API Key）。当前版本 MCP「深知可信工作台」通道暂未启用。
 
-## 常用测试
-
-语法检查：
-
-```bash
-python3 -m py_compile scripts/outline_reference.py scripts/dkag_search.py scripts/merge_search_results.py scripts/format_document.py scripts/template_generator.py scripts/initialize.py scripts/source_note_html.py scripts/render_trace_html.py scripts/review_document.py
-node --check scripts/register.mjs
-```
+## 使用示例
 
 范文大纲生成：
 
@@ -125,25 +119,25 @@ python3 <skillDir>/scripts/outline_reference.py "请写一份关于基层治理�
 普通 Word 生成：
 
 ```bash
-python3 <skillDir>/scripts/format_document.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/dknowc-test.md --output dknowc-test.docx
+python3 <skillDir>/scripts/format_document.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/示例正文.md --output 示例正文.docx
 ```
 
 红头 Word 生成：
 
 ```bash
-python3 <skillDir>/scripts/template_generator.py 通知 --input dknowc-test.docx --org "XX单位" --doc-number "XX〔2026〕1号" --output dknowc-test-red.docx
+python3 <skillDir>/scripts/template_generator.py 通知 --input 示例正文.docx --org "XX单位" --doc-number "XX〔2026〕1号" --output 示例正文-红头.docx
 ```
 
 搜索结果保存：
 
 ```bash
-python3 <skillDir>/scripts/dkag_search.py "人才服务政策" --area 某省 --purpose "核查当地人才服务政策依据" --clean --output result_gd.json
+python3 <skillDir>/scripts/dkag_search.py "人才服务政策" --area 某省 --purpose "核查当地人才服务政策依据" --clean --output result_policy.json
 ```
 
 多次搜索合并：
 
 ```bash
-python3 <skillDir>/scripts/merge_search_results.py result_gd.json result_bj.json --output merged.json
+python3 <skillDir>/scripts/merge_search_results.py result_policy.json result_data.json --output merged.json
 ```
 
 溯源核验报告 HTML：

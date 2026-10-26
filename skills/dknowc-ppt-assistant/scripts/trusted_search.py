@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """深知可信搜索可信搜索调用脚本。
 
-调用可信搜索接口 dependable/search，返回权威材料召回结果。
+调用可信搜索 V2 接口 /open-api/maas/dependable/v2/search，返回权威材料召回结果。
+V2 要点（2026-10-23 起，对齐公文写作 3.9.0 定档）：searchType 必填且每次调用
+单值（多类来源并行调用后合并，混传会稀释结果名额）；segmentCount=4 /
+MaterialLength=18000 为受控实测定档；成功判定 ret==0 且 content.code==200；
+返回顶层带 tid 便于平台排查。
 """
 
 import argparse
@@ -17,7 +21,15 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 
-DEFAULT_ENDPOINT = "https://open.dknowc.cn/dependable/search"
+DEFAULT_ENDPOINT = "https://open.dknowc.cn/open-api/maas/dependable/v2/search"
+# V2 必填：每次调用只传一个 searchType（默认 policy）；多值直接报错——
+# 混传会共用结果名额、显著稀释政策文件与文号覆盖（公文写作 3.9.0 实测）。
+SEARCH_TYPES = ("policy", "govSite", "affair", "qa", "private")
+DEFAULT_SEARCH_TYPE = "policy"
+# 参数定档（第一轮受控实测，对齐公文写作 3.9.0）：4 段/篇 + 18000 字上限，
+# 双主题相关率最高、边际新增质量最好；可经 --segment-count / --material-length 调整。
+DEFAULT_SEGMENT_COUNT = 4
+DEFAULT_MATERIAL_LENGTH = 18000
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
@@ -99,16 +111,31 @@ def _validate_service_area(value: str) -> str:
 
 
 def _build_payload(args: argparse.Namespace) -> Dict[str, Any]:
+    # V2：searchType 必填单值（多值报错；需要多类来源就分路调用后合并）
+    search_type = (args.search_type or DEFAULT_SEARCH_TYPE).strip()
+    for part in re.split(r"[,，\s]+", search_type):
+        if part and part not in SEARCH_TYPES:
+            raise SystemExit(f"错误：searchType 仅允许单值（{' / '.join(SEARCH_TYPES)}），收到：{search_type}")
+    if len([p for p in re.split(r"[,，\s]+", search_type) if p]) > 1:
+        raise SystemExit(f"错误：V2 每次调用只传一个 searchType（混传会稀释结果名额）；"
+                         f"需要多类来源请分路调用后合并。收到：{search_type}")
+    material_length = args.material_length if args.material_length else DEFAULT_MATERIAL_LENGTH
+    if int(material_length) <= 0:
+        raise SystemExit("错误：--material-length 必须为正整数")
     payload: Dict[str, Any] = {
         "query": args.query,
+        "searchType": [search_type],
         "policy": False if args.no_policy else True,
         "item": False if args.no_item else True,
         "knowBase": False if args.no_know_base else True,
         "return_full_content": args.return_full_content,
-        "simplified": False if args.no_simplified else True,
+        # simplified 默认 False：True 会丢每篇材料的存档快照 screenShotPath（接口 2026-10-20 实测），
+        # 快照是报告的附加回看入口；需要精炼输出时显式传 --simplified。
+        "simplified": True if args.simplified else False,
+        "MaterialLength": int(material_length),
     }
 
-    segment_count = args.segment_count if args.segment_count is not None else 2
+    segment_count = args.segment_count if args.segment_count is not None else DEFAULT_SEGMENT_COUNT
     if segment_count not in (None, ""):
         payload["segmentCount"] = int(segment_count)
 
@@ -277,13 +304,18 @@ def _bail_if_biz_error(body: Dict[str, Any]) -> None:
     content = _content(body)
     code = content.get("code")
     msg = content.get("msg")
-    if code and code != 200:
+    # V2 成功判定：ret==0 且 content.code==200；ret 非 0 也按业务错误处理
+    ret = body.get("ret") if isinstance(body, dict) else None
+    if (code and code != 200) or (ret is not None and ret != 0):
         quota = detect_quota_exhausted(None, msg)
-        print(f"错误：可信搜索接口返回 {code} {msg or ''}".strip())
+        err_label = f"ret={ret}" if (ret is not None and ret != 0 and not (code and code != 200)) else code
+        print(f"错误：可信搜索接口返回 {err_label} {msg or ''}".strip())
         print(json.dumps({
             "status": "error",
             "stage": "biz",
             "biz_code": code,
+            "ret": ret,
+            "tid": body.get("tid") if isinstance(body, dict) else None,
             "quota_exhausted": quota,
             "retry_forbidden": quota,
             "user_message": user_message_for_error(None if code != 500 else 500, quota),
@@ -361,9 +393,12 @@ def main() -> None:
     parser.add_argument("--know-base", action="store_true", help="返回知识专库链接")
     parser.add_argument("--no-know-base", action="store_true", help="不返回知识专库链接")
     parser.add_argument("--return-full-content", action="store_true", help="返回资料全文")
-    parser.add_argument("--segment-count", type=int, help="每篇材料最多返回段落数")
-    parser.add_argument("--simplified", action="store_true", help="精炼输出")
-    parser.add_argument("--no-simplified", action="store_true", help="不剔除材料")
+    parser.add_argument("--segment-count", type=int, help="每篇材料最多返回段落数（默认 4，V2 定档）")
+    parser.add_argument("--search-type", help="V2 必填单值：policy / govSite / affair / qa / private（默认 policy；"
+                                              "多值报错——多类来源分路调用后合并）")
+    parser.add_argument("--material-length", type=int, help="返回材料总字符上限（默认 18000，V2 定档）")
+    parser.add_argument("--simplified", action="store_true", help="精炼输出（会丢存档快照 screenShotPath，默认关闭）")
+    parser.add_argument("--no-simplified", action="store_true", help="兼容保留：默认已不精炼，无需传此参数")
     parser.add_argument("--max-articles", type=int, default=3, help="摘要最多展示材料数")
     parser.add_argument("--max-paragraphs", type=int, default=1, help="每篇材料最多展示段落数")
     parser.add_argument("--paragraph-chars", type=int, default=1200, help="每段最多展示字符数")

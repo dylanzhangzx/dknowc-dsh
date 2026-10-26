@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""把 MCP「深知可信工作台」trusted_search（include_details=true 形态）的返回
+"""⚠ 本脚本自 3.7.5 起随 MCP 通道一同停用，仅保留待 MCP 侧落盘方案改造完成后恢复。
+
+现行检索统一走纯脚本通道，规则层（SKILL.md / reference）不引用本脚本；
+以下为停用前的机制说明，仅供恢复改造时参考。
+
+--------------------------------------------------------------------------------
+把 MCP「深知可信工作台」trusted_search（include_details=true 形态）的返回
 转换成与深知可信搜索脚本 `scripts/dkag_search.py --clean` **完全同构**的形态，
 供本 Skill 全部下游流程复用。
 
@@ -39,7 +45,16 @@ import sys
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-SEARCH_RESULTS_DIR = SKILL_ROOT / "official-docs" / "search-results"
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
+import os as _os
+_ws = _os.environ.get("DKNWOC_WS_ROOT")
+if not _ws:
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
+    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
+    _sid = _os.environ.get("DSH_SESSION_ID", "")
+    _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
+WS_ROOT = Path(_ws).resolve()
+SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 
 HTML_ENTITIES = (("＆lt;", "<"), ("＆gt;", ">"), ("＆amp;", "&"), ("＆quot;", '"'),
                  ("&lt;", "<"), ("&gt;", ">"), ("&amp;", "&"), ("&quot;", '"'))
@@ -168,7 +183,7 @@ def convert(data, area: str, purpose: str) -> dict:
         doc_number = clean_text(first_value(material, "doc_number", "文号"))
         if doc_number:
             # 文号直写文章级（MCP 通道增量）：整理溯源 JSON 时直接复制，
-            # 免跨文件翻 policyFiles——实测模型做跨文件标题匹配会跳过
+            # 免跨文件翻 policyFiles——避免模型跨文件标题匹配时跳过
             article["文号"] = doc_number
         articles.append(article)
 

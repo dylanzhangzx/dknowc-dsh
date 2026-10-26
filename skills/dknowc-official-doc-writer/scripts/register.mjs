@@ -22,7 +22,7 @@ const DEFAULT_OPEN_BASE = "https://open.dknowc.cn";
 const DEFAULT_CHANNEL = "46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05";
 const DEFAULT_TYPE = "6";
 // body 的 source 是注册 API 的合同标记：服务端按 source="agent" 放行"老用户直接返 Key"
-// 路径（2026-10-09 生产实测：source=dknowc-official-doc-writer 时返回"用户已存在！"错误，
+// 路径（生产环境可能出现：source=dknowc-official-doc-writer 时返回"用户已存在！"错误，
 // source=agent 时正常返回 Key）。它与 X-Dknowc-Attribution 统计声明里的 skill 标识是两个
 // 字段：统计声明头的键名为 agentSource（2026-10-09 平台方确认改名，避免与 body 的
 // source 混淆），值仍读 attribution.json 的 dknowc-official-doc-writer，不受本值影响。
@@ -444,7 +444,7 @@ async function main() {
     } else if (String(r.msg || "").includes("验证码")) {
       userMessage = `验证码校验没通过（可能是输入有误或已过期）。请核对 ${maskPhone(a.phone)} 最新一条短信的 6 位验证码重新发我；需要我重新发送一条，直接说一声。`;
     } else if (String(r.msg || "").includes("已存在")) {
-      // 老用户但服务端未放行返 Key（2026-10-09 生产实测过此形态）：据实说明并引导网页
+      // 老用户但服务端未放行返 Key（生产环境出现过此形态）：据实说明并引导网页
       // 登录，不冒充找回成功、不诱导重复注册。
       userMessage = `这个手机号之前注册过深知账号，这次没能自动取回密钥。可以稍后再试一次，或到平台用手机号验证码登录查看：${FALLBACK_REGISTER_URL}`;
     } else {

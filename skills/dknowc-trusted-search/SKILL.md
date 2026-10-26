@@ -7,7 +7,7 @@ description: "当用户需要可信搜索、权威材料检索、政策法规/�
 description_zh: "深知可信搜索（法律、政策、标准）是由北京彩智科技有限公司旗下“深知可信智能”提供的可信搜索与权威材料检索 Skill，面向政策法规、政务办事依据、税务社保、公积金、企业补贴、资质证照、行业标准、公共服务、合规义务、政策调研、城市政策对比和企业投资/技改/税惠材料核验等工作场景。检索按问题复杂度分级：单对象/单地域的枚举与单点事实用可信搜索，≥2 个对象/地域需对比并列或跨地域跨层级聚合、或用户明确表达深度意图时才用深度搜索，用户明确要求时总是调用深度搜索；输出带权威来源、知识专库、可点击溯源的单文件 HTML 产出物。"
 description_en: "dknowc trusted search is a trusted search and authoritative-source retrieval Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It supports policy, regulation, government-service evidence, standards, compliance, subsidy, tax-benefit and policy research tasks. Retrieval is tiered by question complexity: single-object or single-region questions (including enumerations such as “what policies exist”) use trusted search, while deep search is used only for two or more objects/regions being compared or aggregated across regions and levels, or on explicit user request. Delivers a direct answer and a single-file HTML deliverable with three switchable pages (body without markers, provenance verification report, knowledge library), with Markdown and PDF export."
 category: "office-efficiency"
-version: "1.5.1-dsh"
+version: "1.6.0-dsh"
 author: 彩智科技
 permissions:
   network:
@@ -24,10 +24,10 @@ secrets:
 # 深知可信搜索（法律、政策、标准）（SkillHub Public 版）
 
 该 Skill 负责“搜索型可信材料获取与核验”，并**承接咨询式政策问答**（dsh 版不设独立的可信咨询 skill——咨询类问题由本 Skill 的可信检索流程作答并附溯源）。检索按问题复杂度分级（见「检索执行规则」）：**先数对象——单对象/单地域的默认入口是 `scripts/trusted_search.py`；≥2 个对象/地域需对比并列或跨地域跨层级聚合、或用户明确表达深度意图时才用 `scripts/deep_query.py`**；用户明确要求深度搜索时总是调用；拿不准时先走可信搜索。
+
 > **dsh Key 机制**：dsh 清理名字含 KEY 的隐式环境变量，但**专用配置文件读取不受影响**——注册成功后 Key 写入 `~/.config/dknowc/api_key`，本会话检索脚本立即可用（无需重启 dsh、无需临时传参）。`initialize.py` 在 dsh 下优先读插件注入的 `DSH_DKNOWC_API_KEY`（与 MCP Bearer 同源），缺失时自动走 环境变量 → 配置文件 → 历史 zshrc 解析。仅 dsh 捆绑的 MCP 兜底工具（`mcp__dknowc__*`）需重启 dsh 才会加载新 Key。
 >
 > **dsh 检索通道**：正式检索一律走脚本直连（全量结构化返回）。dsh 捆绑的 MCP 工具（`mcp__dknowc__trusted_search` / `mcp__dknowc__deep_query`）返回为**精简视图**（缺文号/存档快照/段落标题链/可信度字段），仅作脚本异常时的应急通道，且不应据此生成正式溯源核验报告。
-
 
 ## 最高优先级规则
 
@@ -131,9 +131,9 @@ node <skillDir>/scripts/register_key.mjs register --phone <手机号> --vcode <�
 2. 判断是否需要追问：如果缺少地域、主体、时间、事项类型、企业条件等关键变量且会改变结论，先问用户；否则先搜索。
 3. 检索：按「检索执行规则」**先数对象**再选通道并构造 query——**只有 1 个对象/地域**（含"北京有哪些租房补贴政策""怎么申请""条件是什么"这类单地域枚举、单点事实、单政策解读）用 `scripts/trusted_search.py` 建证据池；**≥2 个对象/地域要放在一起比、跨地域跨层级聚合、或用户明确表达深度意图**才用 `scripts/deep_query.py` **单路**深度搜索（query 直接用用户原始问题、不传 `--area`）。**拿不准时先走可信搜索。** 政策依据型再以可信搜索补搜文号/原文；每次检索返回后**立即落盘到独立 `--output` 文件并 `json.load` 校验**，未校验通过前不得发起下一次（禁止"先攒后写"）。
 4. 整理研究资料并综合答案：**先整理、后动笔**——基于合并产物与材料池清单生成研究资料 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/research_notes.md`，含两张表：**核心事实总表**（| 事实/口径 | 来源编号 |，每行一条可支撑正文的事实）与**数据口径表**（| 指标 | 数值 | 口径/条件 | 属地 | 来源编号 |）。数据口径表的缺口（用户问题需要、但表中查无来源的数字/口径）即定向补搜目标，按「检索执行规则」补搜后回填；仍缺的才进"待确认"。**最终答案的关键结论必须能在研究资料表中逐行找到对应**（治"检索已召回未被消费"：池内相关内容先进表、再进答案）。随后基于研究资料形成面向用户问题的最终答案，并在关键结论后标注真实可支撑的 `[数字]` 来源角标——**边写边标**：写这句时就去材料里定位它是第几号（多路检索看合并产物每篇的 `编号` 字段），当场写下 `[n]`；**禁止先写完正文、再回头反查补标角标**（编号契约见「最高优先级规则」）。多路检索时，大纲生成前先完成「证据侧覆盖」的材料池清单扫描（merge 脚本输出的机构/文号/金额/标题清单），池内与用户情形相关但未被问到的主题要进大纲。
-5. 答案自检并保存：按五项如实自检——①事实有据（关键结论有材料支撑，且**逐条核对角标摘录支撑**：点击每个角标看到的摘录要能印证对应结论，具体条件/数字/程序不得挂在仅主题相关的材料上）②角标绑定（每个角标都能对应到来源文章）③答案一致（报告答案与回复答案一致）④时效确认（材料日期已核对）⑤无未核验断言（不确定处已标"待核验"；**凡写入答案的"待确认/待核验"项，均已先按该项做了一轮定向补搜、补到的已进正文，不得未补搜就挂进待确认清单**；用户核心诉求是具体数字而未查到时，已做过定向补搜并在答案中说明）⑥同文条款完整性（**并入①"事实有据"核对，不新增自检键**）：**引用某份文件的数字后，须回看该文件在材料池中的段落，确认没有与用户情形相关的其他条款被漏用**——例如为待遇数字引用某办法时，同文的配套优惠/例外条款要一并考察；漏了就补进答案或说明为何不适用）。把带角标的最终答案保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_answer.txt`，自检结果写入 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_selfcheck.json`（键 `fact_basis/binding/consistency/freshness/no_gap`，**每项值写 `通过：<简要说明>` 或 `未通过：<原因>` 字符串**——「通过」也须带说明，否则核验单缺该项说明、交付前检查说明折叠区不出现；键支持中英文）。**自检 JSON 只允许这五个键**——核对说明、待办事项、补充计划等不得写成额外键或塞进自检值（多余键会被核验单忽略，塞进值会导致该项无法识别）；自检发现未闭环项（如区县细则缺口）先按「检索执行规则」补搜闭环，越界或补不到才停下与用户确认，不得带着缺口直接生成报告。
+5. 答案自检并保存：按五项如实自检——①事实有据（关键结论有材料支撑，且**逐条核对角标摘录支撑**：点击每个角标看到的摘录要能印证对应结论，具体条件/数字/程序不得挂在仅主题相关的材料上）②角标绑定（每个角标都能对应到来源文章）③答案一致（报告答案与回复答案一致）④时效确认（材料日期已核对）⑤无未核验断言（不确定处已标"待核验"；**资格/准入/受限类问题已按「要件式改写」规则核对允许侧与限制侧双侧依据**；**凡写入答案的"待确认/待核验"项，均已先按该项做了一轮定向补搜、补到的已进正文，不得未补搜就挂进待确认清单**；用户核心诉求是具体数字而未查到时，已做过定向补搜并在答案中说明）⑥同文条款完整性（**并入①"事实有据"核对，不新增自检键**）：**引用某份文件的数字后，须回看该文件在材料池中的段落，确认没有与用户情形相关的其他条款被漏用**——例如为待遇数字引用某办法时，同文的配套优惠/例外条款要一并考察；漏了就补进答案或说明为何不适用）。把带角标的最终答案保存到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_answer.txt`，自检结果写入 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_selfcheck.json`（键 `fact_basis/binding/consistency/freshness/no_gap`，**每项值写 `通过：<简要说明>` 或 `未通过：<原因>` 字符串**——「通过」也须带说明，否则核验单缺该项说明、交付前检查说明折叠区不出现；键支持中英文）。**自检 JSON 只允许这五个键**——核对说明、待办事项、补充计划等不得写成额外键或塞进自检值（多余键会被核验单忽略，塞进值会导致该项无法识别）；自检发现未闭环项（如区县细则缺口）先按「检索执行规则」补搜闭环，越界或补不到才停下与用户确认，不得带着缺口直接生成报告。
 6. 判断是否需要图表：按「可视化」章的判据（路径 A 用户明确要图 / 路径 B 四条全满足）确定本次是否需要图表。**只需要判断，不要在核验报告之外另跑图表脚本。**
-7. 生成核验报告（含图表，若第 6 步判定要图）：把核验后的数据整理成统一结构化 JSON（每点带 `sources`）写入 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`，调用 `scripts/render_trace_html.py --answer-file --self-check-file --charts-json <图表JSON> --question "<用户原话>" --research-notes-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/research_notes.md`，生成单文件产出物《标题.html》到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`（无"_溯源核验报告"后缀、无时间戳；同题重跑自动 `_v2` 另存）。第 4 步生成了研究资料时**必须传 `--research-notes-file`**（AI 自验收过程条会体现整理规模）。**`--question` 必须传用户的原始问题原话**（可去掉与任务无关的寒暄，但不得改写含义）——它显示在报告页首的"原问题"行（1.4.4 起），**不得用成稿标题冒充**（标题是答案的章节名，不是用户问的话）；未传则该行不出现，属装配缺失。**最终答案的首行应为成稿标题、章节标题用 markdown 标题行（`#`/`##`）**——图表 `metadata.section` 锚点与章节卡都按标题行匹配，纯文本标题行会失配（渲染器对"无 # 标题、首行为短标题"的答案有兜底升格，但不要依赖）。**图表就长在这份 HTML 里，本次交付的 HTML 始终只有 1 个。** 生成前硬校验：来源文章非空而答案无 `[n]` 角标时拒绝生成并报错，须修正答案后重跑。
+7. 生成核验报告（含图表，若第 6 步判定要图）：把核验后的数据整理成统一结构化 JSON（每点带 `sources`）写入 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`，调用 `scripts/render_trace_html.py --answer-file --self-check-file --charts-json <图表JSON> --question "<用户原话>" --research-notes-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/research_notes.md`，生成单文件产出物《标题.html》到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`（无"_溯源核验报告"后缀、无时间戳；同题重跑自动 `_v2` 另存）。第 4 步生成了研究资料时**必须传 `--research-notes-file`**（AI 自验收过程条会体现整理规模）。**用户原始问题必须全文落盘为 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_question.txt` 并经 `--question-file` 传入**（1.6.0 起，多行/长问题禁止只传首行；`--question` 直传仅限单行短问题）——可去掉与任务无关的寒暄，但不得改写含义——它显示在报告页首的"原问题"行（1.4.4 起），**不得用成稿标题冒充**（标题是答案的章节名，不是用户问的话）；未传则该行不出现，属装配缺失。**最终答案的首行应为成稿标题、章节标题用 markdown 标题行（`#`/`##`）**——图表 `metadata.section` 锚点与章节卡都按标题行匹配，纯文本标题行会失配（渲染器对"无 # 标题、首行为短标题"的答案有兜底升格，但不要依赖）。**图表就长在这份 HTML 里，本次交付的 HTML 始终只有 1 个。** 生成前硬校验：来源文章非空而答案无 `[n]` 角标时拒绝生成并报错，须修正答案后重跑。
    - 产出物已交付后用户追加图表需求 → 用**原来的 `--output` 文件名**重跑本步：脚本检测到同名会**自动另存为 `原名_v2.html`**（再改则 `_v3`），旧版保留不覆盖；新版本自动落在同一产物目录（`_v2`/`_v3` 命名由脚本处理，旧版保留）。不要手工复制/改名文件。
 8. dsh 交付与回复：产出物直接生成在会话工作区 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`——dsh 以工作区为文件视图、访达也可直达，直接向用户展示脚本实际打印的 HTML 路径即可，无需交付复制。然后给出直接答案，附上产出物 HTML 路径。
 9. 深度搜索邀约（条件化）：**仅当本次走可信搜索通道且用户未要求深度搜索时**，最终回复末尾询问是否需要升级深度搜索，例如：“我还可以继续为你做一次深度搜索，对结果进行多轮核验和扩展，输出一份更完整、可直接使用的深度版结果。这个过程耗时会更长，通常需要几分钟。需要我继续吗？”；已按复杂度分级走深度搜索的默认不再邀约。
@@ -164,12 +164,13 @@ node <skillDir>/scripts/register_key.mjs register --phone <手机号> --vcode <�
   - **对象集在 query 里写清即可**（实测：query 明确列出"珠三角九市（广州、深圳、佛山、东莞、中山、珠海、惠州、江门、肇庆）"时，服务端稳定拆出 9 个子查询、9 城全部覆盖、199 篇，无缺无多）——服务端会按 query 里列出的对象逐个拆子查询，不需要客户端再对照补搜。
   - 用户只是**模糊表述**时（"几个主要城市""部分地市"），以服务端拆分结果为合理范围，不追求固定对象数（服务端对集合概念的扩展范围不固定：同一模糊 query 实测一次 9 城 219 篇、一次 4 城 89 篇，均属正常）。
   - **兜底（非常规步骤）**：仅当返回结果明显异常时才处理——某个已列出的对象 0 篇、或拆分结果明显偏离 query 列出的对象，此时用 `trusted_search.py --service-area <该对象>` 补搜该路，再与深度结果一起 `merge_search_results.py` 合并。
-  - 再按缺口用 `trusted_search.py` 补搜文号/原文（深度搜索返回含快照/段落标题/发布日期可信度，缺独立文号字段——政策依据型必补搜补文号）。
+  - 再按缺口用 `trusted_search.py` 补搜文号/原文（深度搜索返回含快照/段落标题/发布日期可信度；2026-10-23 起文章级带文号 `writtenText`，实测约 1/4 覆盖、标题命中才有，且纯深搜响应无 policyFiles——**关键政策依据文章无文号时仍需补搜 policy 路**拿文号，深搜已带文号的不必为文号而补）。
 - 判定由 Agent 基于用户问题自主做，**拿不准时一律先走可信搜索**（快、省额度），证据不足再升级深度搜索。
 
 **启动 Query 生成原则**（1.3.5 起：括号列举会把检索面收窄到列举词上，牺牲广度）：
 
 - Query 句式「**对象（含地域、时间限定）的关注方向**」，例如「重庆（2026 年）智能化改造补贴政策」；**不列举具体信息需求**（"适用条件、补贴比例…"这种括号列举收窄检索面，列为坏例一）。
+- **资格/准入/受限类问题必须落到要件层（1.6.0）**：用户问「已有 X 还能不能 Y／是否受限／能不能通过审核／允不允许」这类资格、条件、限制、禁止问题时，**禁止**用是非问法（"能不能""还能不能""会不会影响"）或同义替换（如"绿牌/蓝牌"）直接检索——实测该类问法对否定性条款 0/7 命中。**必须**补一路要件式 query：「对象 + 申请条件／资格限制／不予受理情形／除外情形」（例：「深圳 名下已有本市登记小汽车 再申请普通小汽车增量指标 申请条件 不予受理情形」——实测 7/7 命中关键否定条款）。判定答案时**允许侧与限制侧都要有依据**：只有"允许侧"材料、没有"限制/禁止侧"材料 → 视为证据缺口，先按要件式补搜，仍无才升级深度搜索（深度溯源可扩召回但不产出答案，仅作兜底）。
 - 与类目关键词堆砌（"重庆 智能化 改造 补贴 政策"）并列禁止，同为坏例。
 - **复杂问题的深度搜索不拆路**（1.4.0）：一路用原始问题即可，服务端按地域概念自动拆子查询；仅简单问题在需要覆盖不同侧面（如不同政策类型/不同区县）时才拆 1-3 路可信搜索，各路只是关注方向不同、不叠加多维限定。
 - 检索方案需用户确认时，展示每条 query 原文——确认的即执行的，不得偷换。
@@ -177,7 +178,7 @@ node <skillDir>/scripts/register_key.mjs register --phone <手机号> --vcode <�
 **结果即时落地（1.3.5 起）**：
 
 - 每路检索返回后**立即单独落盘**到独立 `--output` 文件并 `json.load` 校验，校验通过前不得发起下一路；**禁止"先把结果攒在对话里、整批统一落盘"**（宿主对工具结果有清理机制，延迟落盘会"过期"导致整批丢失）。
-- **检索产物的位置与取用（1.4.0）**：检索结果落在**会话工作区**的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`（脚本按 `DKNWOC_WS_ROOT`/`DSH_SESSION_ID` 自动锚定到当前会话，多会话互不混杂）——脚本落盘后输出**绝对路径**，校验、合并、渲染一律直接使用该绝对路径。**禁止到工作区 cwd 下寻找检索产物，禁止从 HOME/全盘 `find`、`grep -r` 或其它方式搜索文件**（实测找不到时会触发宿主安全规则弹出 `~/.ssh` 读取询问并打断任务，且浪费大量时间）；如确需确认文件存在，只用脚本输出的绝对路径做 `ls`。同理，渲染/合并脚本的输入参数一律传绝对路径或脚本约定的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/xxx.json` 相对形态（由脚本内部锚定到会话工作区）；**`--output` 不得传工作区路径**（会被路径校验拒绝报 `输出文件必须位于 dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/ 内`）。
+- **检索产物的位置与取用（1.4.0）**：检索结果落在**会话工作区**的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`（脚本按 `DKNWOC_WS_ROOT`/`DSH_SESSION_ID` 自动锚定当前会话，多会话互不混杂）——脚本落盘后输出**绝对路径**，校验、合并、渲染一律直接使用该绝对路径。**禁止到工作区 cwd 下寻找检索产物，禁止从 HOME/全盘 `find`、`grep -r` 或其它方式搜索文件**（实测找不到时会触发宿主安全规则弹出 `~/.ssh` 读取询问并打断任务，且浪费大量时间）；如确需确认文件存在，只用脚本输出的绝对路径做 `ls`。同理，渲染/合并脚本的输入参数一律传绝对路径或脚本约定的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/xxx.json` 相对形态（由脚本内部锚定到会话工作区）；**`--output` 不得传工作区路径**（会被路径校验拒绝报 `输出文件必须位于 dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/ 内`）。
 - "上一批完成"的定义以**每路 JSON 文件存在且校验通过为准**，不以调用已返回为准；落盘失败当场重写。
 
 **多路执行节奏**：
@@ -193,15 +194,32 @@ node <skillDir>/scripts/register_key.mjs register --phone <手机号> --vcode <�
 - 检索方向确认后，边界内（同来源体系/同地域）的补搜**自动执行**，不逐次打断用户；以关键事实闭环为目标，不设固定次数上限；补搜 query 与结果落在 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/`，核验报告可回看。
 - 越界（换地域、切换通道）或补搜后仍未闭环：停下向用户说明缺口并确认方向，不得静默放弃或以模型知识填补。
 
+### 联网检索降级链（1.6.0 起；参数 searchChannel=webSearch 已实测确认）
+
+**默认只查深知库内**（现行全部规则不变）。仅当库内检索（含定向补搜）对问题核心事实仍无直接支撑时，按下列顺序降级：
+
+1. **第一步：可信搜索联网模式**——`trusted_search.py --search-channel webSearch`（独立一次调用，不与库内路混传）。返回真实互联网网页正文段落＋源网址，**可溯源到原段**；`dataAuthority` 自动开启，文章带 `数据权威性`（联网结果实测为"非权威"），渲染层自动打「**非官方来源**」徽标（材料卡＋引文胶囊＋打印版）。
+2. **第二步（仅联网也无果时）：宿主 WebSearch 工具兜底**——如外方一手原文（境外法规接口与联网均无原文，仅有转述）。WebSearch 结果一律标"待核验"，不得作为已核验结论交付。
+3. **引用纪律**：有原段（库内/联网模式）的优先于 WebSearch 结果；**引用联网材料时**——①正文在该结论后标注"（非官方来源，待核验）"字样；②引用前剥离网页模板文字（导航/客服电话/面包屑——接口不做模板清洗，boilerplate 与正文混在同段）；③溯源核验报告已自动标注非官方徽标，无需手写。
+4. **境外政策**：深知库暂不支持外国制度（2026-10-21 确认）——用户问境外制度时如实说明库不覆盖，按本降级链处理并明示来源性质；**不得以中国侧政策冒充境外制度依据**（如以"外国人来华免签"回答"中国人赴日签证"）。
+5. **禁止**：跳过库内直接联网；把联网/WebSearch 结果当"已核验"交付而不标注。
+
+```bash
+# 降级链示例（库内无果后）：
+python3 {baseDir}/scripts/trusted_search.py "用户问题原话" --search-channel webSearch --json-only --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_web.json
+```
+
 ## 可信搜索调用
 
 ```bash
-python3 {baseDir}/scripts/trusted_search.py "忠实于用户目标的搜索问题" --json-only --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search.json
+python3 {baseDir}/scripts/trusted_search.py "忠实于用户目标的搜索问题" --search-type policy --json-only --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search.json
+# 办事/流程类问题并行加一路（各传一个 searchType，两路再 merge）：
+python3 {baseDir}/scripts/trusted_search.py "同一问题的办事指南侧" --search-type govSite --json-only --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_gov.json
 python3 {baseDir}/scripts/render_trace_html.py \
   dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search.json \
   --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_answer.txt \
   --self-check-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_selfcheck.json \
-  --question "用户原始问题"
+  --question-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/dknowc_search_question.txt
 ```
 
 `render_trace_html.py` 生成**单文件产出物 HTML**（1.5.0 起三页架构），输出《标题.html》到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`：
@@ -259,16 +277,19 @@ python3 {baseDir}/scripts/trusted_search.py "企业购置专用设备企业所�
 
 SkillHub Public 版 API Key 统一且只通过 `DKNOWC_API_KEY` 提供；读取顺序：进程环境变量 → 本机专用配置文件 `~/.config/dknowc/api_key`（XDG，600 权限）→ 历史 `~/.zshrc` 块（1.3.5 迁移期兜底）。不从命令行参数或其他旧环境变量读取。本 Skill 不包含 `config.ini`，接口地址和默认请求参数由脚本内置。`register_key.mjs` 注册成功自动把 Key 持久化到 `~/.config/dknowc/api_key` 并清理历史 `~/.zshrc` 块（业务脚本直读，无需重启宿主）；持久化成功时仅返回掩码与写入路径，写入失败才回退明文供临时注入。
 
-可信搜索配置：
+可信搜索配置（**V2 接口，1.6.0 起**）：
 
-- 接口地址：默认 `https://open.dknowc.cn/dependable/search`；可通过 `--endpoint`、`DKNOWC_TRUSTED_SEARCH_ENDPOINT` 或 `DKNOWC_KNOW_SEARCH_ENDPOINT` 覆盖。
+- 接口地址：默认 `https://open.dknowc.cn/open-api/maas/dependable/v2/search`（V1 路径不再保留）；可通过 `--endpoint`、`DKNOWC_TRUSTED_SEARCH_ENDPOINT` 或 `DKNOWC_KNOW_SEARCH_ENDPOINT` 覆盖。
 - API Key：优先环境变量 `DKNOWC_API_KEY`，缺失时脚本自动兜底读 `~/.config/dknowc/api_key` 与历史 `~/.zshrc`。
-- `policy`：默认 `true`。
-- `item`：默认 `true`。
-- `know_base`：默认 `true`，用于返回（已移除：知识专库外链属老能力，2026-09-29）。
+- **`searchType`：单值必填（1.6.0）**——`policy / govSite / affair / qa / private`，默认 `policy`（政策依据主路）。**一次调用只传一个**：混传会共用结果名额、稀释政策文件与文号覆盖（实测结论），混传直接报错；问题同时需要政策依据与办事指南两类来源时，**并行调用两路**（各传一个 searchType）再 merge 合并。办事/流程/问答类问题在 policy 主路外补 `govSite` 路。
+- 参数定档（实测选定）：`segmentCount=4`、`MaterialLength=18000`（配套）、`filterPara=true`（段落过滤，默认开）、`queryTopArea=false`（上级地域材料单独构路，不开）。
+- **`searchChannel`（联网检索降级链，1.6.0）**：`--search-channel webSearch` 单值传入即启用自动联网搜索——返回互联网网页正文段落＋源网址（可溯源到原段），`dataAuthority` 自动开启（文章带 `数据权威性` 标注，联网结果为"非权威"）；另有 `govSearch`（政府站定向）/`wxSearch`（微信生态）。默认不传＝只查库内；V2 无 V1 的 govSite 依赖（policy 路＋webSearch 正常）。
+- `policy`：默认 `true`（文号来源：**文章级「发文字号」字段优先**——V2 policy 路返回、merge 直接透传；policyFiles 规范性文件清单作标题匹配兜底，`writtenText` 偶发为空时靠它）。
+- `item` / `know_base`：**不传**（2026-10-20 起）：办事清单 `recommendationItems` 接口侧始终不返回、知识专库外链属已移除老能力，全链路无消费者。
 - `return_full_content`：默认 `false`。
-- `segment_count`：默认 `2`。
 - `simplified`：默认 `false`（返回完整材料集并携带存档快照 `screenShotPath`）；`--simplified` 开启精炼输出（材料更少且**丢失快照字段**，需要生成核验报告时不要使用）。
+- **V2 已知接口问题（平台侧待确认，应用侧不绕）**：① `policyFiles.writtenText` 偶发为空（文号匹配拿不到就不显示，不得从段落正文提取文号）；② 文章级发文字号主要在 `searchType=policy` 时返回（govSite 基本没有）——政策依据型必走 policy 路；深度搜索 2026-10-23 起文章级带 `writtenText`（实测约 1/4 覆盖、标题命中才有，纯深搜响应无 policyFiles）；③ 段落"匹配等级"（S/I/P）不稳定，只作参考、不作排序依据。
+- 成功判定：`ret==0` 且 `content.code==200`；业务错误是 HTTP 200 + `content.code=500` + 中文 msg（结构化返回，按业务错误处理，不当网络失败重试）；每次调用的 `tid` 已随产物落盘，报障时附上。
 
 深度搜索配置：
 
@@ -277,6 +298,7 @@ SkillHub Public 版 API Key 统一且只通过 `DKNOWC_API_KEY` 提供；读取�
 - API Key：优先环境变量 `DKNOWC_API_KEY`，缺失时脚本自动兜底读 `~/.config/dknowc/api_key` 与历史 `~/.zshrc`。
 - `area`：默认留空；单地域聚焦优先，明确多地域对比时可用逗号分隔一次传入。
 - `query_id`：默认不传；返回侧以 `traceId` 做链路追踪。接口偶发 `code=500 转发失败`（服务端问题），提示用户稍后重试或调整问题表述。
+- `timeout`：默认 `600` 秒（2026-10-20 起，与链路 10 分钟上限对齐；实测单地域 63–101 秒、重题可达 3–10 分钟）。
 
 ## 检索接口报错处理
 

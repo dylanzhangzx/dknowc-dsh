@@ -26,7 +26,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 a{color:var(--brand)}
 
 /* ===== Banner 统一区 =====
-   2026-10-14 反馈意见一：整体结构＝上部 banner 区＋下部正文区。
+   产出物结构调整：整体结构＝上部 banner 区＋下部正文区。
    banner 内统一收纳：文档名＋三切换＋工具（复制/导出）＋原问题＋统计；
    切换三页时 banner 高度与位置保持不变（同一容器，无页面各自的顶部块）。 */
 .banner{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);
@@ -130,7 +130,7 @@ a{color:var(--brand)}
 .vi .s.man{color:var(--case)}
 .vi .s.none{color:var(--muted)}
 .vi .d{color:var(--muted);min-width:0}
-/* 溯源核验报告页正文区的文头标题（反馈意见：标题放正文区，而非页面顶部） */
+/* 溯源核验报告页正文区的文头标题（标题位于正文区，而非页面顶部） */
 .paper-title{margin:0 0 18px;font-size:20px;font-weight:800;color:var(--ink);text-align:center;line-height:1.55;letter-spacing:.3px}
 .v-checks{margin-top:9px}
 .v-checks summary{cursor:pointer;color:var(--brand);font-weight:700;font-size:12.5px;list-style:none;display:inline-flex;align-items:center;gap:5px}
@@ -518,7 +518,7 @@ a.jb-quote{text-decoration:none}
       <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据逐条对过原文<span class="v-stamp">已核验</span></div>
       
       <div class="v-grid">
-        <div class="vi"><span class="s ok">✓ 依据溯源 34/34</span><span class="d">每篇来源文章的摘录可比对，原文或存档快照可回看</span></div><div class="vi"><span class="s ok">✓ 引用对应 42/42</span><span class="d">正文每一处引用都已对回来源文章，点开即可核对原文</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2023-02～2026-09</span></div><div class="vi"><span class="s ok">✓ 材料构成</span><span class="d">政策依据 11 · 数据支撑 13 · 参考案例 10</span></div><div class="vi"><span class="s ok">✓ 交付前检查 5/5</span><span class="d">事实有据、结构完整、无占位残留、无 AI 味、格式合规</span></div>
+        <div class="vi"><span class="s ok">✓ 依据溯源 34/34</span><span class="d">每篇来源文章的摘录可比对，原文或存档快照可回看</span></div><div class="vi"><span class="s ok">✓ 引用对应 42/42</span><span class="d">正文每一处引用都已对回来源文章，点开即可核对原文</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2023-02～2026-09</span></div><div class="vi"><span class="s ok">✓ 材料构成（按内容类型）</span><span class="d">政策依据 11 · 数据支撑 13 · 参考案例 10</span></div><div class="vi"><span class="s ok">✓ 交付前检查 5/5</span><span class="d">事实有据、结构完整、无占位残留、无 AI 味、格式合规</span></div>
       </div>
       <div class="v-note">AI 已完成自验收，正文依据可逐条点开原文复核。<details class="v-checks"><summary>查看交付前检查说明（5 项）</summary><ul><li><b>事实有据</b>：政策文件名称、发文字号、发布主体、发布时间与正文对应位置均已核验；同一政策多标题变体统一采用发文版</li><li><b>结构完整</b>：发展背景、产业基础、政策举措、发展成效、典型应用场景、存在问题、下一步建议七部分齐全</li><li><b>无占位残留</b>：正文无 XX单位、XXXX 等未处理占位</li><li><b>无 AI 味</b>：无旁白句、口号式收尾与格式噪点</li><li><b>格式合规</b>：标题层级、标点与引号均合规</li></ul></details></div>
     </div>

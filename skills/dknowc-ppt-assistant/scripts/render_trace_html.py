@@ -35,8 +35,10 @@ import json
 import re
 import sys
 from datetime import datetime
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlsplit
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
@@ -95,6 +97,27 @@ def _safe_output_path(value: str, allowed_suffixes: set, default_suffix: str) ->
 
 def esc(value: Any) -> str:
     return html.escape(str(value or ""), quote=True)
+
+
+def safe_url(value: Any) -> str:
+    """外链协议白名单：仅放行 http/https，其余（javascript:/data:/file: 等）返回空串。
+
+    所有 href 一律经由本函数，非法协议链接不渲染（防点击执行）。
+    """
+    url = str(value or "").strip()
+    if not url:
+        return ""
+    try:
+        scheme = urlsplit(url).scheme.lower()
+    except ValueError:
+        return ""
+    return url if scheme in ("http", "https") else ""
+
+
+def dumps_for_script(obj: Any) -> str:
+    """嵌入 <script> 的序列化：补全字符级转义防注入（< > & 全转义，不只是 </）。"""
+    s = json.dumps(obj, ensure_ascii=False)
+    return s.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
 
 def load_json(path: Path) -> Dict[str, Any]:
@@ -304,7 +327,8 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
         ),
         "date": first_str(item.get("发布日期"), item.get("date"), item.get("发布时间"), item.get("createDate"), vo.get("dateTime"), vo.get("createDate")),
         "url": first_str(item.get("sourceUrl"), item.get("source_url"), item.get("源网址"), item.get("原文链接"), item.get("url"), item.get("原文"), vo.get("sourceUrl"), vo.get("url")),
-        "policy_url": first_str(item.get("policyUrl"), item.get("policy_url"), item.get("知识专库原文"), vo.get("policyUrl")),
+        "policy_url": first_str(item.get("policyUrl"), item.get("policy_url"), item.get("知识专库原文"),
+                                item.get("知识专库链接"), vo.get("policyUrl")),
         "excerpt": segment.get("text") or paragraph_text(item),
         "section": first_str(item.get("正文对应"), item.get("section"), item.get("支撑")),
         "kind": first_str(item.get("类型"), item.get("type"), item.get("素材类型"), vo.get("typeName"), "材料"),
@@ -332,6 +356,11 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
     # "中办、国办 2026 年印发"类描述导致关键性行失真）。
     _dn = first_str(item.get("文号"), item.get("发文字号"), item.get("doc_number"))
     source["doc_number"] = _dn if re.search(r"〔\d{4}〕\s*\d+\s*号", _dn) else ""
+    # V2 文章级新字段（生效/失效日期、文章类型）：只认接口字段，空则不显示；
+    # 文号不从段落正文提取（V2 的 policyFiles.writtenText 实测为空，文号统一取文章级字段）。
+    source["effective_date"] = first_str(item.get("生效日期"), item.get("effective_date"))
+    source["expiry_date"] = first_str(item.get("失效日期"), item.get("expiry_date"))
+    source["article_type"] = first_str(item.get("文章类型"), item.get("article_type"))
     # 所属搜索条件（多路检索分组）与引用状态（未引用=接口召回但正文未采用）
     source["search_key"] = first_str(item.get("搜索条件"), item.get("search_key"))
     source["used"] = item.get("已引用", item.get("used", True))
@@ -675,11 +704,15 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
 # 过程回顾 / 热词（真实计算，不虚构流程）
 # ============================================================
 
-def compute_process_stats(sources: List[Dict[str, str]], answer: str) -> Dict[str, Any]:
+def compute_process_stats(sources: List[Dict[str, str]], answer: str,
+                          call_log: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """过程回顾条数据：检索次数、每组检索的召回/采用数、入库与引用计数。
 
     全部来自素材自带的真实字段（search_key 分组、used 引用状态、正文角标计数），
-    不虚构任何流程步骤。
+    不虚构任何流程步骤。call_log＝合并 JSON 顶层「检索记录」（可选项，每条
+    {purpose, query, 通道, new_articles, added_paragraphs}，由合并补搜轮时按合并
+    前后差值如实填写）：存在时过程条按真实调用次数统计，补搜路展示
+    「新增 N 篇 · 补充 K 段」，让补搜有没有用一眼可见。
     """
     order: List[str] = []
     for s in sources:
@@ -698,6 +731,25 @@ def compute_process_stats(sources: List[Dict[str, str]], answer: str) -> Dict[st
     used_count = sum(1 for s in sources if s.get("used", True))
     unused_count = len(sources) - used_count
     n_cite_marks = len(re.findall(r"\[(\d+)\]", answer))
+    # 检索记录（可选）：主检索/补搜逐次记录；补搜路的增量来自记录中的真实差值
+    log_rows: List[Dict[str, Any]] = []
+    n_supplement = 0
+    if isinstance(call_log, list) and call_log:
+        for entry in call_log:
+            if not isinstance(entry, dict):
+                continue
+            is_supp = str(entry.get("通道") or entry.get("channel") or "").find("补搜") >= 0 \
+                or str(entry.get("purpose") or "").find("补搜") >= 0
+            if is_supp:
+                n_supplement += 1
+            log_rows.append({
+                "purpose": first_str(entry.get("purpose"), entry.get("方向"), ""),
+                "query": first_str(entry.get("query"), entry.get("检索词"), ""),
+                "channel": first_str(entry.get("通道"), entry.get("channel"), "主检索" if not is_supp else "补搜"),
+                "is_supp": is_supp,
+                "new_articles": entry.get("new_articles", entry.get("新增文章")),
+                "added_paragraphs": entry.get("added_paragraphs", entry.get("补充段落")),
+            })
     return {
         "conds": cond_rows,
         "n_searches": n_searches,
@@ -706,6 +758,9 @@ def compute_process_stats(sources: List[Dict[str, str]], answer: str) -> Dict[st
         "used_count": used_count,
         "unused_count": unused_count,
         "n_cite_marks": n_cite_marks,
+        "call_log": log_rows,
+        "n_main_calls": (len(log_rows) - n_supplement) if log_rows else 0,
+        "n_supplement": n_supplement,
     }
 
 
@@ -808,21 +863,102 @@ def render_markdown_table(lines: List[str], citation_repl) -> str:
     return f'<div class="tbl-wrap"><table class="data-tbl{wide_cls}"><thead><tr>{head_html}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
 
 
+_TABLE_ALLOWED_TAGS = {"table", "thead", "tbody", "tr", "td", "th", "br"}
+_TABLE_VOID_TAGS = {"br"}
+_TABLE_SKIP_CONTENT_TAGS = {"script", "style"}
+
+
+class _TableSanitizer(HTMLParser):
+    """表格 HTML 元素级白名单（替代正则清洗，防标签注入与属性注入）：
+
+    - 只放行 table/thead/tbody/tr/td/th/br，输出不带任何属性；
+    - 其余标签一律丢弃（文本继续走 handle_data，统一转义）；
+    - script/style 连内容一起丢弃；
+    - 乱序/未闭合标签按栈自平衡，不产生悬空标签；
+    - 解析异常由调用方兜底为整体转义。
+    """
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.out: List[str] = []
+        self.stack: List[str] = []
+        self.skip_depth = 0
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        tag = tag.lower()
+        if tag in _TABLE_SKIP_CONTENT_TAGS:
+            self.skip_depth += 1
+            return
+        if self.skip_depth or tag not in _TABLE_ALLOWED_TAGS:
+            return
+        if tag in _TABLE_VOID_TAGS:
+            self.out.append("<br>")
+            return
+        self.out.append(f"<{tag}>")
+        self.stack.append(tag)
+
+    def handle_startendtag(self, tag: str, attrs) -> None:
+        self.handle_starttag(tag, attrs)
+        self.handle_endtag(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        if tag in _TABLE_SKIP_CONTENT_TAGS:
+            self.skip_depth = max(0, self.skip_depth - 1)
+            return
+        if self.skip_depth or tag not in _TABLE_ALLOWED_TAGS or tag in _TABLE_VOID_TAGS:
+            return
+        if tag in self.stack:
+            while self.stack:
+                top = self.stack.pop()
+                self.out.append(f"</{top}>")
+                if top == tag:
+                    break
+
+    def handle_data(self, data: str) -> None:
+        if not self.skip_depth:
+            self.out.append(html.escape(data, quote=False))
+
+    def close(self) -> None:
+        super().close()
+        while self.stack:
+            self.out.append(f"</{self.stack.pop()}>")
+
+
+def _fix_thead_rows(table_html: str) -> str:
+    """修正源表格把多行数据包进 <thead> 的畸形结构：只保留第一行为表头，其余移入 <tbody>。
+
+    政府门户抓取的表格常把数据行一起包在 thead 里（如统计分类表 4 行数据全在
+    thead、仅最后 1 行在 tbody）。白名单清洗只保结构不改行归属，CSS 又给 thead
+    单元格加表头底色——数据行整片变"表头色"。此处把 thead 第 2 行起全部并入
+    tbody（无 tbody 则新建），只有真正的首行作表头。
+    """
+    m = re.search(r"<thead>(.*?)</thead>", table_html, flags=re.S)
+    if not m:
+        return table_html
+    rows = re.findall(r"<tr>.*?</tr>", m.group(1), flags=re.S)
+    if len(rows) <= 1:
+        return table_html
+    head = f"<thead>{rows[0]}</thead>"
+    moved = "".join(rows[1:])
+    rest = table_html[m.end():]
+    tb = re.search(r"<tbody>(.*?)</tbody>", rest, flags=re.S)
+    if tb:
+        rest = rest[:tb.start()] + f"<tbody>{moved}{tb.group(1)}</tbody>" + rest[tb.end():]
+    else:
+        rest = f"<tbody>{moved}</tbody>" + rest
+    return table_html[:m.start()] + head + rest
+
+
 def sanitize_table_html(text: str) -> str:
-    """清洗接口表格 HTML：仅保留 table/thead/tbody/tr/td/th/br，去脚本样式与属性。"""
-    cleaned = re.sub(r"(?is)<script.*?</script>", "", text)
-    cleaned = re.sub(r"(?is)<style.*?</style>", "", cleaned)
-    cleaned = re.sub(r"\s+on\w+\s*=\s*(['\"]).*?\1", "", cleaned)
-    cleaned = re.sub(r"\s+(href|src)\s*=\s*(['\"]).*?\2", "", cleaned)
-    allowed = {"table", "thead", "tbody", "tr", "td", "th", "br"}
-
-    def tag_repl(match: re.Match[str]) -> str:
-        closing, name = match.group(1), match.group(2).lower()
-        if name not in allowed:
-            return ""
-        return f"<{closing}{name}>"
-
-    return re.sub(r"<\s*(/?)\s*([a-zA-Z0-9]+)(?:\s+[^>]*)?>", tag_repl, cleaned)
+    """清洗接口表格 HTML：只保留表格结构标签，属性丢弃、文本转义、脚本样式连内容丢弃。"""
+    parser = _TableSanitizer()
+    try:
+        parser.feed(str(text or ""))
+        parser.close()
+    except Exception:  # 解析异常兜底：整体转义，宁可不渲染表格
+        return html.escape(str(text or ""), quote=False)
+    return _fix_thead_rows("".join(parser.out))
 
 
 def render_excerpt_html(text: str) -> str:
@@ -843,13 +979,13 @@ def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str
         jb = chip_map.get(cid)
         if not jb:
             return ""
-        # 链接原样给出（不做死活检测）；无原文链接但有存档快照时，快照作为附加入口
-        if jb.get("url"):
-            link = (f'<a class="jb-src" href="{esc(jb["url"])}" target="_blank" rel="noopener noreferrer">'
-                    f'{ARROW_SVG}<span>查看全文</span></a>')
-        elif jb.get("snapshot"):
-            link = (f'<a class="jb-src" href="{esc(jb["snapshot"])}" target="_blank" rel="noopener noreferrer">'
-                    f'{ARROW_SVG}<span>查看存档全文</span></a>')
+        # 链接原样给出（不做死活检测）；无原文链接但有存档快照时，快照作为附加入口。
+        # href 一律经 safe_url 协议白名单（仅 http/https），非法协议不渲染。
+        jb_url = safe_url(jb.get("url")) or safe_url(jb.get("snapshot"))
+        if jb_url:
+            btn_txt = "查看全文" if safe_url(jb.get("url")) else "查看存档全文"
+            link = (f'<a class="jb-src" href="{esc(jb_url)}" target="_blank" rel="noopener noreferrer">'
+                    f'{ARROW_SVG}<span>{btn_txt}</span></a>')
         else:
             link = ""
         # 原文直达区展示标题链（多段分块，各段带链——快速人工核验的核心抓手）
@@ -1034,8 +1170,12 @@ def build_chip_data(sources: List[Dict[str, str]]) -> Dict[str, Dict[str, Any]]:
 
 def render_source_links(url: str, policy_url: str = "", snapshot: str = "") -> str:
     """链接区：接口返回的链接**原样展示**（不做连通性检测、不隐藏）；
-    存档快照作为**附加回看入口**与原文链接并存，文案如实区分不冒充原文。"""
+    存档快照作为**附加回看入口**与原文链接并存，文案如实区分不冒充原文。
+    href 一律经 safe_url 协议白名单（仅 http/https），非法协议不渲染。"""
     links = []
+    url = safe_url(url)
+    snapshot = safe_url(snapshot)
+    policy_url = safe_url(policy_url)
     if url and url != "接口未返回":
         links.append(f'<a href="{esc(url)}" target="_blank" rel="noopener">查看全文 ↗</a>')
     if snapshot:
@@ -1267,8 +1407,13 @@ def render_source_card(source: Dict[str, str], for_print: bool = False) -> str:
         vk = f'<span class="sc-vk warn">◐ {reason}</span>'
         note_html = ""
     links = render_source_links(source.get("url"), source.get("policy_url", ""), source.get("snapshot", ""))
-    # 关键性行：有文号（接口字段或合并 JSON）时"文号 · 数据源 · 日期"，否则"数据源 · 日期"
-    meta_parts = [v for v in [source.get("doc_number"), source.get("agency"), source.get("date"), source.get("area")]
+    # 关键性行：有文号时"文号 · 生效/失效 · 类型 · 数据源 · 日期"，空字段自动跳过
+    eff = source.get("effective_date")
+    exp = source.get("expiry_date")
+    eff_txt = f"生效 {eff}" if eff else ""
+    exp_txt = f"失效 {exp}" if exp else ""
+    meta_parts = [v for v in [source.get("doc_number"), eff_txt, exp_txt, source.get("article_type"),
+                              source.get("agency"), source.get("date"), source.get("area")]
                   if v and v != "未知来源"]
     meta = " | ".join(meta_parts)
     # 高可信徽标：仅"发布日期可信度=高"（模型治理入库、标题模型精抽）的材料；"较高"（门户抓取）不标。
@@ -1311,6 +1456,22 @@ def render_process_bar(stats: Dict[str, Any], verification: Dict[str, Any]) -> s
         f'<span>召回 {row["total"]} 条 · 正文采用 {row["used"]} 条</span></div>'
         for row in stats["conds"]
     ) or '<div class="pd-row"><span>本次溯源 JSON 未记录各次检索条件</span></div>'
+    # 检索记录存在时，明细补一行补搜说明（新增 N 篇 · 补充 K 段），补搜有没有用一眼可见
+    call_log = stats.get("call_log") or []
+    for entry in call_log:
+        if not entry.get("is_supp"):
+            continue
+        na = entry.get("new_articles")
+        np_ = entry.get("added_paragraphs")
+        inc_parts = []
+        if isinstance(na, int):
+            inc_parts.append(f"新增 {na} 篇")
+        if isinstance(np_, int):
+            inc_parts.append(f"补充 {np_} 段")
+        inc_txt = " · ".join(inc_parts) if inc_parts else "增量未记录"
+        label = esc(entry.get("purpose") or entry.get("query") or "缺口补搜")
+        detail_rows += (f'<div class="pd-row"><b>补搜 · {label}</b>'
+                        f'<span>{inc_txt}</span></div>')
     detail_hint = f'{esc(short(first_query, 26))}…' if (stats["n_searches"] > 1 and first_query) else "查看检索明细"
     if stats["n_searches"] > 1:
         step1_sub = f"共 {stats['n_searches']} 路检索 · {detail_hint}"
@@ -1322,13 +1483,15 @@ def render_process_bar(stats: Dict[str, Any], verification: Dict[str, Any]) -> s
     step4_icon = "✓" if ov["passed"] else "!"
     step4_label = "核验完成" if ov["passed"] else "核验未完全通过"
     step4_sub = "结论：正文依据逐条对过原文" if ov["passed"] else esc(short("；".join(ov["reasons"]) or "见核验报告单", 30))
+    n_supp = stats.get("n_supplement") or 0
+    step1_title = f"深知检索 {stats['n_searches']} 路" + (f" · 补搜 {n_supp} 次" if n_supp else "")
     return f"""
     <section class="process" aria-label="生成过程回顾">
       <div class="p-head"><b>过程回顾</b><span>数字来自本次任务的真实记录</span></div>
       <ol class="p-steps">
         <li class="p-step expandable" id="p-step-search" role="button" tabindex="0" title="展开各路检索明细">
           <span class="p-no">1</span>
-          <div class="p-txt"><b>深知检索 {stats['n_searches']} 路</b><i>{step1_sub}</i></div>
+          <div class="p-txt"><b>{step1_title}</b><i>{step1_sub}</i></div>
         </li>
         <li class="p-arrow" aria-hidden="true">›</li>
         <li class="p-step">
@@ -1437,7 +1600,7 @@ def _next_version_path(path: Path) -> Path:
     """输出文件已存在时不覆盖：自动改为 原名_v2 / _v3 … 另存。
 
     追加修改后重跑渲染时，旧版本保留、新版本号递增——不覆盖已交付内容，
-    也不会再靠宿主目录里的 "名字 (2)" 兜底。命名与 deliver_outputs.py 的重名规则一致。
+    也不会再靠宿主目录里的 "名字 (2)" 兜底。命名与交付重名规则一致（同名 _v2 副本化）。
     """
     if not path.exists():
         return path
@@ -2259,7 +2422,11 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
     stage_label = STAGE_LABELS.get(stage, "成稿版")
 
     verification = compute_verification(answer, sources, payload, generated_at)
-    process_stats = compute_process_stats(sources, answer)
+    call_log = payload.get("检索记录")
+    if not isinstance(call_log, list):
+        content_layer = payload.get("content") if isinstance(payload.get("content"), dict) else {}
+        call_log = content_layer.get("检索记录") if isinstance(content_layer.get("检索记录"), list) else None
+    process_stats = compute_process_stats(sources, answer, call_log)
     hot_terms = extract_hot_terms(answer, sources)
     citation_warning = ""
     if sources and not used:
@@ -2288,7 +2455,7 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
         origin_html = (f'<div class="hero-q"><span class="q-tag">原问题</span>'
                        f'<span class="q-txt">{esc(origin_question)}</span></div>')
 
-    jb_tables_json = json.dumps(jb_tables, ensure_ascii=False).replace("</", "<\\/")
+    jb_tables_json = dumps_for_script(jb_tables)
     jb_tables_script = (f'<script type="application/json" id="jb-tables">{jb_tables_json}</script>\n'
                         if jb_tables else "")
 

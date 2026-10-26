@@ -103,8 +103,11 @@ def normalize_kb_label(label):
 
 
 def is_internal_search_endpoint(url):
-    """识别深知搜索接口地址，避免误当成知识专库链接输出。"""
-    return "open.dknowc.cn/dependable/search" in url
+    """识别深知搜索接口地址（V1 历史数据 / V2 生产入口），避免误当成知识专库链接输出。"""
+    return any(part in url for part in (
+        "open.dknowc.cn/dependable/search",
+        "open-api/maas/dependable/v2/search",
+    ))
 
 
 def is_generic_kb_label(text):
@@ -186,27 +189,27 @@ def get_configured_output_dir():
 
 
 def is_path_within(path, parent):
-    """判断 path 是否位于 parent 目录内。"""
+    """判断 path 是否位于 parent 目录内（3.8.3 起按真实路径比较，解析符号链接）。"""
     try:
-        return os.path.commonpath([os.path.abspath(path), os.path.abspath(parent)]) == os.path.abspath(parent)
+        return os.path.commonpath([os.path.realpath(path), os.path.realpath(parent)]) == os.path.realpath(parent)
     except ValueError:
         return False
 
 
 def resolve_input_text_path(input_path):
-    """只允许读取 skill 工作目录内的正文文本文件。"""
+    """只允许读取 skill 工作目录内的正文文本文件（符号链接解析后校验）。"""
     raw_path = os.path.expanduser(str(input_path).strip())
     if os.path.isabs(raw_path):
-        resolved = os.path.abspath(raw_path)
+        resolved = os.path.realpath(raw_path)
     elif raw_path == os.path.basename(raw_path):
-        resolved = os.path.abspath(os.path.join(INPUT_DIR, raw_path))
+        resolved = os.path.realpath(os.path.join(INPUT_DIR, raw_path))
     else:
-        resolved = os.path.abspath(os.path.join(get_skill_root(), raw_path))
+        resolved = os.path.realpath(os.path.join(get_skill_root(), raw_path))
 
     allowed_dirs = [
-        os.path.abspath(INPUT_DIR),
-        os.path.abspath(get_configured_output_dir()),
-        os.path.abspath(SEARCH_RESULTS_DIR),
+        os.path.realpath(INPUT_DIR),
+        os.path.realpath(get_configured_output_dir()),
+        os.path.realpath(SEARCH_RESULTS_DIR),
     ]
     if not any(is_path_within(resolved, allowed_dir) for allowed_dir in allowed_dirs):
         raise ValueError(f"输入文件必须位于 skill 工作目录内: {input_path}")

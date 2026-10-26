@@ -114,11 +114,14 @@ def merge_results(result_files: List[str]) -> Dict:
         search_meta = data.get("search_meta", {})
         region = search_meta.get("area") or infer_region_from_filename(str(safe_file_path))
         regions_searched.append(region)
+        # 本文件处理前的文章/段落基线：用于计算每次调用真实新增量
+        before_article_count = len(all_articles)
+        before_para_total = sum(len(a.get("段落") or []) for a in all_articles)
         # 搜索目的兜底（3.7.6 修复）：该路 --purpose 为空时用该路 query 兜底——
         # 若留空，文章"搜索目的"缺失，溯源报告分组键（search_key）会退化成
-        # "中国"/"浙江省"等地域碎片，材料面板筛选胶囊失去意义（曾出现 75/295 篇退化）。
+        # "中国"/"浙江省"等地域碎片，材料面板筛选胶囊失去意义（避免大量篇目退化）。
         purpose_val = search_meta.get("purpose") or search_meta.get("query") or ""
-        searches.append({
+        record = {
             "file": str(safe_file_path),
             "query": search_meta.get("query", ""),
             "purpose": purpose_val,
@@ -128,7 +131,13 @@ def merge_results(result_files: List[str]) -> Dict:
             "full": search_meta.get("full", False),
             "segmentCount": search_meta.get("segmentCount"),
             "knowledgeBase": data.get("knowledgeBase", ""),
-        })
+            # 调用通道：深搜转换产物自带 channel=deep；补搜文件按文件名区分（deep_* vs 其他）
+            "channel": ("深知深度搜索"
+                        if (data.get("channel") == "deep"
+                            or Path(str(safe_file_path)).name.startswith("deep_"))
+                        else "深知可信搜索"),
+        }
+        searches.append(record)
         if data.get("knowledgeBase"):
             knowledge_bases.append({
                 "file": str(safe_file_path),
@@ -193,7 +202,7 @@ def merge_results(result_files: List[str]) -> Dict:
                 # 追加本次搜索的来源标记（搜索地域/搜索词/搜索目的）
                 if region and region not in (existing.get("搜索地域") or ""):
                     existing["搜索地域"] = (existing.get("搜索地域") or "") + (("、" + region) if existing.get("搜索地域") else region)
-                # 检索通道：两接口召回同一材料时拼接保留双通道（2026-10-14 修复——
+                # 检索通道：两接口召回同一材料时拼接保留双通道（去重逻辑——
                 # 原按"字段非空保留先入"会让深搜标签覆盖补搜标签，补搜召回的标准在
                 # 报告材料级被误标为仅"深知深度搜索"）
                 if (article.get("检索通道") or "") and article["检索通道"] not in (existing.get("检索通道") or ""):
@@ -219,7 +228,14 @@ def merge_results(result_files: List[str]) -> Dict:
                 article["知识专库原文"] = article["policyUrl"]
             all_articles.append(article)
 
-    # —— 近似重复去重（句子指纹，2026-10-14 修复"段落重复"问题）——
+        # 每次调用的真实增量：新增文章数 / 新增段落数（含新文章自带段落）。
+        # 补搜的价值主要看这两个数：新增 0 篇但补充 N 段，说明补的是已有文章的条款段落。
+        record["new_articles"] = len(all_articles) - before_article_count
+        record["added_paragraphs"] = (
+            sum(len(a.get("段落") or []) for a in all_articles) - before_para_total
+        )
+
+    # —— 近似重复去重（句子指纹，用于处理段落重复问题）——
     # 搜索接口对同一篇文章常返回多个标题变体条目（如"北京出台智能体专项政策"与
     # "…专项政策 最高支持1亿元"），上面的标题去重会漏掉，表现为知识专库中同一内容
     # 出现多张卡：段落完全一致、或分段切法不同导致顺序略不同。此处按"句子集合"二次
@@ -273,7 +289,7 @@ def merge_results(result_files: List[str]) -> Dict:
                         continue
                     if not keep.get(f) and v:
                         keep[f] = v
-                # 检索通道：不同则拼接保留双通道（同上方同名键去重处的 2026-10-14 修复）
+                # 检索通道：不同则拼接保留双通道（同上方同名键去重逻辑）
                 if (drop.get("检索通道") or "") and drop["检索通道"] not in (keep.get("检索通道") or ""):
                     keep["检索通道"] = (keep.get("检索通道") or "") + (("、" + drop["检索通道"]) if keep.get("检索通道") else drop["检索通道"])
                 if (drop.get("搜索地域") or "") and drop["搜索地域"] not in (keep.get("搜索地域") or ""):
@@ -287,7 +303,7 @@ def merge_results(result_files: List[str]) -> Dict:
             _j += 1
         _i += 1
 
-    # 段内重复段去重（2026-10-14 修复"一张卡里两段内容一样"）：
+    # 段内重复段去重（用于处理一张卡里两段内容一样的问题）：
     # ① 内容完全一致 → 保留先出现的；
     # ② "标题链拼进正文"的污染段——接口偶发把段落标题/上级标题文字拼进内容开头，
     #    形成 内容=标题前缀+另一段内容 的超集段（渲染剥前缀后两段看起来完全一样）。

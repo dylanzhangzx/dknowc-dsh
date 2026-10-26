@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
-"""深知可信搜索可信搜索调用脚本。
+"""深知可信搜索可信搜索调用脚本（V2 接口，1.6.0 起）。
 
-调用可信搜索接口 dependable/search，返回权威材料召回结果。
+调用可信搜索 V2 接口 open-api/maas/dependable/v2/search，返回权威材料召回结果。
+V2 与 V1 的关键差异（2026-10-23 切换，对齐公文写作 3.9.0 的实测结论）：
+- searchType 必填且**每次调用只传一个值**（policy/govSite/affair/qa/private）；
+  混传多个类型会共用结果名额、稀释政策文件与文号覆盖——需要两类来源时并行
+  调用两路再经 merge_search_results.py 合并，禁止在一请求里混传。
+- 参数定档（受控实测选定）：segmentCount=4、MaterialLength=18000、
+  filterPara=true、queryTopArea=false、simplified=false。
+- 成功判定：ret==0（或缺省）且 content.code==200；业务错误是 HTTP 200 +
+  content.code=500 + 中文 msg（结构化返回，按业务错误处理，不当网络失败重试）。
+- 已知接口问题（平台侧待确认，应用侧不绕）：policyFiles.writtenText 偶发为空
+  （文号匹配拿不到就不显示）；文章级发文字号主要在 searchType=policy 时才有返回
+  （govSite 基本没有、深度搜索完全不带）；段落"匹配等级"（S/I/P）不稳定，只作参考。
 """
 
 import argparse
@@ -10,14 +21,13 @@ import os
 import re
 import socket
 import sys
-import textwrap
 import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 
-DEFAULT_ENDPOINT = "https://open.dknowc.cn/dependable/search"
+DEFAULT_ENDPOINT = "https://open.dknowc.cn/open-api/maas/dependable/v2/search"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
@@ -29,6 +39,12 @@ if not _ws:
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
+
+# V2 参数定档（1.6.0；对齐公文写作 3.9.0 三组受控实测：4/18000 双主题相关率最高、边际新增质量最好）
+DEFAULT_SEARCH_TYPE = "policy"       # 政策依据主路；办事/流程类补 govSite 路（各自单值，禁止混传）
+SEARCH_TYPES = ("policy", "govSite", "affair", "qa", "private")
+DEFAULT_SEGMENT_COUNT = 4
+DEFAULT_MATERIAL_LENGTH = 18000
 
 # 余额/额度用尽的判定：HTTP 状态与业务错误消息双路径。
 # 命中后返回 quota_exhausted=true，Agent 必须停止重试并引导用户到 MaaS 处理，不得反复调用。
@@ -145,31 +161,53 @@ def _validate_service_area(value: str) -> str:
     return value
 
 
+def _validate_search_type(value: str) -> str:
+    """V2：searchType 单值必填。混传（逗号/顿号/空格分隔多个）直接报错——混传会共用
+    结果名额、稀释政策文件与文号覆盖（公文写作 3.9.0 实测结论），需要两类来源时
+    并行调用两路再 merge。"""
+    value = (value or "").strip()
+    if not value:
+        return DEFAULT_SEARCH_TYPE
+    multi_markers = [",", "，", "、", ";", "；", " ", "\t", "/", "|"]
+    if any(marker in value for marker in multi_markers):
+        print(
+            "错误：searchType 每次调用只传一个值（policy / govSite / affair / qa / private）。"
+            "混传多个类型会共用结果名额、稀释政策文件与文号覆盖——需要两类来源时请并行调用"
+            "两路（各传一个 searchType）再经 merge_search_results.py 合并。",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+    if value not in SEARCH_TYPES:
+        print(f"错误：searchType 只能是 {' / '.join(SEARCH_TYPES)} 之一，收到：{value}", file=sys.stderr)
+        sys.exit(2)
+    return value
+
+
 def _build_payload(args: argparse.Namespace) -> Dict[str, Any]:
+    # V2 请求体（1.6.0）：searchType 必填单值；eff_time/service_area 恒为数组的 V1 兼容形态；
+    # item / knowBase 不传（1.5.2 口径延续：办事清单能力接口侧不可用、专库外链属已移除老能力）。
     payload: Dict[str, Any] = {
         "query": args.query,
+        # 联网搜索模式（1.6.0 起，"自动联网搜索"）：searchChannel 单值传 webSearch，
+        # 返回真实互联网内容（网页正文段落+源网址，可溯源到原段）；dataAuthority 随联网路自动开——
+        # 返回文章级 数据权威性 标注（实测联网结果为"非权威"），供渲染层打"非官方来源"徽标。
+        "dataAuthority": bool(args.data_authority or args.search_channel == "webSearch"),
+        "eff_time": _list_arg(_validate_eff_time(args.eff_time)) if args.eff_time else [""],
+        "service_area": _list_arg(_validate_service_area(args.service_area)) if args.service_area else [""],
+        "searchType": [args.search_type],
         "policy": False if args.no_policy else True,
-        "item": False if args.no_item else True,
-        "knowBase": False if args.no_know_base else True,
         "return_full_content": args.return_full_content,
-        # simplified 默认 False：
-        # 实测同一 query 下 simplified=true 返回精简集（材料更少且无存档快照 screenShotPath），
-        # simplified=false 返回完整集（含快照字段，供核验报告原文失效时兜底回看）。
+        # simplified 固定 False：simplified=true 返回精简集（材料更少且无存档快照 screenShotPath），
+        # false 返回完整集（含快照字段，供核验报告原文失效时兜底回看）。
         "simplified": bool(args.simplified),
+        "segmentCount": args.segment_count,
+        "MaterialLength": args.material_length,
+        "filterPara": not args.no_filter_para,
+        "queryTopArea": args.query_top_area,
     }
-
-    segment_count = args.segment_count if args.segment_count is not None else 2
-    if segment_count not in (None, ""):
-        payload["segmentCount"] = int(segment_count)
-
-    service_area = args.service_area
-    if service_area:
-        payload["service_area"] = _list_arg(_validate_service_area(service_area))
-
-    eff_time = args.eff_time
-    if eff_time:
-        payload["eff_time"] = _list_arg(_validate_eff_time(eff_time))
-
+    if args.search_channel:
+        # 单值（与 searchType 同理）：govSearch/webSearch/wxSearch 一次只传一个
+        payload["searchChannel"] = [args.search_channel]
     return payload
 
 
@@ -256,21 +294,26 @@ def _print_list(title: str, items: Any, fields: Iterable[str], max_items: int) -
 
 
 def _bail_if_biz_error(body: Dict[str, Any]) -> None:
-    """业务码校验：HTTP 200 ≠ 成功（content.code != 200 即业务错误）。
+    """业务码校验（V2，1.6.0）：成功 = ret∈{None,0} 且 content.code∈{None,200}。
 
-    1.4.0 修复：`--json-only` 落盘前与摘要输出前都必须校验——此前 `--json-only` 分支
-    直接保存并打印"已保存"，错误响应被当成正常结果落盘（对齐 deep_query.py 同步修复）。
+    业务错误是 HTTP 200 + content.code=500 + 中文 msg（结构化返回，不当网络失败重试）；
+    401 为扁平 {code,msg}（由 _fail_request 的 HTTP 分支处理）。错误输出携带 tid 便于平台排查。
+    1.4.0 修复保持：`--json-only` 落盘前与摘要输出前都必须校验——错误响应不得当正常结果落盘。
     """
     content = _content(body)
     code = content.get("code")
     msg = content.get("msg")
-    if code and code != 200:
+    ret = body.get("ret")
+    biz_ok = (ret in (None, 0, "0")) and (code in (None, 200, "200"))
+    if not biz_ok:
         quota = detect_quota_exhausted(None, msg)
-        print(f"错误：可信搜索接口返回 {code} {msg or ''}".strip())
+        print(f"错误：可信搜索接口返回 ret={ret} code={code} {msg or ''}".strip())
         print(json.dumps({
             "status": "error",
             "stage": "biz",
             "biz_code": code,
+            "ret": ret,
+            "tid": body.get("tid"),
             "quota_exhausted": quota,
             "retry_forbidden": quota,
             "user_message": user_message_for_error(None if code != 500 else 500, quota),
@@ -279,7 +322,8 @@ def _bail_if_biz_error(body: Dict[str, Any]) -> None:
         sys.exit(1)
 
 
-def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int, paragraph_chars: int) -> None:
+def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int, paragraph_chars: int,
+                   search_type: str) -> None:
     _bail_if_biz_error(body)
 
     data = _data(body)
@@ -287,7 +331,7 @@ def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int,
         print(json.dumps(body, ensure_ascii=False, indent=2))
         return
 
-    print("可信搜索结果")
+    print(f"可信搜索结果（searchType={search_type}｜tid={body.get('tid') or '未返回'}）")
     for key in ("用户问题", "咨询日期", "办理地域"):
         value = data.get(key)
         if value:
@@ -328,19 +372,32 @@ def _print_summary(body: Dict[str, Any], max_articles: int, max_paragraphs: int,
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="深知可信搜索可信搜索调用脚本")
+    parser = argparse.ArgumentParser(description="深知可信搜索调用脚本（V2 接口，1.6.0 起）")
     parser.add_argument("query", help="用户搜索问题")
-    parser.add_argument("--endpoint", help="覆盖可信搜索接口地址")
+    parser.add_argument("--endpoint", help="覆盖可信搜索接口地址（默认 V2：open-api/maas/dependable/v2/search）")
     parser.add_argument("--service-area", help="办理地域，只传一个中文地域名")
     parser.add_argument("--eff-time", help="生效时间，只传一个日期值，如 2026年、2026年07月")
-    parser.add_argument("--policy", action="store_true", help="返回规范性文件清单")
+    parser.add_argument("--search-type", default=DEFAULT_SEARCH_TYPE,
+                        help=f"检索材料类型，单值必填：{'/'.join(SEARCH_TYPES)}；默认 {DEFAULT_SEARCH_TYPE}。"
+                             "混传报错——需要两类来源时并行调用两路再合并")
+    parser.add_argument("--policy", action="store_true", help="返回规范性文件清单（默认开启）")
     parser.add_argument("--no-policy", action="store_true", help="不返回规范性文件清单")
-    parser.add_argument("--item", action="store_true", help="返回公共事项在线办理清单")
-    parser.add_argument("--no-item", action="store_true", help="不返回公共事项在线办理清单")
-    parser.add_argument("--know-base", action="store_true", help="请求体携带 knowBase（默认即开；链接不再向用户展示，2026-09-29 移除老能力）")
-    parser.add_argument("--no-know-base", action="store_true", help="请求体不携带 knowBase")
     parser.add_argument("--return-full-content", action="store_true", help="返回资料全文")
-    parser.add_argument("--segment-count", type=int, help="每篇材料最多返回段落数")
+    parser.add_argument("--segment-count", type=int, default=DEFAULT_SEGMENT_COUNT,
+                        help=f"每篇材料最多返回段落数（默认 {DEFAULT_SEGMENT_COUNT}，1.6.0 实测定档）")
+    parser.add_argument("--material-length", type=int, default=DEFAULT_MATERIAL_LENGTH,
+                        help=f"每段材料长度上限（默认 {DEFAULT_MATERIAL_LENGTH}，与 segmentCount 配套定档）")
+    parser.add_argument("--search-channel", default="",
+                        choices=["webSearch", "govSearch", "wxSearch"],
+                        help="动态搜索渠道（单值）：webSearch=自动联网搜索模式（返回互联网网页正文段落+源网址，"
+                             "可溯源到原段；dataAuthority 自动开启）；govSearch=政府站定向；wxSearch=微信生态。"
+                             "默认不传=只查深知库内")
+    parser.add_argument("--data-authority", action="store_true",
+                        help="请求返回文章级 数据权威性 标注（联网路自动开启，无需显式传）")
+    parser.add_argument("--no-filter-para", action="store_true",
+                        help="关闭段落过滤 filterPara（默认开启，剔除低匹配段落）")
+    parser.add_argument("--query-top-area", action="store_true",
+                        help="开启 queryTopArea（由接口带出上级地域材料）；默认关闭，上级材料走单独构路")
     parser.add_argument("--simplified", action="store_true",
                         help="精炼输出（剔除部分材料；将丢失存档快照 screenShotPath 与部分候选材料，不建议在需要生成核验报告时使用）")
     parser.add_argument("--max-articles", type=int, default=3, help="摘要最多展示材料数")
@@ -353,6 +410,7 @@ def main() -> None:
     parser.add_argument("--timeout", type=int, default=60, help="请求超时秒数")
     args = parser.parse_args()
 
+    args.search_type = _validate_search_type(args.search_type)
     endpoint = _pick(
         args.endpoint,
         os.environ.get("DKNOWC_TRUSTED_SEARCH_ENDPOINT"),
@@ -376,7 +434,7 @@ def main() -> None:
 
     payload = _build_payload(args)
     if args.show_payload:
-        print("=== 可信搜索请求参数 ===")
+        print("=== 可信搜索请求参数（V2） ===")
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         print()
     if args.dry_run:
@@ -386,12 +444,19 @@ def main() -> None:
     if args.json_only:
         _bail_if_biz_error(body)  # 落盘前校验：错误响应不落盘、不报"已保存"（1.4.0 修复）
         # 检索通道打标（1.5.0）：每篇检索文章注入 检索通道="深知可信搜索"，供 merge →
-        # 渲染按接口通道拆分计数与来源声明；字段随文章 dict 原样透传
+        # 渲染按接口通道拆分计数与来源声明；1.6.0 起同时记录本路 searchType（V2 单值）
         _content = body.get("content") if isinstance(body.get("content"), dict) else {}
         _data = _content.get("data") if isinstance(_content.get("data"), dict) else {}
+        _channel_tag = "深知可信搜索·联网" if args.search_channel == "webSearch" else "深知可信搜索"
         for _a in (_data.get("检索文章") or []):
-            if isinstance(_a, dict) and not _a.get("检索通道"):
-                _a["检索通道"] = "深知可信搜索"
+            if isinstance(_a, dict):
+                if not _a.get("检索通道"):
+                    _a["检索通道"] = _channel_tag
+                if not _a.get("检索类型"):
+                    _a["检索类型"] = args.search_type
+                # 联网路统一补 非官方来源 标记（dataAuthority 缺失/未开时兜底；渲染层按此+数据权威性双口径打徽标）
+                if args.search_channel == "webSearch":
+                    _a["非官方来源"] = True
         raw_json = json.dumps(body, ensure_ascii=False, indent=2)
         if args.output:
             output_path = resolve_output_json(args.output)
@@ -403,7 +468,7 @@ def main() -> None:
         else:
             print(raw_json)
         return
-    _print_summary(body, args.max_articles, args.max_paragraphs, args.paragraph_chars)
+    _print_summary(body, args.max_articles, args.max_paragraphs, args.paragraph_chars, args.search_type)
 
 
 if __name__ == "__main__":

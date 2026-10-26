@@ -167,7 +167,7 @@ def _post(url: str, api_key: str, payload: Dict[str, Any], timeout: int) -> Dict
     except urllib.error.URLError as e:
         _fail_request("network", f"网络请求失败 - {e.reason}")
     except socket.timeout:
-        _fail_request("timeout", "深度搜索接口请求超时。该接口耗时较长，可适当增大 --timeout")
+        _fail_request("timeout", "深度搜索接口请求超时（默认等待 600 秒，与服务端 10 分钟上限对齐）。偶发服务端长链路请稍后重试")
     elapsed = time.perf_counter() - started
 
     try:
@@ -282,7 +282,7 @@ def main() -> None:
     parser.add_argument("--json-only", action="store_true", help="仅输出接口原始 JSON")
     parser.add_argument("--output", "-o", help="深度搜索结果 JSON 文件名，写入 official-docs/search-results/（配合 --json-only 使用）")
     parser.add_argument("--show-materials", type=int, default=5, help="摘要中展示前 N 篇材料")
-    parser.add_argument("--timeout", type=int, default=300, help="请求超时秒数")
+    parser.add_argument("--timeout", type=int, default=600, help="请求超时秒数（默认 600，对齐服务端深度搜索 10 分钟上限；部分链路可能需 3–10 分钟，客户端过短会在服务端仍在计算时误判超时并触发重试）")
     args = parser.parse_args()
 
     endpoint = _pick(
