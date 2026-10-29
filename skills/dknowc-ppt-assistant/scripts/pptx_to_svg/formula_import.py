@@ -1,4 +1,4 @@
-"""Import PPT Master-owned Office Math into canonical SVG formula markers.
+"""Import 深知可信PPT-owned Office Math into canonical SVG formula markers.
 
 The reverse contract is deliberately narrow: accept only the closed OMML
 vocabulary already validated by the native formula compiler, serialize that

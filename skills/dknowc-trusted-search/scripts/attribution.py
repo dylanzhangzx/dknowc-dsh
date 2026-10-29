@@ -4,7 +4,7 @@
 依据 MaaS 平台调用来源统计方案（2026-09-14；2026-10-09 头内键名由 source 改为
 agentSource——平台方改名，区别于注册 body 的 source 合同标记，值不变）：
 
-- 声明格式（单行纯 ASCII）：`kind=skill;agentSource=dknowc-trusted-search;version=1.4.1;channel=skillhub`
+- 声明格式（单行纯 ASCII）：`kind=skill;agentSource=dknowc-trusted-search;version=1.6.2-dsh;channel=dsh`
 - kind/source/channel 读自**包根 `attribution.json`**（json 字段名保持 `source` 不变，仅请求头输出键名为 `agentSource`；渠道差异由打包期改这一个文件表达）；
 - **version 运行时从 SKILL.md frontmatter 解析**（单一事实源，不硬编码）；
 - 声明为调用方自报，**仅用于统计、不参与鉴权、不作安全凭证**；

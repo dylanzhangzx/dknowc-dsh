@@ -33,7 +33,31 @@ import tempfile
 from pathlib import Path
 
 from console_encoding import configure_utf8_stdio
-from project_management.project_specs import parse_spec_lock as parse_lock
+import re as _re
+
+
+def parse_lock(lock_path) -> dict:
+    """解析 spec_lock.md：`## 分节` + `- key: value` 列表 -> {分节: {key: value}}。
+
+    最小实现，覆盖本脚本与导出链路需要的 canvas / typography / communication 等分节；
+    忽略注释与空行，值按原样保留字符串。
+    """
+    path = Path(lock_path)
+    text = path.read_text(encoding="utf-8")
+    sections: dict = {}
+    current = None
+    for line in text.splitlines():
+        m = _re.match(r"^##\s+(.+?)\s*$", line)
+        if m:
+            current = m.group(1).strip().lower()
+            sections.setdefault(current, {})
+            continue
+        m = _re.match(r"^-\s+([A-Za-z0-9_\-]+)\s*:\s*(.*)$", line)
+        if m and current is not None:
+            sections[current][m.group(1)] = m.group(2).strip()
+    if not sections:
+        raise ValueError(f"spec_lock has no sections: {path}")
+    return sections
 
 configure_utf8_stdio()
 

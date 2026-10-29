@@ -6,8 +6,7 @@
 本地代理（127.0.0.1，路径带会话级 hash），内部持有真实凭据转发到云端 mcp.dknowc.cn。
 环境变量 `CODEBUDDY_MCP_CONFIG` 内联 JSON 里含各 MCP server 的 url + headers
 （Bearer 会话令牌）。脚本从该变量动态拿到 dknowc-mcp 的地址与头，直连代理发 JSON-RPC，
-返回的完整 JSON 由脚本写入文件——模型不抄写大 JSON，也就没有转写丢内容的问题
-（此前模型调 MCP 工具会把 60-170KB 返回抄进上下文再落盘，实测丢失 83%）。
+返回的完整 JSON 由脚本写入文件——模型不抄写大 JSON，避免转写大返回时的内容丢失问题。
 
 只负责"调用 + 落盘原始返回"；转换仍走现有 deep_convert.py / mcp_convert.py。
 
@@ -31,7 +30,7 @@ import urllib.request
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 skill 目录
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:

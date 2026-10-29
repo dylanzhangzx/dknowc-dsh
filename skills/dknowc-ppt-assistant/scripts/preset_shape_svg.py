@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Preset Shape SVG Fragment Tool
+深知可信PPT - Preset Shape SVG Fragment Tool
 
 Browse and inspect DrawingML presets, or print compact canonical native-preset
 SVG groups to stdout for manual insertion into a hand-authored page or
@@ -20,7 +20,7 @@ Examples:
     python3 scripts/preset_shape_svg.py render-batch --input shapes.json
 
 Dependencies:
-    None (only uses standard library and local PPT Master modules)
+    None (only uses standard library and local 深知可信PPT modules)
 """
 
 from __future__ import annotations

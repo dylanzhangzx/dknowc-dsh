@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Shared SVG Resource Helpers
+深知可信PPT - Shared SVG Resource Helpers
 
 Centralizes project-relative resource lookup and nested-SVG closure validation
 used by the checker, finalizer, and SVG-to-PPTX exporter.

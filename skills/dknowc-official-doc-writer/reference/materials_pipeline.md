@@ -39,4 +39,4 @@
 我建议先按下面方案检索，请确认是否执行，或告诉我需要增删哪些搜索项。
 ```
 
-搜索命令与参数（**统一走脚本通道**，需 API Key）：脚本调用、参数映射、searchType 单值分路、时间与段落参数、合并命令均见 `reference/search_policy.md` 执行命令节。脚本一律用 skill 安装目录的绝对路径（`<skillDir>/scripts/…`）调用；搜索结果只能读写会话工作区的 `dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/` 下 `input|output|search-results` 子目录。
+搜索命令与参数（**统一走脚本通道**，需 API Key）：脚本调用、参数映射、searchType 单值分路、时间与段落参数、合并命令均见 `reference/search_policy.md` 执行命令节。脚本一律用 skill 安装目录的绝对路径（`<skillDir>/scripts/…`）调用；搜索结果只能读写会话工作区的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/` 下 `input|output|search-results` 子目录。

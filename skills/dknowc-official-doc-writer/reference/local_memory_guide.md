@@ -14,10 +14,10 @@
 保存与检索命令：
 
 ```bash
-python3 scripts/local_memory.py kb save <文件> --category <分类> --tags <场景标签> --note <备注> [--title <标题>]
-python3 scripts/local_memory.py kb list [--category <分类>] [--tag <标签>]
-python3 scripts/local_memory.py kb search <关键词> [--category <分类>]
-python3 scripts/local_memory.py kb remove <素材ID>    # 必须先经用户确认
+python3 <skillDir>/scripts/local_memory.py kb save <文件> --category <分类> --tags <场景标签> --note <备注> [--title <标题>]
+python3 <skillDir>/scripts/local_memory.py kb list [--category <分类>] [--tag <标签>]
+python3 <skillDir>/scripts/local_memory.py kb search <关键词> [--category <分类>]
+python3 <skillDir>/scripts/local_memory.py kb remove <素材ID>    # 必须先经用户确认
 ```
 
 分类固定六类：`unit-profile`（单位资料）、`policy`（政策文件）、`data`（数据资料）、`past-docs`（历史文稿）、`business-rules`（业务口径）、`misc`（其他）；场景标签按写作场景打（如：通知、请示、总结、汇报材料）。
@@ -40,9 +40,9 @@ python3 scripts/local_memory.py kb remove <素材ID>    # 必须先经用户确�
 沉淀时机：用户明确说"以后都这样写""记住这个习惯"→ 直接保存；用户在某次修改中纠正了 Agent 的写法且该纠正具有一般性 → Agent 主动询问"是否把这条作为你的常用写作偏好"，确认后保存。
 
 ```bash
-python3 scripts/local_memory.py pref save --type <content|format|phrasing> --scope <通用或文种> --rule <偏好内容> [--source <来源>]
-python3 scripts/local_memory.py pref list [--type <类型>] [--scope <范围>]
-python3 scripts/local_memory.py pref remove <偏好ID>    # 必须先经用户确认
+python3 <skillDir>/scripts/local_memory.py pref save --type <content|format|phrasing> --scope <通用或文种> --rule <偏好内容> [--source <来源>]
+python3 <skillDir>/scripts/local_memory.py pref list [--type <类型>] [--scope <范围>]
+python3 <skillDir>/scripts/local_memory.py pref remove <偏好ID>    # 必须先经用户确认
 ```
 
 应用规则：

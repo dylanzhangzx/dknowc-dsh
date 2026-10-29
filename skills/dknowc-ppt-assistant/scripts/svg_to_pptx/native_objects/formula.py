@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Native Formula Shape Builder
+深知可信PPT - Native Formula Shape Builder
 
 Build editable PowerPoint formula shapes from explicit LaTeX markers.
 
@@ -13,7 +13,7 @@ Examples:
     from svg_to_pptx.native_objects.formula import build_native_formula
 
 Dependencies:
-    None (only uses standard library and local PPT Master modules)
+    None (only uses standard library and local 深知可信PPT modules)
 """
 
 from __future__ import annotations

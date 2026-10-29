@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 公文排版脚本 v2.0.0
-严格按照《XX单位公文格式样本（试行）》进行自动排版
+严格按照 config/format.json 与 reference/standards/ 的格式规范进行自动排版
 
 【v2.0.0 更新说明】
 - 删除所有红头文件相关代码（红头+尾表由 template_generator.py 处理）
@@ -17,7 +17,10 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-import docx
+try:
+    import docx
+except ImportError:  # 顶层导入失败时给出可执行的安装提示，而不是堆栈
+    raise SystemExit("缺少依赖 python-docx，请先执行：python3 -m pip install python-docx")
 import docx.opc.constants
 from docx.enum.section import WD_ORIENT, WD_SECTION
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
@@ -189,11 +192,27 @@ def get_configured_output_dir():
 
 
 def is_path_within(path, parent):
-    """判断 path 是否位于 parent 目录内（3.8.3 起按真实路径比较，解析符号链接）。"""
+    """判断 path 是否位于 parent 目录内（按真实路径比较，解析符号链接）。"""
     try:
         return os.path.commonpath([os.path.realpath(path), os.path.realpath(parent)]) == os.path.realpath(parent)
     except ValueError:
         return False
+
+
+def read_text_auto(path):
+    """按 utf-8-sig → utf-8 → gb18030 依次尝试读取正文，全部失败时给出明确提示。
+
+    中文材料常由 Word/WPS 另存为 GBK，硬用 utf-8 会直接抛 UnicodeDecodeError；
+    这里统一回退，并提示用户另存为 UTF-8 以便排查。
+    """
+    raw = open(path, "rb").read()
+    for enc in ("utf-8-sig", "utf-8", "gb18030"):
+        try:
+            return raw.decode(enc)
+        except UnicodeDecodeError:
+            continue
+    raise SystemExit(
+        f"错误：无法识别正文文件编码（{path}）。请用文本编辑器另存为 UTF-8 后重试。")
 
 
 def resolve_input_text_path(input_path):
@@ -223,7 +242,7 @@ def _looks_like_path(text):
 
     用于路径解析失败时的兜底判定：含路径分隔符，或以常见正文扩展名结尾时
     视为路径——此时若文件读不到，宁可报错也不要把路径字符串当成正文写进 Word
-    （此前会静默生成一份正文只有一行路径的"正式公文"）。
+    （否则会静默生成一份正文只有一行路径的"正式公文"）。
     """
     value = (text or "").strip()
     if not value or "\n" in value:
@@ -989,8 +1008,8 @@ def strip_citation_markers(content_text: str) -> str:
 
     背景：素材清单先行要求写作时边写边标 [n] 角标——但角标只服务于
     build_trace_json 装配溯源 JSON、在溯源核验报告 HTML 中变成可点击跳转；
-    **正式 Word 交付的正文不应内嵌来源角标**（SKILL.md 搜索规则第 10 条）。
-    此前模型常把同一份带角标正文直接交给本脚本，导致 Word 交付物残留
+    **正式 Word 交付的正文不应内嵌来源角标**（见 reference/output_guide.md 交付规则）。
+    模型常把同一份带角标正文直接交给本脚本，导致 Word 交付物残留
     [1]…[23] 角标（带角标正文两用时，交付物曾残留 86～141 个角标）。
     本函数作为兜底，在排版前统一剥离半角 [n] 与全角 【n】 形式。
     """
@@ -1721,7 +1740,7 @@ def create_document(content_text, output_path=None):
         # 署名右空相应增加——两分支均满足"日期首字=署名首字右移2字"。
         # 右缩进是"距右缘的字数"，右移=更靠右=字数更小：设日期首字距右缘为 date_len+date_indent、
         # 署名首字为 unit_len+unit_indent，右移二字即 date_len+date_indent = unit_len+unit_indent-2。
-        # 修正：两分支此前均少算 4 字（写成 unit_len+4-date_len 与 date_len-unit_len），
+        # 修正：两分支旧实现均少算 4 字（写成 unit_len+4-date_len 与 date_len-unit_len），
         # 导致每份稿子的成文日期都比规则要求偏左。
         if should_right_align_date(lines, i):
             last_sign_date = stripped
@@ -1810,10 +1829,9 @@ def main():
             text_path = None
         if text_path and os.path.exists(text_path) and os.path.isfile(text_path):
             print(f'⚠ 检测到 --text 参数是文件路径，自动读取文件内容: {text_path}')
-            with open(text_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+            content = read_text_auto(text_path)
         elif _looks_like_path(args.text):
-            # 路径解析失败时不得把路径字符串当正文——此前会生成一份
+            # 路径解析失败时不得把路径字符串当正文——旧实现会生成一份
             # 正文只有一行路径的"正式公文"，且打印成功、退出码 0，用户与模型都无从察觉
             raise SystemExit(
                 f'错误：--text 收到的是文件路径而非正文（{args.text}），且该文件无法读取。\n'
@@ -1829,8 +1847,7 @@ def main():
     elif args.input:
         input_path = resolve_input_text_path(args.input)
         if os.path.exists(input_path):
-            with open(input_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+            content = read_text_auto(input_path)
         else:
             raise FileNotFoundError(f"输入文件不存在: {input_path}")
     else:
@@ -1848,7 +1865,7 @@ def main():
         print(f'✗ 生成失败: {e}')
         import traceback
         traceback.print_exc()
-        # 此前失败分支不设退出码，宿主按退出码判断成败时会把
+        # 旧实现失败分支不设退出码，宿主按退出码判断成败时会把
         # 失败当成功继续走交付话术，用户收到不存在的路径
         sys.exit(1)
 

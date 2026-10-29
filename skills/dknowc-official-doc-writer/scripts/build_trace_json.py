@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """从「素材清单 + 正文（带角标）+ 合并产物」装配溯源核验报告 JSON。
 
-背景（3.7.5 修复）：此前模型写完正文才反查"正文 [n] 对应哪篇素材"，再手写临时脚本拼
+背景旧实现模型写完正文才反查"正文 [n] 对应哪篇素材"，再手写临时脚本拼
 溯源 JSON——写作时引用情况无保障，溯源核验沦为"事后圆场"。修复后强制顺序：
   素材四分类 → 素材清单落盘（materials_<任务>.json）→ 用户确认 → 基于清单写正文（边写边标 [n]）
 本脚本只做**装配**（不反查、不挑拣）：
@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
@@ -57,7 +57,7 @@ ART_SNAPSHOT_FIELDS = ("快照链接", "screenShotPath", "snapshot")
 SEL_TYPE_FIELDS = ("type", "素材类型", "类型")
 SEL_TITLE_FIELDS = ("标题", "文章标题", "title", "material_name")
 SEL_URL_FIELDS = ("源网址", "source_url", "sourceUrl", "原文链接", "url")
-# 分组键兜底链不含"搜索地域"（3.7.6 修复）：地域名（"中国"/"浙江省"）做分组键无意义，
+# 分组键兜底链不含"搜索地域"地域名（"中国"/"浙江省"）做分组键无意义，
 # "搜索目的"为空的篇目会退化成地域胶囊（避免大量篇目退化）；全部落空时归"其他检索"。
 SEL_SEARCH_KEY_FIELDS = ("search_key", "搜索条件", "deep_group")
 
@@ -152,12 +152,14 @@ def resolve_selected_index(selected: list, by_title: dict, by_url: dict) -> list
         if art is None and t:
             art = by_title.get(norm_key(t))
         if art is None and t:
-            # 标题前缀匹配（政策文件名常带"关于印发…的通知"变体）
+            # 标题前缀匹配（政策文件名常带"关于印发…的通知"变体）：
+            # 只接受“共同前缀 ≥12 字”的变体，避免短前缀命中无关文件
             tk = norm_key(t)
-            for k, a in by_title.items():
-                if tk[:8] and (tk[:8] in k or k[:8] in tk):
-                    art = a
-                    break
+            if len(tk) >= 12:
+                for k, a in by_title.items():
+                    if len(k) >= 12 and (k.startswith(tk[:12]) or tk.startswith(k[:12])):
+                        art = a
+                        break
         resolved.append((item, art))
     return resolved
 
@@ -246,7 +248,7 @@ def main() -> int:
         raise SystemExit("错误：正文没有任何 [n] 角标对应素材清单，请先基于清单写作并标注角标")
 
     # 按角标号（=素材清单序号）升序重排：渲染层按"位置"给材料编号，只有 materials 处于
-    # 1..N 的 id 顺序时，位置才等于角标号。此前按正文"出现顺序"输出，只要正文首个引用
+    # 1..N 的 id 顺序时，位置才等于角标号。旧实现按正文"出现顺序"输出，只要正文首个引用
     # 不是 [1]（如先引 [23]），胶囊标题与角标号就会整体错位——溯源错配，务必升序。
     materials.sort(key=lambda m: m["id"])
 

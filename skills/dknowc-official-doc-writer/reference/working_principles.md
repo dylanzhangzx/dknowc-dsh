@@ -23,7 +23,7 @@
 - 交付形态按 `reference/task_router.md` 的两个开关判定：**命中 15 种法定公文（含复函、提醒函）→ 生成 `.docx` Word**；**本次任务执行过深知搜索 → 生成产出物 HTML（`XXX.html`，正文 / 溯源核验报告 / 知识专库 三页）**。两个开关独立、可同时成立；用户明确要求 Word 时照出 Word，但不因此取消产出物 HTML。只有用户明确说"直接在对话里给正文""不要生成文件""先看文字草稿"时才在对话输出正文。不得先发"正文初稿/压缩版/预览版"，直接生成产物并只给简短说明和路径。
 - 正式公文 Word 保持纯净：正文不带来源角标、`【素材使用情况】`、`【知识专库链接】`或长 URL；可点击溯源由产出物 HTML 承载。Word 正文与元数据均不写 AI 生成提示，AI 标识仅由交付话术承担（本稿由 AI 辅助生成、依据已经过可信核验，建议按单位审签流程核批后正式行文）；排版脚本自动过滤误带的提示行。
 - **先出 HTML、后补 Word 时**：只从带角标正文派生一份无角标 Word 副本（仅去角标/排版），**不得修改带角标正文、不得重新装配溯源 JSON、不得重渲染已交付的 HTML**；补交 Word 时交付脚本只传 Word 文件，不重复复制 HTML。Word 排版所需的格式整理只落在副本上，原正文与 HTML 保持不动。
-- Markdown 草稿只是内部中间文件，不得展示、链接、发送或要求用户审阅。**带角标的正文只能保存在会话工作区产物目录 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/`**；**dsh 交付**：产物直接生成在会话工作区 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`（Word 与产出物 HTML）——dsh 以工作区为文件视图、访达也可直达，直接向用户展示脚本实际打印的产物路径即可，无需交付复制；Markdown 正文不交付、不复制、不列入 `present_files`。
+- Markdown 草稿只是内部中间文件，不得展示、链接、发送或要求用户审阅。**带角标的正文只能保存在会话工作区产物目录 `dknowc-output/<会话ID前8位>/official-docs/input/`**；**dsh 交付**：产物直接生成在会话工作区 `dknowc-output/<会话ID前8位>/official-docs/output/`（Word 与产出物 HTML）——dsh 以工作区为文件视图、访达也可直达，直接向用户展示脚本实际打印的产物路径即可，无需交付复制；Markdown 正文不交付、不复制、不列入 `present_files`。
 - 生成 Word 时，正文超过一行必须先写入临时 `.txt`/`.md` 文件，再把文件路径传给 `scripts/format_document.py`；不得把多行正文塞进 `--text`，也不得用临时脚本手写 `python-docx` 生成正式交付文件。
 - 默认只生成普通 Word；仅用户明确说"红头文件/红头版/套红头/生成红头"时生成红头。
 - 当前版本不支持自动生成 PDF，不主动提及；用户要求 PDF 时只生成 Word 并说明建议在 Word/WPS 中自行导出。不得用 LibreOffice、ReportLab、pypdf、浏览器打印等降级方案生成正式公文 PDF。

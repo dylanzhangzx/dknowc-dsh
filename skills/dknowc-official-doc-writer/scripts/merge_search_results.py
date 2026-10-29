@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Dict
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
@@ -102,6 +102,12 @@ def merge_results(result_files: List[str]) -> Dict:
             print(f"警告: 无法读取文件 {file_path}: {e}", file=sys.stderr)
             continue
         
+        # 兼容顶层直接是文章数组的输入（部分接口/手工整理产物）
+        if isinstance(data, list):
+            data = {"cleaned": True, "articles": data}
+        if not isinstance(data, dict):
+            print(f"警告: 无法识别的文件结构，已跳过 {file_path}", file=sys.stderr)
+            continue
         # 检查是否是清洗后的格式
         if data.get("cleaned") and "articles" in data:
             articles = data["articles"]
@@ -117,7 +123,7 @@ def merge_results(result_files: List[str]) -> Dict:
         # 本文件处理前的文章/段落基线：用于计算每次调用真实新增量
         before_article_count = len(all_articles)
         before_para_total = sum(len(a.get("段落") or []) for a in all_articles)
-        # 搜索目的兜底（3.7.6 修复）：该路 --purpose 为空时用该路 query 兜底——
+        # 搜索目的兜底该路 --purpose 为空时用该路 query 兜底——
         # 若留空，文章"搜索目的"缺失，溯源报告分组键（search_key）会退化成
         # "中国"/"浙江省"等地域碎片，材料面板筛选胶囊失去意义（避免大量篇目退化）。
         purpose_val = search_meta.get("purpose") or search_meta.get("query") or ""
@@ -148,7 +154,7 @@ def merge_results(result_files: List[str]) -> Dict:
             })
         
         # 规范性文件清单（policyFiles，含发文字号）：可信搜索补搜产物携带，
-        # 是溯源核验报告匹配"文号"的唯一来源，合并时必须带下去（此前被整体丢弃，
+        # 是溯源核验报告匹配"文号"的唯一来源，合并时必须带下去（旧实现被整体丢弃，
         # 导致合并产物 policyFiles 恒为空、政策文件无法显示发文字号）。
         for pf in (data.get("policyFiles") or []):
             if not isinstance(pf, dict):
@@ -159,10 +165,11 @@ def merge_results(result_files: List[str]) -> Dict:
             seen_policies.add(key)
             all_policy_files.append(pf)
         
-        # 去重合并（3.7.5 修复：合并式去重，禁止按标题整体丢弃后篇）
-        # 同一材料多次搜索返回时，标题相同但召回段落可能不同（各次搜索命中不同相关段落）——
+        # 去重合并：合并式去重，不按标题整体丢弃后篇。
+        # 同一材料多次搜索返回时，标题相同但召回段落可能不同（各次搜索命中不同相关段落），
         # 按标题丢弃会丢掉其他搜索带来的段落；标题微小差异（空格/全半角/赘词）又可能漏去重。
-        # 正确做法：按"规范化标题 + 源网址"双键判同一材料，同一材料合并段落、字段取并集。
+        # 做法：以"规范化标题"为主键（标题为空时退回源网址）判同一材料，合并段落、字段取并集：
+        # 同标题不同网址视为同一材料的不同抓取/镜像，保留先到的源网址，缺失时由后篇补齐。
         for article in articles:
             title = article.get("文章标题", "")
             url = article.get("源网址") or article.get("sourceUrl") or article.get("原文链接") or ""

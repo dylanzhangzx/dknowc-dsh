@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Unified Configuration Management Module
+深知可信PPT - Unified Configuration Management Module
 
 Centrally manages all project configuration items to ensure consistency and maintainability.
 
@@ -51,7 +51,7 @@ CHART_TEMPLATES_DIR = TEMPLATES_DIR / 'charts'
 # Environment Configuration
 # ============================================================
 
-USER_CONFIG_DIR = Path.home() / '.ppt-master'
+USER_CONFIG_DIR = Path.home() / '.dknowc-ppt'
 USER_ENV_FILE = USER_CONFIG_DIR / '.env'
 
 
@@ -494,14 +494,14 @@ LAYOUT_MARGINS = {
 # Keep the exported authority key as the compatibility router for existing
 # config consumers.
 SVG_CONSTRAINTS = {
-    'authority': 'skills/ppt-master/references/shared-standards.md',
-    'core_authority': 'skills/ppt-master/references/shared-standards-core.md',
+    'authority': 'references/svg-authoring.md',
+    'core_authority': 'references/svg-authoring.md',
     'conditional_authorities': {
-        'effects': 'skills/ppt-master/references/svg-effects.md',
-        'native_data': 'skills/ppt-master/references/native-data-interface.md',
-        'pptx_structure': 'skills/ppt-master/references/pptx-structure-interface.md',
+        'effects': 'references/svg-authoring.md',
+        'native_data': 'references/svg-authoring.md',
+        'pptx_structure': 'references/svg-authoring.md',
     },
-    'validator': 'skills/ppt-master/scripts/svg_quality_checker.py',
+    'validator': 'scripts/svg_quality_checker.py',
 }
 
 
@@ -645,7 +645,7 @@ class Config:
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(
-        description="PPT Master configuration management tool.",
+        description="深知可信PPT configuration management tool.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("list-formats", help="List all canvas formats")

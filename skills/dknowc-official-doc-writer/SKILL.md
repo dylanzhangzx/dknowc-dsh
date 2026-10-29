@@ -7,7 +7,7 @@ description: "深知公文写作，是面向单位办公室、综合岗、文秘
 description_zh: "深知公文写作，是由北京彩智科技有限公司旗下“深知可信智能”提供的正式材料写作助手，准确、规范地完成企事业单位与政府机关等场景下的文档编写需求，所有依据或参考材料，都全程可溯源到权威部门发布的规范性文件。本技能用于公文写作、正式文书起草、汇报材料整理、讲话稿撰写、工作总结和方案报告生成，帮助用户把零散想法、会议记录、工作素材、调研资料或初稿整理成结构清楚、表达稳妥、逻辑完整、可直接修改使用的正式文稿。本技能还能严格按公文相关国家标准，支持通知、请示、报告、函、复函、批复、会议纪要、通报、通告、公告、意见、方案、总结、管理办法、汇报材料、发言稿、讲话稿、调研报告、经验材料等常见文种和工作材料。依托深知可信搜索，获取准确有效的法规政策依据、行业信息与数据、标准规范和案例参考，并生成含正文、溯源核验报告与知识专库的产出物，帮助用户写得有依据、能复核、可交付。正式公文（15 种法定文种）可生成 Word 文档；并可按用户明确要求自动生成红头文件。"
 description_en: "dknowc official doc writer is a formal-document writing Skill provided by dknowc Trusted Intelligence under Beijing Caizhi Technology Co., Ltd. It helps users draft, rewrite, polish, review and generate structured workplace documents, including official documents, formal letters, reports, meeting minutes, summaries, plans, speeches, research reports and other business materials. When evidence, data, standards or reference cases are needed, it can use dknowc Trusted Search to retrieve traceable materials from authoritative sources and produce a deliverable containing the formal content, a source-verification report and a knowledge-library view. Word documents are generated for the 15 statutory official-document types, and red-head document formatting is supported when explicitly requested by the user."
 category: "office-efficiency"
-version: "3.9.2-dsh"
+version: "3.9.4-dsh"
 author: "彩智科技"
 permissions:
   network:
@@ -37,7 +37,7 @@ secrets:
 
 ## 权限说明
 
-本 Skill 会访问 `https://open.dknowc.cn/` 用于公文范文大纲、深知可信搜索和产出物整理；访问 `https://platform.dknowc.cn/auth/#/login` 用于 MaaS 手机号验证码注册、API Key 获取和管理平台地址说明。运行过程中会读取本 Skill 的规则、标准、配置和参考资料文件，并在本地写入初始化状态文件、用户授权保存的写作偏好、生成的 Word 文档、产出物 HTML 和搜索结果中间文件。MaaS 注册取 Key 成功后，会把 `DKNOWC_API_KEY` 写入本机 Key 专用配置文件（`~/.config/dknowc/api_key`，纯文本一行 Key、600 权限，不写 `~/.zshrc`）；脚本读取顺序为进程环境变量优先、缺失时自动读取该文件，历史 `~/.zshrc` 中的 Key 块仅作迁移期兜底。Skill 包内不包含真实 API Key，API Key 必须通过环境变量 `DKNOWC_API_KEY` 注入或配置文件持久化，不得硬编码，不得写入公开包，不得在对话中展示完整内容。
+本 Skill 会访问 `https://open.dknowc.cn/` 用于公文范文大纲、深知可信搜索和产出物整理；访问 `https://platform.dknowc.cn/auth/#/login` 用于 MaaS 手机号验证码注册、API Key 获取和管理平台地址说明；访问 `https://platform.dknowc.cn/maas/identity-center/maas/login/` 用于读取官方 Agent 注册指引、领取注册文字题并提交答案（人工兜底时另含一次性验证页链接）。运行过程中会读取本 Skill 的规则、标准、配置和参考资料文件，并在本地写入初始化状态文件、用户授权保存的写作偏好、生成的 Word 文档、产出物 HTML 和搜索结果中间文件。MaaS 注册取 Key 成功后，会把 `DKNOWC_API_KEY` 写入本机 Key 专用配置文件（`~/.config/dknowc/api_key`，纯文本一行 Key、600 权限，不写 `~/.zshrc`）；脚本读取顺序为进程环境变量优先、缺失时自动读取该文件，历史 `~/.zshrc` 中的 Key 块仅作迁移期兜底。Skill 包内不包含真实 API Key，API Key 必须通过环境变量 `DKNOWC_API_KEY` 注入或配置文件持久化，不得硬编码，不得写入公开包，不得在对话中展示完整内容。
 
 ## 设计模式
 
@@ -100,11 +100,12 @@ secrets:
 - 不得用 Web Search / Web Fetch / 浏览器搜索替代深知搜索（用户明确要求除外，且必须声明这些材料不是深知检索结果）。
 - 严禁将外省政策作为本省政策依据；非官方网搜材料不得作为政策、数据依据。
 - 不得由模型手写完整 HTML，不得自行拼接 `<a>`、`onclick`、按钮、卡片或页面样式。
-- 不得把正文初稿、压缩版、Markdown 草稿发到对话；正式任务直接生成产物并只给路径与简短说明。带角标正文只保存在会话工作区产物目录 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/`，不得写入其他目录；交付与 `present_files` 只列最终 HTML / Word，Markdown 正文不复制、不展示。
+- 不得把正文初稿、压缩版、Markdown 草稿发到对话；正式任务直接生成产物并只给路径与简短说明。带角标正文只保存在会话工作区产物目录 `dknowc-output/<会话ID前8位>/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/`，不得写入其他目录；交付与 `present_files` 只列最终 HTML / Word，Markdown 正文不复制、不展示。
 - 不得补写未发生的调研方法（座谈、走访、台账查阅等）；附录、附表、填报表承诺必须兑现，不能只列名称。交付说明中的文号必须能在素材清单 `发文字号` 找到，正文因 G6 删除的文号不得在说明中保留。
 - 事实陈述只来自用户材料和可信搜索结果；模型假设只能用于结构、分析框架和建议方向，涉及具体事实须标“待核实/初步判断”，不得写成确定事实。引用标准按 `reference/writing_rules.md` 的“标准引用四查”核对。
 - 当前版本不生成 PDF；不得声称已生成 PDF。
 - 不得向用户展示完整 API Key；验证码由用户本人输入，不代输、不转发。
+- 注册领到的文字题由模型当场作答，不把题目发给用户、不复述答题过程；题目 token 与领题会话不进入对话、不写日志；不代做图片验证、不伪造通过结果。
 
 ## 参考资料索引
 

@@ -2,8 +2,7 @@
 """Console encoding helpers for dknowc PPT assistant CLI scripts.
 
 Adapted from ppt-master (MIT, Copyright (c) 2025-2026 Hugo He):
-UTF-8 stdio configuration only. The upstream official-distribution identity
-gates are intentionally removed for this extracted subset; MIT attribution is
+UTF-8 stdio configuration only. This is an extracted subset; MIT attribution is
 preserved in THIRD_PARTY_NOTICES.md at the skill root.
 """
 

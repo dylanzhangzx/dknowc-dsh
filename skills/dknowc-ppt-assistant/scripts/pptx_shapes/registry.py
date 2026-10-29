@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Preset Shape Registry
+深知可信PPT - Preset Shape Registry
 
 Expose the complete preset catalog and evaluate shape geometry instances.
 
@@ -83,7 +83,7 @@ class PresetShapeRegistry:
 
     @classmethod
     def bundled(cls) -> PresetShapeRegistry:
-        """Load the hash-locked catalog shipped with PPT Master."""
+        """Load the hash-locked catalog shipped with 深知可信PPT."""
 
         names = load_shape_type_values()
         definitions = load_preset_shape_definitions(expected_names=names)

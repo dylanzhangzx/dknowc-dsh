@@ -120,8 +120,9 @@ def main() -> int:
 
     api_key = os.environ.get(API_KEY_ENV, "").strip()
     if not api_key:
-        # dsh 兜底：注册成功后 Key 已自动写入 ~/.zshrc（register_key.mjs 持久化），
-        # 本进程环境变量可能未注入——从 ~/.zshrc 解析（api_key.py 同源逻辑）。
+        # dsh 兜底：注册成功后 Key 自动写入本机专用配置文件
+        # （~/.config/dknowc/api_key），本进程环境变量可能未注入——
+        # 经 api_key.py 同源解析（含 dsh 注入的 DSH_DKNOWC_API_KEY）。
         try:
             from api_key import resolve_api_key
             api_key, _src = resolve_api_key()

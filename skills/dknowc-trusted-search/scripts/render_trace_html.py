@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """可信溯源核验报告渲染器：把搜索结果 JSON + 最终答案渲染为单文件可核验 HTML。
 
-深知可信搜索 SkillHub 版（渲染层与深知系列核验报告同构，数据口径保持自有与真实）。
+深知可信搜索 dsh 版（渲染层与深知系列核验报告同构，数据口径保持自有与真实）。
 输入直读 trusted_search.py / deep_query.py 的 --json-only 输出（可信搜索 content.data
 或深度搜索 deep-query/v3 格式），正文用 --answer-file 传入最终答案（关键结论带 [n] 角标），
 成稿自检用 --self-check-file 传入五项结果。
@@ -447,7 +447,7 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
     # 检索通道（深知深度搜索 / 深知可信搜索）：由检索脚本在产物上打标、merge 透传，
     # 供过程条/hero 按接口通道拆分计数；历史 JSON 无该字段时为空（渲染层回退旧文案）
     source["channel"] = first_str(item.get("检索通道"), item.get("channel"))
-    # 非官方来源（1.6.0 起）：联网路（searchChannel=webSearch）召回的非权威站点材料。
+    # 非官方来源：联网路（searchChannel=webSearch）召回的非权威站点材料。
     # 双口径判定：联网路脚本打标 非官方来源=True；或接口 dataAuthority 返回 数据权威性=非权威。
     source["unofficial"] = bool(item.get("非官方来源")) or str(
         item.get("数据权威性") or item.get("authority") or "").strip() in ("非权威", "non-authoritative")
@@ -2723,7 +2723,7 @@ def _next_version_path(path: Path) -> Path:
     """输出文件已存在时不覆盖（1.4.0 起）：自动改为 原名_v2 / _v3 … 另存。
 
     追加图表/修改答案后重跑渲染时，旧版本保留、新版本号递增——不覆盖已交付内容，
-    也不会再靠宿主目录里的 "名字 (2)" 兜底。命名与 deliver_outputs.py 的重名规则一致。
+    也不会再靠宿主目录里的 "名字 (2)" 兜底。命名与交付重名规则一致（同名 _v2 副本化）。
     """
     if not path.exists():
         return path
@@ -2772,7 +2772,7 @@ def parse_research_notes(text: str) -> Dict[str, int]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="生成溯源核验报告 HTML（深知可信搜索 SkillHub 版）")
+    parser = argparse.ArgumentParser(description="生成溯源核验报告 HTML（深知可信搜索 dsh 版）")
     parser.add_argument("input_json", help="trusted_search.py / deep_query.py 的 --json-only 输出 JSON")
     parser.add_argument("--output", help="输出 HTML 文件名（official-docs/output/，形如《标题.html》）；不传时按问题自动生成《标题.html》。同题重跑自动 _v2 另存")
     parser.add_argument("--title", default="溯源核验报告", help="页面标题")

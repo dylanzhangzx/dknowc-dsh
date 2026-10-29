@@ -3,7 +3,7 @@
 
 依据与 MaaS 平台方约定的调用来源统计方案：
 
-- 声明格式（单行纯 ASCII）：`kind=skill;agentSource=dknowc-official-doc-writer;version=3.9.2;channel=dsh`
+- 声明格式（单行纯 ASCII）：`kind=skill;agentSource=dknowc-official-doc-writer;version=3.9.4;channel=dsh`
   （头内键名为 agentSource——2026-10-09 平台方改名，区别于注册 body 的 `source="agent"` 合同标记）
 - kind/source/channel 读自**包根 `attribution.json`**（json 字段名不变；渠道差异由打包期改这一个文件表达）；
 - **version 运行时从 SKILL.md frontmatter 解析**（单一事实源，不硬编码）；

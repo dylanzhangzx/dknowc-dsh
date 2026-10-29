@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PPT Master stateless SVG contract checks.
+"""深知可信PPT stateless SVG contract checks.
 
 Validates the SVG property surface shared with the native DrawingML exporter.
 Each check receives an explicit XML root or source string and appends findings
@@ -12,7 +12,7 @@ Examples:
     from svg_quality.svg_contracts import check_paint_compatibility
 
 Dependencies:
-    Standard library plus local PPT Master SVG-to-PPTX modules.
+    Standard library plus local 深知可信PPT SVG-to-PPTX modules.
 """
 
 import copy

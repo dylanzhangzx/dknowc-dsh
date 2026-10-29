@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Native Shape Semantic Fingerprints
+深知可信PPT - Native Shape Semantic Fingerprints
 
 Build stable hashes for visible SVG text, generated preset previews, and
 native chart/table fallback subtrees.

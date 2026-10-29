@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Shape Boolean SVG Fragment Tool
+深知可信PPT - Shape Boolean SVG Fragment Tool
 
 Combine closed SVG shapes or resolvable text outlines and print the resulting
 canonical SVG path fragment to stdout. Result geometry is in SVG-root coordinate
@@ -22,7 +22,7 @@ Examples:
         --operation subtract --source scrim --source chapter-number --id reveal
 
 Dependencies:
-    skia-pathops, local PPT Master modules, and uharfbuzz for text operands
+    skia-pathops, local 深知可信PPT modules, and uharfbuzz for text operands
 """
 
 from __future__ import annotations

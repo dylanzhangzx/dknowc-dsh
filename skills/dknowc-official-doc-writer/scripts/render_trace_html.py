@@ -2,7 +2,7 @@
 """产出物 HTML 渲染器：把结构化正文/素材 JSON 渲染为单文件三页 HTML（正文 / 溯源核验报告 / 知识专库）。
 
 报告定位：不止展示"材料从哪来"（溯源），更要传达"我们查过了，可以交付"（核验）。
-3.8.0 架构（交互形态参考自研原型，数据口径保持自有与真实）：
+架构说明（交互形态与数据口径均按本 Skill 自身规则）：
 - 顶栏：身份章 + 标题 + 工具组（复制全文 / 打印归档）+ 阅读进度条
 - Hero：大标题 + 真实统计（N 次检索 · M 条材料 · K 处引用）+ 三页切换
 - 过程回顾条：检索 → 入库 → 逐条比对 → 核验完成（静态回放，数字全部真实计算；
@@ -39,7 +39,7 @@ def esc(value: Any) -> str:
 def safe_url(value: Any) -> str:
     """外链协议白名单：仅放行 http/https，其余（javascript:/data:/file: 等）返回空串。
 
-    3.8.3 起所有 href 一律经由本函数，非法协议链接不渲染（防点击执行）。
+    所有 href 一律经由本函数，非法协议链接不渲染（防点击执行）。
     """
     url = str(value or "").strip()
     if not url:
@@ -514,9 +514,9 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
     no_citation = bool(sources) and not cited
 
     # ③ 时效检查：**正文依据**的日期范围与历史材料计数。
-    # 核验单五项都应只针对正文依据；① 依据溯源、② 引用对应 本就按正文角标计算，而 ③④ 此前
+    # 核验单五项都应只针对正文依据；① 依据溯源、② 引用对应 本就按正文角标计算，而 ③④ 旧实现
     # 误用全部召回（sources 同时含未引用的 recalled_materials），口径不一致。
-    # 修复：43 篇正文依据的日期范围是 2020-01～2026-09，却因未引用
+    # 43 篇正文依据的日期范围是 2020-01～2026-09，却因未引用
     # 材料里有两篇接口标注 2027-09 的条目，核验单显示成 2016-03～2027-09 —— 把"未来日期"
     # 和 11 年跨度算进了交付物的时效说明里。
     dated = [parse_year_month(s.get("date")) for s in cited_sources]
@@ -739,7 +739,7 @@ _TABLE_SKIP_CONTENT_TAGS = {"script", "style"}
 
 
 class _TableSanitizer(HTMLParser):
-    """表格 HTML 元素级白名单（3.8.3 起替代正则清洗，防标签注入与属性注入）：
+    """表格 HTML 元素级白名单（元素级白名单，替代正则清洗，防标签注入与属性注入）：
 
     - 只放行 table/thead/tbody/tr/td/th/br，输出不带任何属性；
     - 其余标签一律丢弃（文本继续走 handle_data，统一转义）；
@@ -1087,7 +1087,7 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
                    f'<span class="d">每篇来源文章的摘录可比对，原文或存档快照可回看</span></div>')
     elif tr["passed"] == tr["total"]:
         # 摘录齐全但有材料没有回看通道：不得照写"原文或存档快照可回看"
-        # （此前 missing_links 算出却从未参与结论，属虚假背书）
+        # （旧实现 missing_links 算出却从未参与结论，属虚假背书）
         tr_html = (f'<div class="vi"><span class="s warn">◐ 依据溯源 {tr["passed"]}/{tr["total"]}</span>'
                    f'<span class="d">摘录可比对，其中 {n_no_link} 条没有原文链接或存档快照、无法回看</span></div>')
     else:
@@ -1510,7 +1510,7 @@ def render_toc(sections: List[Dict[str, Any]]) -> str:
         title = (sec.get("title") or "").strip()
         if not title:
             # 无标题节＝正文开头的导语/摘要段（第一个章节标题之前的内容），不是正式章节。
-            # 修复：此前会被兜底成「第 N 节」列进目录，页面上表现为一条灰色
+            # 旧实现会被兜底成「第 N 节」列进目录，页面上表现为一条灰色
             # 占位项，读者不知道那是什么。内容仍照常
             # 在正文里展示，只是不占目录条目、不参与滚动高亮。
             continue
@@ -2311,8 +2311,8 @@ def normalize_body_quotes(text: str) -> str:
 
     背景：`format_document.py` 生成 Word 时会统一把 ASCII 直引号转为
     中文全角引号，但溯源报告直接读溯源 JSON 里的 document_content —— 模型落盘时若把
-    中文引号写成半角，报告就会与 Word 交付物不一致，而这条路径此前没有兜底
-    （此前靠任务侧手工跑引号脚本规避，机制上没有保障）。取不到该函数时原样返回，
+    中文引号写成半角，报告就会与 Word 交付物不一致，而这条路径没有兜底
+    （靠任务侧手工跑引号脚本规避，机制上没有保障）。取不到该函数时原样返回，
     不阻断渲染。
     """
     if not text:
@@ -2545,7 +2545,7 @@ def main() -> None:
     args = parser.parse_args()
 
     payload = load_json(Path(args.input_json))
-    # 3.7.5 修复：渲染前硬校验残缺输入（recalled 空 / self_check 缺项），阻断静默降级
+    # 渲染前硬校验残缺输入（recalled 空 / self_check 缺项），阻断静默降级
     _check_degraded_input(payload, args.input_json)
     answer_override = ""
     if args.answer_file:

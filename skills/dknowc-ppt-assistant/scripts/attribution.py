@@ -3,9 +3,9 @@
 
 依据与 MaaS 平台方约定的调用来源统计方案：
 
-- 声明格式（单行纯 ASCII）：`kind=skill;agentSource=dknowc-ppt-assistant;version=1.3.6;channel=skillhub`
+- 声明格式（单行纯 ASCII）：`kind=skill;agentSource=dknowc-ppt-assistant;version=<SKILL.md 版本>;channel=<渠道>`
   （头内键名为 agentSource——2026-10-09 平台方改名，区别于注册 body 的 `source="agent"` 合同标记）
-- kind/source/channel 读自**包根 `attribution.json`**（渠道差异由打包期改这一个文件表达）；
+- kind/source/channel 读自**包根 `attribution.json`**；
 - **version 运行时从 SKILL.md frontmatter 解析**（单一事实源，不硬编码）；
 - 声明为调用方自报，**仅用于统计、不参与鉴权、不作安全凭证**；
   读取失败时返回 None，调用方不加该头、**不阻断请求**（服务端归"未声明"桶）。

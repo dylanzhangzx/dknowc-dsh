@@ -27,7 +27,6 @@ dknowc-ppt-assistant/
 │   ├── trusted_search.py        # 深知可信搜索（内容层，未连接 MCP 时）
 │   ├── mcp_convert.py           # MCP trusted_search 返回 → REST 形态转换
 │   ├── render_trace_html.py     # 溯源核验报告（提纲版/成稿版）
-│   ├── initialization.md(../../references) 等 dsh 版参考文件同母版
 │   ├── preview_slide_html.py    # SVG 页面 HTML 预览页（首页确认/进度查看）
 │   └── svg_to_pptx 等           # 第三方开源（MIT）抽取的编译器组件
 └── …（运行时产物不落 skill 目录：项目工作区在会话工作区 `dknowc-projects/`，检索/报告中间文件在 `dknowc-output/<会话ID前8位>/official-docs/`）
@@ -35,23 +34,38 @@ dknowc-ppt-assistant/
 
 ## 依赖
 
-基础：`python3`、`requests`。编译导出另需 `python-pptx`、`XlsxWriter`（缺失时可用 `uv run --with python-pptx --with XlsxWriter` 隔离提供）。可选增强：`skia-pathops`（布尔形状）、`uharfbuzz`（文字轮廓），缺失不影响主线。
+基础：`python3`（3.10+）。素材检索与注册脚本另需 `node`（18+，仅 `scripts/register_key.mjs` 需要；已配置 Key 的纯检索任务不依赖 Node）。
+
+编译导出：`python-pptx`、`XlsxWriter`（缺失时可用 `uv run --with python-pptx --with XlsxWriter` 隔离提供，需 `uv`）。`requests` 为可选依赖（检索走标准库 `urllib`，缺失不影响任何功能）。
+
+可选增强（缺失不影响主线，相关功能自动降级）：
+- `Pillow`：图片预览与位图处理（`pic_to_svg` 等工具）
+- `cairosvg` / `svglib` + `reportlab`：SVG→PDF/位图渲染路径
+- `PyYAML`：读取 YAML 配置的工具
+- `openpyxl`：XLSX 数据处理（无 `XlsxWriter` 时的回退路径）
+- `skia-pathops`：布尔形状运算
+- `uharfbuzz`：文字轮廓
+- 外部命令（仅对应工具需要）：`ffprobe`（媒体时长探测）、ImageMagick `magick`（位图转换）
+
+依赖缺失时 `scripts/initialize.py` 会给出提示并区分「阻断」与「可选」——python3 缺失阻断全部；编译依赖缺失只影响导出（可用 uv 隔离补齐）。
 
 素材检索需要环境变量 `DKNOWC_API_KEY`（通过 `scripts/register_key.mjs` 或 MaaS 平台 `https://platform.dknowc.cn/` 获取）；用户只要排版、材料齐全时无需 Key。
 
 ## 快速使用
 
 1. 初始化：`python3 {skillDir}/scripts/initialize.py`
-2. 主题模式检索：`python3 {skillDir}/scripts/trusted_search.py "问题" --service-area 地域 --json-only --output official-docs/search-results/xx.json`
-3. 提纲版报告：`python3 {skillDir}/scripts/render_trace_html.py official-docs/search-results/xx.json --answer-file official-docs/search-results/<项目短名>_outline.md --title "<标题> 提纲 · 溯源核验报告"`
-4. 质检：`python3 {skillDir}/scripts/svg_quality_checker.py dknowc-projects/<项目> --quick-generate`
-5. 导出：`uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pptx.py dknowc-projects/<项目> --quick-generate`
+2. 主题模式检索：`python3 {skillDir}/scripts/trusted_search.py "问题" --service-area 地域 --json-only --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/xx.json`
+3. 提纲版报告：`python3 {skillDir}/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/xx.json --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/<项目短名>_outline.md --title "<标题> 提纲 · 溯源核验报告"`
+4. 质检：`python3 {skillDir}/scripts/svg_quality_checker.py projects/<项目> --quick-generate`
+5. 导出：`uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pptx.py projects/<项目> --quick-generate -o "projects/<项目>/exports/<演示名>.pptx"`
 
 完整流程（内容包、确认门、溯源）见 `SKILL.md` 与 `workflows/generate-pptx.md`。
 
 ## 版本说明
 
-当前 dsh 版基于 SkillHub 母版 `1.5.0`（2026-10-23；dsh 版本号 `1.5.0-dsh`）：①**质检判据与循环纪律定死**——通过＝退出码 0 且 errors=0（`passed-with-warnings` 即通过、warnings 不阻断），质检→修复循环最多 3 轮且只修 errors 与明显事实错，导出后不回头（不再质检/截图自检/微调重导），固定产物名导出（治当日实测的 31 分钟 11 轮质检循环事故）；②**SKILL.md 定向瘦身**——163→118 行、21.7→14.5KB，初始化前置、API Key 注册全流程、MCP 取 Key、开通引导完整规则零内容丢失移入新 `references/initialization.md`，SKILL.md 保留骨架＋硬规则＋索引（渐进式读取）。`1.4.0`（2026-10-23）：①**可信搜索全面切换 V2**——端点 `/open-api/maas/dependable/v2/search`、`searchType` 必填单值（政策依据路 `policy`、数据/案例路 `govSite`，混传报错分路合并）、参数定档 `segmentCount=4`/`MaterialLength=18000`、成功判定 `ret==0 且 content.code==200`、文章级新字段（生效/失效日期、文章类型、文号）进来源卡关键性行，文号只认接口字段；②**产出物 HTML 注入防护**（对齐公文写作 3.8.3 同源中危修复）——表格清洗改 HTMLParser 元素级白名单（防 `<svg/onload=…>` 绕过）、全部外链 `safe_url()` 协议白名单（仅 http/https）、页尾 JSON 字符级转义、接口畸形表格（数据行整片包 thead）自动修正；③**补搜增量透明**——合并 JSON 顶层 `检索记录` 记录每路增量，过程回顾条显示「检索 N 路 · 补搜 M 次」与「补搜 · 新增 X 篇 · 补充 Y 段」。`1.3.8`（2026-10-20）：检索默认参数 `simplified` 由 `true` 改 `false`——实测 `true` 会丢每篇材料的存档快照 `screenShotPath`（报告的附加回看入口），与可信搜索 1.5.1 / 公文写作 3.8.1 的「安全做法」对齐；`--simplified` 变为显式开启（help 注明会丢快照），其余默认参数不变。`1.3.7`（2026-10-15）：修复知识专库卡片横向溢出——`.lib-list` 网格轨道由 `1fr` 改 `minmax(0,1fr)`、`.scard` 补 `min-width:0`、打印块补宽表格贴合页宽规则；含宽表格的材料不再撑宽卡片（实测页面横向溢出 1598px→960px＝视口、卡片 1548px→860px）。`1.3.6`（2026-10-09，注册链路契约对齐公文写作 3.7.9，user-auth maas-1.1.6）：①注册 body 的 `source` 合同标记改回 `"agent"`（v1.3.3 起误传 skill 标识，老用户会命中「用户已存在！」取不回 Key——生产级修复）；②`X-Dknowc-Attribution` 头内键名 `source`→`agentSource`（值不变，`attribution.json` 字段名不变，与注册 body 的 `source` 合同标记彻底区分）；③sendMessage 两分支（直发 / 验证链接）＋退出码 `0/2/1`＋验证链接安全校验（同源/精确路径/`#token=` 43 位 Base64URL，校验失败不展示）；④X-MaaS 客户端观测请求头（Entry-Surface / Client-Name / Client-Version / Instance-Id，服务端签发后落盘回传）；⑤错误码族话术（限频/链接过期已用/验证未通过/供应商失败/结果未确认）；⑥register `pending:true` 与「用户已存在！」专门话术；⑦话术库 S3a/S3b/S3c＋报错表 5 行＋禁则 2 条（验证页红线、凭据保密）。附带修复 register 分支 TDZ 缺陷、keyRemark 文案误植、明文 Key 仅落盘失败时返回；对外包文件做产品化口径清理（去人名与内部决策语境）。`1.3.5`（2026-10-08）：①**同名卡片重复修复**——渲染器去重键原为 `(id, title, url, excerpt[:80])`，其中 `id` 是递增序号（条条不同，实际从不命中），致同名材料成批建卡（实测《医疗保障法》重复 17 张）；改为归一化「标题+源网址」双键，同一篇文章只出一张卡，同文异号（一文占多个角标）合并为一张卡并**并列显示全部编号**（`[8][13]`），正文引用任一编号都能定位；②**移除原文链接活性检测**——接口返回的链接原样进报告（不检测、不隐藏、不降级），存档快照（screenShotPath）仅作附加回看入口，`--skip-link-check` 保留为 no-op；③**报告新增「原问题」行**——只认 `--question` 显式传入（不得用标题冒充），不传不渲染；④**交付落错会话根治**——交付命令三条纪律（绝对路径调用不先 `cd`、核对 `dest_source` 以 `workbuddy-cwd:` 开头、不命中用 `--dest` 重跑）。`1.3.4`（2026-09-29）：内容同 1.3.3，仅修正 SKILL.md 中与代码不一致的一处 source 说明。`1.3.3`（2026-09-29）：①**调用来源追踪声明**（`X-Dknowc-Attribution`，包根 `attribution.json` + `scripts/attribution.py`，检索与注册请求统一带头，version 从 SKILL.md 动态解析）；②**MCP 取 Key 优先路径**（宿主「深知可信工作台」已 OAuth 授权时经 `create_api_key` 免手机号验证码直接开通，`register_key.mjs save-key` 密钥经 stdin 落盘；无 MCP 或未授权回落手机号注册）。`1.3.2`（2026-09-29 同号）（对齐公文写作 3.7.3~3.7.6 + 可信搜索 1.4.0）：检索统一走**纯脚本通道**（MCP「深知可信工作台」通道经实测大结果落盘不可靠已回退，`mcp_convert.py` 保留待恢复）；**API Key 落盘迁移**到 `~/.config/dknowc/api_key`（600 权限，自动清理 ~/.zshrc 历史块）；**交付链路重写**（宿主识别 + 仅 WorkBuddy/豆包复制 + 宿主未知保留 skill 输出 + 绝不覆盖改 `_v2`）；报告 UI（**知识专库**/**来源文章**术语、章节目录三项修复、连续角标换位、统计口径修正、输出版本化）；检索链路（每路即时落地、Query 句式修订、业务码校验、角标契约写实）。`1.3.1`（2026-09-20）：公文写作 3.7.1+3.7.2 对齐——「现行效力」提示行移除、搜索串行改默认并行（知识专库存档 kb_zone 随之移除）、初始化 MCP「深知可信工作台」检测与场景分流、标题链降级（无章节不显示）、Query 构造原则（对象+信息需求句式）、deliver_outputs 多会话串目录三级保护、同指标口径冲突检测、选材优先发文版与文号回填。`1.3.0`（2026-09-16）：溯源核验报告整体重构（对齐公文写作 3.7.0 同源方案，参考深知晓可信深度溯源报告原型）——正文文档流 + 句后引文胶囊（点击原地展开溯源卡、同段同材料去重）、章节引用徽章、材料专库独立视图（大搜索/热词真实计算/检索分组 tabs）、顶栏工具（只看正文/复制全文/打印归档下拉）、原文链接活性检测（404/410+软 404 嗅探）与存档快照兜底（screenShotPath）、多段分块面包屑链、文号关键性行、紫色系视觉；PPT 特有口径全部保留（提醒制/双版 stage/位置兜底/双形态 JSON/双向硬校验/未引用双通道/知识专库存档）。`1.2.2`（2026-09-11）：安全扫描措辞透明化（腾讯安全威胁情报中心扫描反馈）——话术库新增透明度说明、S2 话术写明平台与注册本质、「通俗表达但不隐瞒」取代「不暴露内部术语」类措辞，语义与功能不变。`1.2.1`（2026-09-11）：注册漏斗话术固化（移植公文写作 3.6.1）——固定话术库（S1-S6/报错表/FAQ）、三脚本 user_message 原样转述、额度用尽禁重试、新建 Key 失败沿用原密钥、核验报告全要素示例。`1.2.0`（2026-09-09）：溯源核验报告 0907 会议八项改版（移植公文写作 3.6.0 同源方案）——报告名统一「溯源核验报告」+ 身份章、五项指标拟人化、原文原段标注、标题链、高可信徽标、recalled_materials 未引用召回、检索分组筛选、移动端对照弹层；`1.1.0`（2026-09-02）：溯源核验报告核验式改版（移植公文写作 3.5.0 同源方案）——首屏核验报告单（五项真实计算指标）、报告式分节卡片布局、素材四分类色系与筛选、打印归档模式、生成前硬校验，`--stage outline|final` 双版适配，数据层修复全部保留；含宿主环境交付（`deliver_outputs.py`，WorkBuddy 等宿主中自动把提纲版报告与三件套复制到宿主工作区并展示可见路径）与移动端适配（680px 断点、查看核验材料双向锚点、角标/证据 chips 底部弹层就地查看）。`1.0.3`：对外文档表述优化——不再点名上游开源项目，第三方来源与 MIT 许可统一收敛到 THIRD_PARTY_NOTICES.md。`1.0.2`：产品更名为「深知可信PPT」；报告统一命名「溯源核验报告」；新增提纲版报告，交付三件套。`1.0.1`：优化开通检索的注册引导（价值前置、时机后移、可退路），新增引导参考与效果示例文件，补齐注册请求渠道埋点。
+当前版本 `1.5.2-dsh`（2026-10-29）。
+
+版本历史与逐版变更详见 GitHub Releases：<https://github.com/dylanzhangzx/dknowc-dsh/releases>。
 
 ## 路线图
 

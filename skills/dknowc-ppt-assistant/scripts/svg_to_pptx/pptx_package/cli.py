@@ -633,7 +633,7 @@ def _print_structure_contract_error(
         print(
             "  A legacy lock without pptx_structure.mode defaults only to flat. "
             "Mirror/layout reuse must first create a current template workspace "
-            "through skills/ppt-master/workflows/create-template.md, then generate "
+            "following references/svg-authoring.md, then generate "
             "new structured SVG pages.",
             file=sys.stderr,
         )
@@ -648,7 +648,7 @@ def _print_structure_contract_error(
         "  A legacy lock with no pptx_structure.mode defaults to flat. "
         "Explicit legacy or unknown values are not inferred. Mirror/layout reuse "
         "must first create a current template workspace "
-        "through skills/ppt-master/workflows/create-template.md, then generate "
+        "following references/svg-authoring.md, then generate "
         "new structured SVG pages.",
         file=sys.stderr,
     )
@@ -811,7 +811,7 @@ def main(argv: list[str] | None = None) -> int:
     animation_choices = ['none', *ANIMATIONS, 'auto', 'mixed', 'random']
 
     parser = argparse.ArgumentParser(
-        description='PPT Master - SVG to native DrawingML PPTX Tool',
+        description='深知可信PPT - SVG to native DrawingML PPTX Tool',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f'''
 Examples:
@@ -1346,7 +1346,7 @@ Recorded narration:
             )
             quick_flag = ' --quick-generate' if args.quick_generate else ''
             print(
-                "Run: python3 skills/ppt-master/scripts/svg_quality_checker.py "
+                "Run: python3 scripts/svg_quality_checker.py "
                 f'"{project_path}"{quick_flag} --stage final --json',
                 file=sys.stderr,
             )
@@ -1453,7 +1453,9 @@ Recorded narration:
 
     backup_dir: Path | None = None
     if args.output:
+        # 显式 -o：使用调用方给定的固定文件名，同时保留 svg_output 备份（与默认分支一致）
         native_path = Path(args.output)
+        backup_dir = project_path / "backup" / timestamp
     else:
         exports_dir = project_path / "exports"
         exports_dir.mkdir(parents=True, exist_ok=True)
@@ -1954,7 +1956,7 @@ Recorded narration:
     )
 
     if verbose:
-        print("PPT Master - SVG to native DrawingML PPTX Tool")
+        print("深知可信PPT - SVG to native DrawingML PPTX Tool")
         print("=" * 50)
         print(f"  Project path: {project_path}")
         print(f"  SVG directory: {native_source_dir}")

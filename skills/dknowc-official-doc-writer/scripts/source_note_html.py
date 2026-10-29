@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
@@ -106,7 +106,7 @@ def load_source_index() -> dict:
         except (OSError, ValueError):
             continue
         # 顶层为数组的索引 JSON（all_materials_index.json 等）不是搜索结果，跳过。
-        # 此前直接 data.get() 会抛 AttributeError: 'list' object has no
+        # 旧实现直接 data.get() 会抛 AttributeError: 'list' object has no
         # attribute 'get'，导致溯源报告生成中断（曾靠临时移走文件绕过）
         if not isinstance(data, dict):
             continue
@@ -273,7 +273,7 @@ def main() -> None:
     parser.add_argument("input", help="结构化可信溯源 JSON，必须位于 official-docs/input")
     parser.add_argument("--output", "-o", help="输出 HTML 文件名，默认写入 official-docs/output")
     parser.add_argument("--skip-link-check", action="store_true",
-                        help="（已废弃 2026-10-08：链接连通性检测已整体移除，参数保留仅为兼容旧命令）")
+                        help="保留参数以兼容旧命令；当前版本不做链接连通性检测")
     parser.add_argument("--disable-snapshot", action="store_true",
                         help="关闭快照兜底展示（默认启用：原文 404 时以验证过的存档快照替换）")
     args = parser.parse_args()

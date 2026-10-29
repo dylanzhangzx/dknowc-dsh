@@ -55,6 +55,13 @@ def resolve_api_key() -> tuple[str, str]:
     if value:
         return value, "environment"
 
+    # dsh：插件 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源；dsh 的安全机制
+    # 会清理名字含 KEY 的隐式环境变量，该 DSH_ 前缀变量是官方显式注入通道）。
+    # 取数脚本与 initialize 门禁同源解析，避免"门禁显示已配置、检索脚本取不到 Key"。
+    value = os.environ.get("DSH_DKNOWC_API_KEY", "").strip()
+    if value:
+        return value, "environment"
+
     try:
         value = api_key_file_path().read_text(encoding="utf-8", errors="ignore").strip()
     except OSError:

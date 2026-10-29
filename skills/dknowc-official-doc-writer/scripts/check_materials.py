@@ -135,7 +135,7 @@ def check_citations(content: str, materials: list) -> list[str]:
     会移入 recalled_materials，因此 `build_trace_json.py` 产出的 materials **只装配被引用
     的那些，id 天然是稀疏的**（如清单 65 篇中未引用第 30 篇，则 id = 1..29、31..65）。
     故此处不能用 `len(materials)` 当上界、也不能要求 id 从 1 连续。
-    （修复：此前按 `len(materials)` + `range(1, n+1)` 校验，只要素材清单里存在
+    （按 `len(materials)` + `range(1, n+1)` 校验，只要素材清单里存在
     未被正文引用的条目，就必然误报"角标越界"且校验永远无法通过，只能被迫裁清单、重编号角标。）
     """
     errors = []
@@ -353,7 +353,10 @@ def main() -> int:
         if not first_value(mat, MAT_TYPE_FIELDS):
             errors.append(f"材料[{i}] 缺 type（四分类：政策依据型/数据支撑型/参考案例型/表述参考型）")
     if not recalled:
-        errors.append("recalled_materials 为空——执行过搜索的任务必须包含全部未引用召回材料")
+        # 未执行检索的写作任务不做此项校验；执行过检索却缺 recalled 才是错误
+        searched = bool(trace.get("检索记录") or trace.get("search_summary") or trace.get("检索通道"))
+        if searched:
+            errors.append("recalled_materials 为空——执行过搜索的任务必须包含全部未引用召回材料")
 
     # ③ 角标对应
     errors.extend(check_citations(trace.get("document_content") or "", materials))
@@ -367,8 +370,8 @@ def main() -> int:
     # ④ self_check 完整
     errors.extend(check_self_check(trace.get("self_check")))
 
-    # ⑤ 研究资料 gate（3.8.0）：研究型与综合长篇文种必须落盘研究资料底稿
-    # （SKILL.md 搜索规则第 8/9 条：分类自检时初版、确认清单后定稿）。该层是
+    # ⑤ 研究资料 gate：研究型与综合长篇文种必须落盘研究资料底稿
+    # （见 reference/research_notes.md：分类自检时初版、确认清单后定稿）。该层是
     # 研究型文种分析深度与数据密度的来源，曾因只写在散文段而整层被跳过
     # （无层 2509 字 vs 有层 9045 字）——此处在渲染前强制拦截。
     doc_type = str(trace.get("doc_type") or "")
@@ -379,7 +382,7 @@ def main() -> int:
         if not notes:
             errors.append(
                 f"doc_type={doc_type} 属研究型/综合长篇文种，但未找到研究资料文件"
-                f"（{input_dir}/*研究资料*.md）——按 SKILL.md 搜索规则第 8/9 条先生成研究资料"
+                f"（{input_dir}/*研究资料*.md）——按 reference/research_notes.md 先生成研究资料"
                 f"（初版：核心事实总表+数据口径表；定稿：角标与素材清单对齐，正文基于定稿写作），"
                 f"缺少该层会导致正文过短")
 

@@ -4,7 +4,7 @@ DKAG 素材召回接口脚本
 用于根据查询关键词召回相关公文素材
 
 使用深知可信搜索 V2 接口：/open-api/maas/dependable/v2/search
-（3.9.0 起全面切换 V2，不再保留 V1 代码路径）
+（V2 接口；不保留 V1 代码路径）
 """
 
 import argparse
@@ -34,7 +34,7 @@ QUERY_TOO_SHORT_ERROR = f"错误：查询关键词过短，最少需要 {MIN_QUE
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 API_KEY_ENV = "DKNOWC_API_KEY"
 DEFAULT_BASE_URL = "https://open.dknowc.cn/open-api/maas/dependable/v2/search"
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
@@ -549,6 +549,7 @@ def dkag_search(
 
     # 发送请求（429/402 全部按额度用尽处理，不重试——见 detect_quota_exhausted 注释）
     try:
+        # 可信搜索为轻量补搜，默认 30 秒；深度搜索（deep_query.py）单次召回量大，默认 600 秒，两者按调用类型分别设定
         response = requests.post(DEFAULT_BASE_URL, data=json.dumps(payload), headers=headers, timeout=30)
         response.raise_for_status()
         result = response.json()

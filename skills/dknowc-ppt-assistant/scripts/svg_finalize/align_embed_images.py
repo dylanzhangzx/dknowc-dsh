@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PPT Master — single-pass image alignment + Base64 embedding.
+"""深知可信PPT — single-pass image alignment + Base64 embedding.
 
 Replaces the previous three independent finalize_svg steps:
 

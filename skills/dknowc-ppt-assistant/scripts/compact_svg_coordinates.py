@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - SVG Coordinate Compactor
+深知可信PPT - SVG Coordinate Compactor
 
 Compact model-facing page-space SVG coordinates to at most two decimal places
 without rounding normalized crop ratios or transform linear coefficients.

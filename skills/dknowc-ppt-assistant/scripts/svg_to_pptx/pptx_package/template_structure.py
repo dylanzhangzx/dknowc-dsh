@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Template Structure Metadata
+深知可信PPT - Template Structure Metadata
 
 Parse and validate explicit SVG metadata consumed by structured PPTX export.
 

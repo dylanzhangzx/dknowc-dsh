@@ -5,7 +5,7 @@
 - outline 提纲版：结构方案确认门前的提纲答案文件（页面规划表 + 口径事项清单）→ 事前核验
 - final   成稿版：交付时的页面级结论文本 → 事后溯源
 
-3.7.x 同源架构（对齐公文写作 3.7.5/3.7.6，参考深知晓交互原型，数据口径保持自有与真实）：
+3.7.x 同源架构（参考深知晓交互原型，数据口径保持自有与真实）：
 - 顶栏：身份章 + 标题 + 工具组（只看正文 / 复制全文 / 打印归档）+ 阅读进度条
 - Hero：大标题 + 真实统计（N 次检索 · M 条材料 · K 处引用）+ 双视图切换
 - 过程回顾条：检索 → 入库 → 逐条比对 → 核验完成（静态回放，数字全部真实计算）
@@ -15,7 +15,7 @@
   接口提供存档快照（screenShotPath）时作为**附加回看入口**与原文链接并存
   （路径容错补 /A/、纯本地格式校验）
 
-PPT 特有口径（与公文写作版本的既定差异）：
+PPT 特有口径（与同源版本的既定差异）：
 - 提醒制：数据缺口（缺原文链接/缺摘录）不判不通过、指标恒绿附温和提醒；只有无素材/
   正文无角标/角标未绑定三种真实错误才判不通过
 - 双版 stage：提纲版（事前核验）与成稿版（事后溯源）同脚本同形式，标题与身份章带版本后缀
@@ -352,7 +352,7 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
     source["doc_section"] = " › ".join(first_chain)
     source["chain_full"] = " › ".join(segments[0]["chain"]) if segments else ""
     # 发文字号：必须是标准格式（〔年份〕序号号）；描述性文字（"XX印发"类自造
-    # 描述）不显示、当无文号处理（对齐公文写作 3.7.3，实测模型把文号写成
+    # 描述）不显示、当无文号处理（模型把文号写成
     # "中办、国办 2026 年印发"类描述导致关键性行失真）。
     _dn = first_str(item.get("文号"), item.get("发文字号"), item.get("doc_number"))
     source["doc_number"] = _dn if re.search(r"〔\d{4}〕\s*\d+\s*号", _dn) else ""
@@ -439,7 +439,7 @@ def collect_raw_articles(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def _dedupe_key(source: Dict[str, Any]) -> tuple:
-    """归一去重键：标题 + 原网址（对齐公文 3.7.8 / 可信搜索 1.4.4 的同款修复）。
+    """归一去重键：标题 + 原网址（同款修复）。
 
     旧键含 id（材料编号），而 id 要么是位置兜底序号、要么是角标号——同一篇文章被
     多路召回或按段落返回多条片段时，各条 id 不同，含 id 的键**等于从不去重**，
@@ -574,7 +574,7 @@ def classify_check_value(raw: Any) -> Tuple[str, str]:
     兼容多种写法：`pass` / `true` / `通过` / `通过：说明文字` / `✓` 等；
     值后面的说明文字保留下来供核验单展示。红项（fail）只给显式声明的
     "未通过"；无法识别的描述性文本按"未记录"（none）处理不判红——
-    自检书写格式走样不应被放大成核验红项（对齐公文写作 3.7.3，实测
+    自检书写格式走样不应被放大成核验红项（实测
     模型写入"备注"等额外键导致交付前检查误判红）。
     """
     text = str(raw or "").strip()
@@ -630,7 +630,7 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
     no_citation = bool(sources) and not cited
 
     # ③ 时效检查：材料日期范围与历史材料计数
-    # 统计口径（对齐公文 3.7.6）：③材料新旧/④材料构成只算正文引用的来源文章——
+    # 统计口径：③材料新旧/④材料构成只算正文引用的来源文章——
     # sources 含未引用召回，其未来日期/类型会把时效范围与构成写歪。
     dated = [parse_year_month(s.get("date")) for s in cited_sources]
     dated = [d for d in dated if d]
@@ -1263,7 +1263,7 @@ def render_verify_panel(v: Dict[str, Any], stage: str = "final") -> str:
                    f'<span class="d">检索 JSON 没写入 self_check（默认查：{esc(default_names)}）</span></div>')
 
     # 3.7.2 起「现行效力」提示行移除：该提示对用户无操作价值，policy_count
-    # 保留在计算层不再展示（对齐公文写作 3.7.2 口径）。
+    # 保留在计算层不再展示（口径）。
 
     what = "提纲页面规划" if stage == "outline" else "页面级结论"
     return f"""
@@ -1363,7 +1363,7 @@ def strip_leading_chain(text: str, chain: List[str]) -> str:
 def render_crumb(chain: List[str]) -> str:
     """面包屑标题链：文章 › 章 › 节（标题链是模型生成的结构化位置，核验核心抓手）。
 
-    降级规则（对齐公文写作 3.7.2）：段落本身无章节层级（链上只有文章名）时不显示
+    降级规则：段落本身无章节层级（链上只有文章名）时不显示
     标题链行——材料卡标题已是文章名，单独一行重复文章名对定位无增量。
     """
     parts = [esc(level) for level in chain if level]
@@ -2416,7 +2416,7 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
             s["used"] = False
     # 3.7.2 起知识专库原始召回存档（kb_zone）移除：并行检索下接口返回的
     # knowledgeBase 链接会错乱不可靠，且未引用召回材料已在专库全量展示，
-    # 对齐公文写作「知识专库链接不进报告」的前提（检索并行化的前置）。
+    # 「知识专库链接不进报告」的前提（检索并行化的前置）。
     generated_at = generated_at or datetime.now()
     generated = generated_at.strftime("%Y-%m-%d %H:%M")
     stage_label = STAGE_LABELS.get(stage, "成稿版")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - PPTX Transition Core
+深知可信PPT - PPTX Transition Core
 
 Provide one strict PowerPoint-native transition registry, a compatibility input
 map, and shared OOXML read/write helpers for generated slides, template-filled
@@ -9,7 +9,7 @@ See references/animations.md for the public workflow and
 scripts/docs/pptx-transitions.md for the OOXML contract.
 
 Usage:
-    Import from PPT Master PPTX builders and direct-package workflows.
+    Import from 深知可信PPT PPTX builders and direct-package workflows.
 
 Examples:
     from pptx_transitions import AdvanceUpdate, EnterUpdate, apply_slide_motion

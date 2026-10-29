@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 r"""
-PPT Master - Microsoft 365 LaTeX Formula Parser
+深知可信PPT - Microsoft 365 LaTeX Formula Parser
 
 Parse the documented Microsoft 365 LaTeX import profile into the internal
 native-formula AST. Unknown commands remain fail-closed.
@@ -14,7 +14,7 @@ Examples:
     parse_latex_formula(r"\binom{n}{k}", display=True)
 
 Dependencies:
-    None (only uses standard library and local PPT Master modules)
+    None (only uses standard library and local 深知可信PPT modules)
 """
 
 from __future__ import annotations

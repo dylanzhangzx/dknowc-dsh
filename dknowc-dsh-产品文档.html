@@ -96,9 +96,9 @@
     <h1>dknowc-dsh（DeepSeek Harness 插件）· 产品文档</h1>
     <p>深知可信办公全家桶的 DeepSeek Harness（dsh）分发版 —— 一个 bundle 交付三个深知 Skill，脚本直连全量检索 + MCP 应急兜底，产物按会话隔离落工作区。</p>
     <div class="meta">
-      <span class="tag ver">插件版本 v2.3.0</span>
-      <span class="tag info">2026-10-26 更新</span>
-      <span class="tag info">3 skill · 3.9.2-dsh / 1.6.0-dsh / 1.5.0-dsh</span>
+      <span class="tag ver">插件版本 v2.3.1</span>
+      <span class="tag info">2026-10-29 更新</span>
+      <span class="tag info">3 skill · 3.9.4-dsh / 1.6.2-dsh / 1.5.2-dsh</span>
       <span class="tag ok">npm 主源</span>
     </div>
   </div>
@@ -262,7 +262,8 @@ dknowc-dsh/
       <div class="section-head"><span class="section-no">9</span><h2>版本历史</h2></div>
       <table class="k">
         <tr><th style="width:90px">版本</th><th style="width:110px">日期</th><th>主要内容</th></tr>
-        <tr><td><strong>2.3.0</strong></td><td>2026-10-26</td><td>同步母版 3.9.2 / 1.6.0 / 1.5.0：可信搜索全面切换 V2 接口（searchType 单值分路、参数定档 4/18000、V2 文章级字段进来源卡）；文号键链修复（merge 中文键优先）+ 公文 G6 文号 gate；渲染器注入防护（HTMLParser 白名单/协议白名单/字级转义）；过程增量统计与 --question-file 全文保真；搜索要件式改写与联网降级链（非官方来源徽标）；公文 SKILL.md 重构（396→143 行，细节拆入六篇新 reference）；PPT 质检判据定死。</td></tr>
+        <tr><td><strong>2.3.1</strong></td><td>2026-10-29</td><td>同步母版 3.9.4 / 1.6.2 / 1.5.2：注册链路切 Agent 文字题（challenge→answer→register，legacy 回退）；脚本不再读写 ~/.zshrc、Key 来源收敛两级；母版人名清理与死文件删除同步（dsh 侧同步删 mcp_convert 等，保留 dsh 专属 mcp_direct）；PPT 品牌统一与权限收紧。</td></tr>
+<tr><td><strong>2.3.0</strong></td><td>2026-10-26</td><td>同步母版 3.9.2 / 1.6.0 / 1.5.0：可信搜索全面切换 V2 接口（searchType 单值分路、参数定档 4/18000、V2 文章级字段进来源卡）；文号键链修复（merge 中文键优先）+ 公文 G6 文号 gate；渲染器注入防护（HTMLParser 白名单/协议白名单/字级转义）；过程增量统计与 --question-file 全文保真；搜索要件式改写与联网降级链（非官方来源徽标）；公文 SKILL.md 重构（396→143 行，细节拆入六篇新 reference）；PPT 质检判据定死。</td></tr>
 <tr><td><strong>2.2.0</strong></td><td>2026-10-15</td><td>同步母版 3.8.1 / 1.5.1 / 1.3.7：产出物 HTML 三页架构（banner 收敛版）、公文 Word×HTML 双开关交付、检索通道标注全链路、merge 句子指纹去重与表格保留、materials 角标重排、check_materials URL 变体修复与研究资料 gate、可信搜索 deep_convert 转换层（不再生成 clean.md）、可信PPT 卡片溢出修复与交付清单纪律；修复 dsh 侧遗留（deliver_outputs 幽灵引用、PPT initialize 重复定义、检索产物位置口径、src/index.js 描述旧口径）。</td></tr>
         <tr><td><strong>2.1.0</strong></td><td>2026-10-09</td><td>注册链路契约同步（母版 3.7.9 / 1.4.5 / 1.3.6）：注册 body <code>source="agent"</code> 回退（修复老用户返 Key）、声明头键名 <code>agentSource</code>、sendMessage 两分支、X-MaaS 四观测头。</td></tr>
         <tr><td><strong>2.0.0</strong></td><td>2026-09-29</td><td>移除深知可信咨询 skill（咨询由可信搜索承接）；检索通道反转为脚本直连；Key 落盘迁专用配置文件（注册后本会话即用）；同步母版 1.4.2 / 1.3.4 / 3.7.7。</td></tr>
@@ -292,7 +293,7 @@ dknowc-dsh/
   </div>
 
   <div class="footer">
-    dknowc-dsh · 产品文档 · 依据插件 v2.3.0（skill 3.9.2-dsh / 1.6.0-dsh / 1.5.0-dsh）与各 skill 母版整理 · 2026-10-26<br>
+    dknowc-dsh · 产品文档 · 依据插件 v2.3.1（skill 3.9.4-dsh / 1.6.2-dsh / 1.5.2-dsh）与各 skill 母版整理 · 2026-10-29<br>
     维护约定：skill 内容以 SkillHub 母版为准；版本定稿后同步维护本文档（与母版同步同批处理）
   </div>
 

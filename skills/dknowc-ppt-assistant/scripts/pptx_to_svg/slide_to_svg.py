@@ -228,7 +228,7 @@ def assemble_slide(
           source ``showMasterSp`` flags. This view is used for round-trip
           fidelity with svg_to_pptx.
         - "layered": skip inherited shapes entirely. The slide SVG contains
-          only its own shapes. Callers (e.g. /create-template's PPTX import)
+          only its own shapes. Callers (e.g. the PPTX import path)
           render master/layout once each as separate SVGs and record the
           inheritance graph in inheritance.json.
     """

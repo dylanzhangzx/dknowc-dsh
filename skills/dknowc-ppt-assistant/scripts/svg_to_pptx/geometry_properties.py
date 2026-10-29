@@ -1,6 +1,6 @@
 """Materialize the supported inline SVG geometry-property subset.
 
-SVG 2 lets selected geometry values participate in CSS. PPT Master does not
+SVG 2 lets selected geometry values participate in CSS. 深知可信PPT does not
 run a CSS engine, but it can safely compile literal per-element ``style``
 declarations into the equivalent XML geometry attributes before any existing
 SVG post-processing or DrawingML conversion runs.

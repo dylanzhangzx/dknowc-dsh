@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PPT Master - SVG to PPTX Tool (thin wrapper).
+"""深知可信PPT - SVG to PPTX Tool (thin wrapper).
 
 Delegates to the svg_to_pptx package. ``-s final`` remains a native-export
 diagnostic override; the standard pipeline reads ``svg_output/``:

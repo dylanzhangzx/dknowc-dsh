@@ -3948,20 +3948,18 @@ def _create_writable_work_dir(output_path: Path) -> Path:
     )
 
 
-def _relax_output_permissions(output_path: Path) -> list[str]:
-    """Make exported files readable outside the sandbox owner where possible."""
+def _restrict_output_permissions(output_path: Path) -> list[str]:
+    """Restrict exported files to the owner (no group/other access)."""
     warnings: list[str] = []
 
     try:
         current_mode = output_path.stat().st_mode
-        readable_mode = (
-            current_mode
-            | stat.S_IRUSR
-            | stat.S_IWUSR
-            | stat.S_IRGRP
-            | stat.S_IROTH
+        # 显式清除组/其他读位：umask 决定创建权限（常见 644），仅"不追加"不足以收紧
+        owner_only_mode = (
+            (current_mode | stat.S_IRUSR | stat.S_IWUSR)
+            & ~(stat.S_IRGRP | stat.S_IROTH | stat.S_IWGRP | stat.S_IWOTH)
         )
-        os.chmod(output_path, readable_mode)
+        os.chmod(output_path, owner_only_mode)
     except OSError as exc:
         warnings.append(f"chmod skipped for {output_path}: {exc}")
 
@@ -6233,7 +6231,7 @@ def create_pptx_with_native_svg(
                 f'PPTX animation package validation failed: {exc}'
             ) from exc
         shutil.move(str(temp_output_path), str(output_path))
-        permission_warnings = _relax_output_permissions(output_path)
+        permission_warnings = _restrict_output_permissions(output_path)
 
         if conversion_trace_path and conversion_trace is not None:
             conversion_trace_path.parent.mkdir(parents=True, exist_ok=True)

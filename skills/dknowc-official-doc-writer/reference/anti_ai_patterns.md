@@ -110,4 +110,4 @@
 
 ## 十、配合脚本
 
-可运行 `python3 scripts/prose_lint.py <草稿文件> --format --structure` 扫描 `.txt`、`.md` 或 `.docx` 草稿。脚本只提示语言、格式和重复风险，不检查文种要素完整性，也不自动改写；不得把脚本结果作为不加判断的硬性清洗命令。
+可运行 `python3 <skillDir>/scripts/prose_lint.py <草稿文件> --format --structure` 扫描 `.txt`、`.md` 或 `.docx` 草稿。脚本只提示语言、格式和重复风险，不检查文种要素完整性，也不自动改写；不得把脚本结果作为不加判断的硬性清洗命令。

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Hyperlink Contract
+深知可信PPT - Hyperlink Contract
 
 Parse and validate the shared SVG hyperlink surface used by quality checks,
 SVG-to-PPTX export, and PPTX-to-SVG round-trip conversion.

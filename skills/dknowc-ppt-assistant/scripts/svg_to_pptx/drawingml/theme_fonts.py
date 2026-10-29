@@ -204,7 +204,7 @@ def apply_theme_font_spec(extract_dir: Path, spec: ThemeFontSpec) -> None:
         minor = font_scheme.find(f"{{{DML_NS}}}minorFont")
         if major is None or minor is None:
             raise ThemeFontError(f"Theme has no major/minor font collection: {theme_path}")
-        font_scheme.set("name", "PPT Master")
+        font_scheme.set("name", "深知可信PPT")
         _patch_font_collection(major, spec.major)
         _patch_font_collection(minor, spec.minor)
         tree.write(theme_path, encoding="utf-8", xml_declaration=True)

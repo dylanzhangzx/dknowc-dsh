@@ -188,7 +188,7 @@ def _build_payload(args: argparse.Namespace) -> Dict[str, Any]:
     # item / knowBase 不传（1.5.2 口径延续：办事清单能力接口侧不可用、专库外链属已移除老能力）。
     payload: Dict[str, Any] = {
         "query": args.query,
-        # 联网搜索模式（1.6.0 起，"自动联网搜索"）：searchChannel 单值传 webSearch，
+        # 联网搜索模式：searchChannel 单值传 webSearch，
         # 返回真实互联网内容（网页正文段落+源网址，可溯源到原段）；dataAuthority 随联网路自动开——
         # 返回文章级 数据权威性 标注（实测联网结果为"非权威"），供渲染层打"非官方来源"徽标。
         "dataAuthority": bool(args.data_authority or args.search_channel == "webSearch"),
@@ -421,7 +421,7 @@ def main() -> None:
         os.environ.get("DKNOWC_API_KEY"),
     )
     if not api_key:
-        # 宿主进程读不到 shell 环境变量时，从专用配置文件兜底解析已持久化的 Key（历史 zshrc 兜底）
+        # 宿主进程读不到 shell 环境变量时，从专用配置文件兜底解析已持久化的 Key
         try:
             from api_key import resolve_api_key
             api_key, _source = resolve_api_key()

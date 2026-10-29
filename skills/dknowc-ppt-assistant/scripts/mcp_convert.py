@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""把 MCP「深知可信工作台」trusted_search（include_details=true 形态）的返回
+"""历史工具：把 MCP「深知可信工作台」trusted_search（include_details=true 形态）的返回
 转换成深知可信搜索 REST 接口的原始响应形态，供深知可信PPT 全部下游流程复用。
 
-背景（3.7.3）：检测到宿主已连接 MCP「深知可信工作台」时，搜索走 MCP 通道
-（免 API Key）。模型在对话层调用 MCP 工具后，把完整返回 JSON 保存到
-official-docs/search-results/，再运行本脚本转换——转换产物与 trusted_search.py
-直调 REST 的输出同构（content.data.检索文章 / policyFiles / knowledgeBase /
-search_meta），内容包、合并 JSON 整理与溯源核验报告生成全部按现有流程执行。
+当前状态：素材检索统一走 trusted_search.py 脚本通道，本脚本随包保留、规则层不引用。
+宿主 MCP 工具结果存在过期清理机制，大结果在对话层中转的可靠性不足，因此不作为检索通道；
+若后续宿主工具能力升级，可由技术侧评估后重新启用。
 
-字段映射：
+字段映射（通道启用时适用）：
   title → 文章标题            source → 数据源          date → 发布日期
   url   → 源网址              date_confidence → 发布日期可信度
   snapshot → screenShotPath
@@ -17,11 +15,6 @@ search_meta），内容包、合并 JSON 整理与溯源核验报告生成全部
   doc_number → 同时写入文章级「文号」与反向构造 policyFiles[{title, writtenText}]
     （渲染器直接读文章级文号；MCP 侧已完成变体匹配，直接复用其结果）
   内容中的 ＆lt;/＆gt;/＆amp;/＆quot; HTML 实体顺手反转义（MCP 透传未清洗）。
-
-用法：
-  python3 scripts/mcp_convert.py official-docs/search-results/mcp_raw.json \
-      --area 北京市 --purpose "搜索目的" \
-      --output official-docs/search-results/result_xxx.json
 """
 
 from __future__ import annotations
@@ -33,7 +26,16 @@ import unicodedata
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-SEARCH_RESULTS_DIR = SKILL_ROOT / "official-docs" / "search-results"
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
+import os as _os
+_ws = _os.environ.get("DKNWOC_WS_ROOT")
+if not _ws:
+    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
+    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
+    _sid = _os.environ.get("DSH_SESSION_ID", "")
+    _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
+WS_ROOT = Path(_ws).resolve()
+SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 
 HTML_ENTITIES = (("＆lt;", "<"), ("＆gt;", ">"), ("＆amp;", "&"), ("＆quot;", '"'),
                  ("&lt;", "<"), ("&gt;", ">"), ("&amp;", "&"), ("&quot;", '"'))
@@ -103,8 +105,8 @@ def convert(data: dict, area: str, purpose: str) -> dict:
             article["screenShotPath"] = snapshot
         doc_number = clean_text(first_value(material, "doc_number", "文号"))
         if doc_number:
-            # 文号同时写入文章级（整理合并 JSON 时直接复制，免跨文件翻 policyFiles——
-            # 实测模型做跨文件标题匹配会跳过，2026-09-21 中医药轮 34 条现成文号取 0）
+            # 文号同时写入文章级（整理合并 JSON 时直接复制，免跨文件回查 policyFiles——
+            # 跨文件标题匹配易被跳过，文章级字段最稳定）
             article["文号"] = doc_number
         if purpose:
             # 搜索条件写文章级：合并 JSON 时材料自带检索分组（专库 tabs 数据源）

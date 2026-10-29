@@ -70,10 +70,9 @@ def check_environment():
         "api_key_source": config_status["api_key_source"],
         "api_key_hint": config_status["api_key_hint"],
         "config_issue": None if config_status["api_key_configured"] else "api_key_missing",
-        # channel_note：通道提示（常驻）。3.7.5 起检索与大纲统一走脚本通道，不再走 MCP。
+        # channel_note：检索通道提示（常驻，面向使用者，不含内部路线图）。
         "channel_note": (
-            "检索与大纲统一走本 Skill 脚本通道（deep_query.py / dkag_search.py / outline_reference.py），"
-            "需要 API Key。MCP「深知可信工作台」通道于 3.7.5 停用，待其大结果落盘方案改造完成后另行加回。"
+            "检索与大纲统一走本 Skill 脚本通道（deep_query.py / dkag_search.py / outline_reference.py），需要 API Key。"
         ),
         "search_ready": config_status["api_key_configured"] and requests_available,
         "search_blocking_issues": search_blocking_issues,
@@ -91,7 +90,7 @@ def check_environment():
         "font_note": "Word 文档会写入公文常用字体名称；打开端如缺少对应字体，Word/WPS 可能自动替换，需以本机打开后的显示为准。",
         "blocking_issues": blocking_issues,
         "ready": not blocking_issues,
-        "search_ready_note": None if config_status["api_key_configured"] else "仅需要搜索的任务需先完成 MaaS 注册获取 API Key 并写入环境变量；无需搜索的任务可先直接写作。",
+        "search_ready_note": None if config_status["api_key_configured"] else "仅需要搜索的任务需先完成 MaaS 注册获取 API Key（写入本机 Key 专用配置文件或注入环境变量）；无需搜索的任务可先直接写作。",
         "local_memory": {
             "knowledge_base_materials": kb_count,
             "knowledge_base_dir": "knowledge-base/",
@@ -152,7 +151,7 @@ def _in_dsh() -> bool:
 def check_api_key_config():
     if _in_dsh():
         # dsh：优先 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源）；缺失时 resolve_api_key 兜底
-        # （环境变量 → 专用配置文件 → 历史 zshrc）。配置文件读取不受 dsh 环境清理影响，
+        # （环境变量 → 专用配置文件）。配置文件读取不受 dsh 环境清理影响，
         # 注册后本会话脚本立即可用。无 Key 仅暂停搜索，不阻断纯写作。
         api_key = os.environ.get("DSH_DKNOWC_API_KEY", "").strip()
         source = "environment"
@@ -166,7 +165,7 @@ def check_api_key_config():
                 pass
         if not _valid_api_key(api_key):
             return {"api_key_configured": False, "api_key_source": None,
-                "api_key_hint": f"未检测到可用的 {API_KEY_ENV}（环境变量、专用配置文件与历史 zshrc 均未找到）。运行注册脚本开通后 Key 自动写入 ~/.config/dknowc/api_key，本会话立即可用。仅搜索任务受影响，不涉及搜索的写作任务可继续。"}
+                "api_key_hint": f"未检测到可用的 {API_KEY_ENV}（环境变量与专用配置文件均未找到）。运行注册脚本开通后 Key 自动写入 ~/.config/dknowc/api_key，本会话立即可用。仅搜索任务受影响，不涉及搜索的写作任务可继续。"}
         return {"api_key_configured": True, "api_key_source": source, "api_key_hint": None}
 
 
@@ -191,7 +190,16 @@ def check_api_key_config():
 
 
 def _valid_api_key(value):
-    return bool(value) and value not in {"your_api_key_here", "你的深知搜索 API Key"}
+    """判断 Key 是否像一份真实的检索密钥。
+
+    只做本地格式校验（不发网络请求）：MaaS 密钥为 sk- 开头、长度不小于 20。
+    真实可用性（过期/无权限/额度用尽）由首次搜索调用的 401/403/429 分支处理，
+    避免每次初始化都多打一次接口。
+    """
+    key = (value or "").strip()
+    if len(key) < 20 or not key.startswith("sk-"):
+        return False
+    return key not in {"your_api_key_here", "你的深知搜索 API Key"}
 
 
 def main():

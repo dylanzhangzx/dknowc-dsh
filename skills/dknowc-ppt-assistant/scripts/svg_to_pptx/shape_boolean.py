@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Shape Boolean Core
+深知可信PPT - Shape Boolean Core
 
 Resolve closed SVG or text-outline operands into SVG-root-coordinate paths and
 apply PowerPoint-compatible merge-shapes operations without mutating the source.
@@ -19,7 +19,7 @@ Examples:
     )
 
 Dependencies:
-    skia-pathops, local PPT Master modules, and uharfbuzz for text operands
+    skia-pathops, local 深知可信PPT modules, and uharfbuzz for text operands
 """
 
 from __future__ import annotations

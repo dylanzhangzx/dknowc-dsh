@@ -307,7 +307,7 @@ def main() -> None:
         os.environ.get("DKNOWC_API_KEY"),
     )
     if not api_key:
-        # 宿主进程读不到 shell 环境变量时，从专用配置文件兜底解析已持久化的 Key（历史 zshrc 兜底）
+        # 宿主进程读不到 shell 环境变量时，从专用配置文件兜底解析已持久化的 Key
         try:
             from api_key import resolve_api_key
             api_key, _source = resolve_api_key()

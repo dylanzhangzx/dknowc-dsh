@@ -119,8 +119,13 @@ def read_docx(path: Path) -> str:
                         pieces.append(elem.text)
                     elif tag in {"p", "br"}:
                         pieces.append("\n")
-    except (zipfile.BadZipFile, ElementTree.ParseError, OSError):
-        return ""
+    except (zipfile.BadZipFile, ElementTree.ParseError, OSError) as exc:
+        # 读不出内容时不能当成“无风险”：报错退出，避免把损坏/加密的 docx 判为通过
+        raise SystemExit(
+            f"无法读取 {path}：{exc}。请确认它是未加密的 .docx；"
+            "如需检查 .doc 请先另存为 .docx 或 .txt。")
+    if not pieces:
+        raise SystemExit(f"{path} 中没有可扫描的文本（可能是图片型或空文档），未做质检。")
     return "".join(pieces)
 
 

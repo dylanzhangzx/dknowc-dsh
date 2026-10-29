@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Native Inline Formula Contract
+深知可信PPT - Native Inline Formula Contract
 
 Validate SVG inline-formula markers and build editable PowerPoint math runs.
 
@@ -13,7 +13,7 @@ Examples:
     <tspan data-pptx-inline-formula="x_i^2">xᵢ²</tspan>
 
 Dependencies:
-    None (only uses standard library and local PPT Master modules)
+    None (only uses standard library and local 深知可信PPT modules)
 """
 
 from __future__ import annotations

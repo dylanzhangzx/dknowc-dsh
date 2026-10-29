@@ -2,7 +2,7 @@
 """深知可信搜索可信搜索调用脚本。
 
 调用可信搜索 V2 接口 /open-api/maas/dependable/v2/search，返回权威材料召回结果。
-V2 要点（2026-10-23 起，对齐公文写作 3.9.0 定档）：searchType 必填且每次调用
+V2 要点（2026-10-23 起，沿用同源规范 定档）：searchType 必填且每次调用
 单值（多类来源并行调用后合并，混传会稀释结果名额）；segmentCount=4 /
 MaterialLength=18000 为受控实测定档；成功判定 ret==0 且 content.code==200；
 返回顶层带 tid 便于平台排查。
@@ -22,11 +22,28 @@ from typing import Any, Dict, Iterable, List, Optional
 
 
 DEFAULT_ENDPOINT = "https://open.dknowc.cn/open-api/maas/dependable/v2/search"
+
+# 端点域名白名单：默认仅官方 HTTPS 域名，防止 --endpoint 把 API Key 发往任意主机。
+# 本地测试（mock 服务）可用 DKNOWC_ALLOW_ANY_ENDPOINT=1 显式放开。
+ALLOWED_ENDPOINT_HOSTS = {"open.dknowc.cn", "platform.dknowc.cn"}
+
+
+def assert_endpoint_allowed(raw_url: str, flag_name: str = "--endpoint") -> str:
+    raw = str(raw_url or "").strip()
+    if os.environ.get("DKNOWC_ALLOW_ANY_ENDPOINT") == "1":
+        return raw
+    parsed = urllib.parse.urlparse(raw)
+    if parsed.scheme != "https" or parsed.hostname not in ALLOWED_ENDPOINT_HOSTS:
+        raise ValueError(
+            f"{flag_name} 指向非官方主机（{parsed.scheme}://{parsed.hostname}）：仅允许 HTTPS 的 "
+            "open.dknowc.cn / platform.dknowc.cn。如确需自定义端点，请设置 DKNOWC_ALLOW_ANY_ENDPOINT=1。"
+        )
+    return raw
 # V2 必填：每次调用只传一个 searchType（默认 policy）；多值直接报错——
-# 混传会共用结果名额、显著稀释政策文件与文号覆盖（公文写作 3.9.0 实测）。
+# 混传会共用结果名额、显著稀释政策文件与文号覆盖（同源规范 实测）。
 SEARCH_TYPES = ("policy", "govSite", "affair", "qa", "private")
 DEFAULT_SEARCH_TYPE = "policy"
-# 参数定档（第一轮受控实测，对齐公文写作 3.9.0）：4 段/篇 + 18000 字上限，
+# 参数定档（第一轮受控实测，沿用同源规范）：4 段/篇 + 18000 字上限，
 # 双主题相关率最高、边际新增质量最好；可经 --segment-count / --material-length 调整。
 DEFAULT_SEGMENT_COUNT = 4
 DEFAULT_MATERIAL_LENGTH = 18000
@@ -409,12 +426,12 @@ def main() -> None:
     parser.add_argument("--timeout", type=int, default=60, help="请求超时秒数")
     args = parser.parse_args()
 
-    endpoint = _pick(
+    endpoint = assert_endpoint_allowed(_pick(
         args.endpoint,
         os.environ.get("DKNOWC_TRUSTED_SEARCH_ENDPOINT"),
         os.environ.get("DKNOWC_KNOW_SEARCH_ENDPOINT"),
         DEFAULT_ENDPOINT,
-    )
+    ))
     api_key = _pick(
         _resolve_key(),
     )

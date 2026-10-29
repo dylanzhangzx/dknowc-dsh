@@ -5,7 +5,7 @@
 key 写入，或宿主安全更新后不再加载 shell 导出变量（WorkBuddy 5.5.3 持续
 读不到）。因此 Key 持久化统一落在本机专用配置文件（XDG 规范路径），脚本直读
 文件，避免误报缺失、触发不必要的手机号验证码引导，也免去"写完 key 必须重启
-宿主"的限制。读取顺序：进程环境变量 → 专用配置文件 → 历史 ~/.zshrc 块（3.7.5
+宿主"的限制。读取顺序：进程环境变量 → 专用配置文件 → 历史 ~/.zshrc 块（早期版本
 迁移期兜底，读到即视为已持久化）。key 仅在本机解析并用于调用深知接口，不写入
 任何其他位置，不随公开包分发。
 """
@@ -32,7 +32,7 @@ def api_key_file_path() -> Path:
 
 
 def _read_legacy_zshrc() -> str:
-    """迁移期：从历史 ~/.zshrc 块读取 Key（3.7.5 之前的写入位置）。"""
+    """兼容：从历史 ~/.zshrc 块读取 Key（历史写入位置）。"""
     zshrc = Path.home() / ".zshrc"
     try:
         text = zshrc.read_text(encoding="utf-8", errors="ignore")
@@ -52,6 +52,13 @@ def _read_legacy_zshrc() -> str:
 def resolve_api_key() -> tuple[str, str]:
     """返回 (key, source)。source ∈ {'environment', 'keyfile', 'zshrc', ''}（空串表示未找到）。"""
     value = os.environ.get(API_KEY_ENV, "").strip()
+    if value:
+        return value, "environment"
+
+    # dsh：插件 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源；dsh 的安全机制
+    # 会清理名字含 KEY 的隐式环境变量，该 DSH_ 前缀变量是官方显式注入通道）。
+    # 取数脚本与 initialize 门禁同源解析，避免"门禁显示已配置、检索脚本取不到 Key"。
+    value = os.environ.get("DSH_DKNOWC_API_KEY", "").strip()
     if value:
         return value, "environment"
 

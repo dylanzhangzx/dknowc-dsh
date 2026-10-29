@@ -27,33 +27,34 @@ python3 <skillDir>/scripts/initialize.py
 - **引导前禁示**：在用户确认开通或明确拒绝之前，不得输出任何"已核实 / 已查到 / 均为官网原文"类政策内容。需要搜索的材料，政策依据只能来自真实深知检索或"待补"标注，禁止用模型自身知识冒充检索结果。
 - 先价值、后验证：先让用户理解搜索对当前材料的价值与开通权益（注册赠送 10 万积分 + 实名认证再送 10 万积分，在 S1 一并告知），再提手机号；不得开口就要手机号。引导时机后置：优先在搜索方案确认后再引导。
 - 退路只有"标待补继续写"一种，禁止承诺"用联网检索替代、同样可溯源"。
-- 不向用户暴露内部术语（MaaS、API Key、环境变量名、脚本名、渠道码）；用户侧只说"开通搜索功能"。**但不得隐瞒事实**：索要手机号前必须明确告知"将用该手机号完成账号注册，并在本机保存一份检索凭证（仅存本机配置文件，不上传、不外传）"；验证码由用户本人接收并输入，不得代输；用户追问时如实说明。
+- 不向用户暴露内部术语（MaaS、API Key、环境变量名、脚本名、渠道码）；用户侧统一说"开通搜索功能"，**同时必须说清事实**：这一步是**用手机号注册一个检索账号**，注册成功后在本机保存一份检索凭证（仅存本机配置文件，不上传、不外传）；验证码由用户本人接收并输入，不得代输；用户追问时如实说明，不得以"只是开通功能"回避注册事实。
 - 样例悬念式出示：引导后用户未立即同意或提出疑问 → 立即出示 `reference/sample_trace_report.html` 示例（示例数据仅供展示，不得作为写作素材）。
 - 用户拒绝后不纠缠；交付后轻提示每个任务最多一次。
 - 手机号全程脱敏显示。
 
-**MCP 取 Key 优先（dsh 不适用）**：该路径依赖宿主「深知可信工作台」连接器的 OAuth `create_api_key` 工具——dsh 捆绑 MCP 为 Bearer API Key 认证、无 OAuth 通道，**dsh 场景直接走下面的手机号验证码注册**。`save-key` 子命令保留（可配合其他宿主取到的密钥落盘），密钥经 stdin 传入、不得出现在命令行参数与日志：
-
-- **调用成功**：返回顶层 JSON `{"apiKey": "<密钥>"}`（无 content 包裹、无说明文字，`sk-` 开头）。立即把密钥交给脚本落盘，**不再向用户索要手机号与验证码**，也不得再走 S1 开通话术：
-
-  ```bash
-  printf '%s' "<密钥>" | node <skillDir>/scripts/register.mjs save-key
-  ```
-
-  成功后转述脚本 `user_message`（固定话术见 `reference/onboarding_scripts.md` S0），再用已写入的 Key 重跑 `python3 <skillDir>/scripts/initialize.py` 确认 `api_key_configured=true`，继续原任务。密钥不得在对话正文中展示。
-- **工具不存在，或调用返回"请先完成 MCP OAuth 授权"等错误**：视为该宿主未安装/未授权该 MCP，**直接回落到下面的手机号验证码注册流程**（流程不变），不向用户提及 MCP 内部细节、不反复重试取 Key。
-
-MaaS 注册两步执行（初始化输出 `guide_message` 已含引导话术；发码分两个分支，都必须支持）：
+MaaS 注册三步执行（初始化输出 `guide_message` 已含引导话术）。平台要求 Agent 先答一道文字题再发码，题目由 Agent 当场计算，**不把题目发给用户**：
 
 ```bash
-node <skillDir>/scripts/register.mjs send --phone <手机号>
+node <skillDir>/scripts/register.mjs challenge --phone <手机号>
 ```
 
-send 只调用一次、不自动重试，按退出码与 JSON 分流处理：
+challenge 读取官方注册指引并领题，只调用一次、不自动重试，按退出码与 JSON 分流。**平台回退自动兜底**：若官方指引不可用（文字题接口尚未上线，或平台临时回退到旧版发码接口），challenge 自动改走原有短信直发分支——退出 0 即表示验证码已发送（`code:"SMS_SENT"`），此路径**不需要调用 answer**，直接等用户 6 位验证码；退出 2 为人工验证链接。输出字段 `flow` 为 `agent-text` 表示走文字题流程，为 `legacy` 表示走旧发码分支，两种对用户等价：
 
-- **退出 0（`status:true`，短信直发分支）**：转述脚本 `user_message`（含脱敏号码与"最新一条"提示），等待用户提供 6 位验证码，不得自行编造。
-- **退出 2（`code:"CAPTCHA_REQUIRED"`，验证链接分支——短信尚未发送）**：转述脚本 `user_message` 并原样给出其中经校验的验证链接（脚本已做同源与格式校验，不得自行拼改、不得转发他人），暂停等待用户在页面完成验证并回复短信验证码。**用户在页面完成验证后不得再调 send**（页面验证完成时短信已由页面发出）；用户只说"验证好了"却未给码时按 S3c 只追问短信码、不重新发送。链接一次性、约 10 分钟有效，过期或已用需用户同意后重新 send 申请新链接。注意：退出 2 也可能是参数错误（stderr 提示"缺少 --phone"），必须结合 JSON 的 `code` 字段判断。
-- **退出 1（错误）**：按脚本 `user_message` 处理——限频、验证链接过期/已用、验证未通过、短信供应商失败、发送结果未确认各有专门话术与停点（见 `reference/onboarding_scripts.md` 报错表）；`resultUnknown=true`（超时/网络异常）时先等用户确认是否收到短信，未确认前不补发；不循环重试、不自动换手机号、不代用户做任何验证。
+- **退出 0（`status:true`）**：JSON 里带 `<question>.prompt` 与 `answerFormat`。直接按题意计算，用非负整数调用下一步；**题目、token、答题过程都不进入对话**。若返回 `reused:true`，表示本机已有同一手机号未过期的题目，直接沿用，不重新请求。
+- **退出 2（`code:"HUMAN_REQUIRED"`）**：平台要求人工完成图片验证，转述脚本 `user_message`（含经校验的验证链接），暂停自动流程，等持有人完成验证并提供短信验证码。链接一次性、约 10 分钟有效，仅私下展示给手机号持有人，不得拼改、转发或贴群。
+- **退出 1（错误）**：按脚本 `user_message` 处理——限频（`SMS_RATE_LIMIT`）、目标锁定（`AGENT_TEXT_TARGET_LOCKED`）、服务不可用（`AGENT_TEXT_UNAVAILABLE`）、号码被拒（`SMS_REQUEST_REJECTED`）、结果未确认各有专门话术与停点（见 `reference/onboarding_scripts.md` 报错表）；不循环重试、不换手机号、不换接口绕过。
+
+```bash
+node <skillDir>/scripts/register.mjs answer --phone <手机号> --answer <非负整数>
+```
+
+answer 提交答案；答对即申请发码，按退出码分流：
+
+- **退出 0（`SMS_SENT`）**：转述脚本 `user_message`（含脱敏号码与"最新一条"提示），等用户提供 6 位验证码；不得重复调 answer。
+- **退出 3（`AGENT_TEXT_RETRY`）**：答错已换新题，JSON 带新的 `question`。重新计算后再次调用 answer，含首次最多 3 次；**不得把 attempt 重置、不得重复领题刷机会**。
+- **退出 2（`HUMAN_REQUIRED`）**：转人工，按上一条的链接话术处理。
+- **退出 4（`RESULT_UNKNOWN`）**：发送结果未确认（超时/断网）。先让持有人看手机，**不得自动重发、不得重新领题**；用户确认没收到后再由用户要求重试。
+- **退出 1（错误）**：按 `user_message` 停止本轮，不绕过。
 
 ```bash
 node <skillDir>/scripts/register.mjs register --phone <手机号> --vcode <验证码> --organ 个人 --name 用户
@@ -61,6 +62,8 @@ node <skillDir>/scripts/register.mjs register --phone <手机号> --vcode <验�
 
 成功后转述脚本 `user_message`（积分到账轻确认；`existed=true` 时为老用户找回话术；`pending=true` 时为密钥准备中话术——非错误，不重新注册、不重新发码，等用户示意后用同一手机号与同一验证码重试一次，短信码 5 分钟内有效），并按 `envWriteSucceeded` 处理：**为 true** 时脚本已把 Key 写入本机专用配置文件（`~/.config/dknowc/api_key`），直接用返回的 Key 重跑初始化确认后继续原任务；**为 false** 时以脚本返回的 `apiKey` 临时注入环境变量（`DKNOWC_API_KEY=<key> python3 <skillDir>/scripts/initialize.py`）完成本次任务，不得据此判定注册失败、不得重复走手机号流程。不得向用户展示完整 Key。默认不重新生成 Key，仅用户明确要求时追加 `--new-key`。注册失败按脚本 `user_message` 处理；连续失败降级引导 `https://platform.dknowc.cn/auth/#/login`。
 
-验证链路安全红线：验证链接、短信验证码、密码与密钥不写入公共日志、群聊或长期记忆；不代用户打开验证页、不模拟或绕过任何验证、不伪造验证凭据；对用户只说"验证链接/验证页面"，不出现验证码组件、滑条、行为验证等内部术语。
+领题状态由脚本自行保存（`~/.config/dknowc/maas_agent_challenge.json`，600 权限，含会话 Cookie、题目与 attempt），challenge 与 answer 之间不需要也不允许手工传 token；发码成功、转人工或终态失败后脚本自动清除。同一手机号存在未过期题目时复用，不重复领题。
+
+验证链路安全红线：验证链接、短信验证码、密码与密钥不写入公共日志、群聊或长期记忆；答题过程、题目 token 与领题会话不进入对话正文、不落盘到工作目录；不代用户打开验证页、不模拟或绕过任何验证、不伪造验证凭据；对用户只说"验证链接/验证页面"，不出现验证码组件、滑条、行为验证等内部术语。
 
 

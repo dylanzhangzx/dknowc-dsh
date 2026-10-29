@@ -2,7 +2,7 @@
 """把深知可信搜索 deep-query/v3（深度搜索）的返回转换成与 dkag_search.py --clean 同构的形态，
 供本 Skill 全部下游流程复用（素材分类、研究资料、溯源 JSON、核验报告）。
 
-背景（3.7.5）：首轮检索改用深度搜索做广度召回——分 3 路（政策依据型/数据支撑型/参考案例型），
+背景：首轮检索改用深度搜索做广度召回——分 3 路（政策依据型/数据支撑型/参考案例型），
 每路一次深度搜索，query 用「对象+关注方向」句式（不列举具体信息需求）；拿到材料后，
 政策原文/快照等缺口由可信搜索按需补搜；文号已由深搜自带（2026-10-23 起文章级 writtenText，映射为「发文字号」），不再为拿文号而必补。
 
@@ -34,7 +34,7 @@ import sys
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd（SkillHub 兼容）
+# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
 if not _ws:
@@ -62,7 +62,7 @@ def strip_html(text) -> str:
     """去掉深度搜索段落内容里的 HTML 标签并反转义实体（真实返回含表格等标签）。
 
     表格标签（table/thead/tbody/tr/td/th/br）原样保留：深度返回的
-    标准限值表/名单表此前被整体拍平成空格分隔文本，知识专库与引文胶囊无法按表格
+    标准限值表/名单表曾被整体拍平成空格分隔文本，知识专库与引文胶囊无法按表格
     形态展示（渲染端 sanitize_table_html / render_excerpt_html 对表格做白名单清洗与
     展示，可信搜索通道 dkag_search 亦原样保留表格，两通道口径一致）。"""
     raw = str(text or "")
@@ -179,7 +179,7 @@ def convert(data, area: str, purpose: str) -> dict:
     raw_query = first_value(data, "query") if isinstance(data, dict) else ""
     search_meta = {
         "query": raw_query,
-        # purpose 兜底（3.7.6 修复）：--purpose 为空时用该路 query 兜底——
+        # purpose 兜底--purpose 为空时用该路 query 兜底——
         # 留空会导致合并产物文章"搜索目的"缺失，溯源分组键退化成地域碎片。
         "purpose": purpose or raw_query,
         "area": area,

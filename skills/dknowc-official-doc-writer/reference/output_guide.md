@@ -128,17 +128,17 @@ Markdown表格            → Word原生表格
 
 ```bash
 python3 <skillDir>/scripts/format_document.py \
-  dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/official_doc_content.txt
+  dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/official_doc_content.txt
 ```
 
-调用前必须先把正文写入本 Skill 工作目录下的 `dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/` 临时 `.txt` 或 `.md` 文件，再把文件路径传给脚本。默认保存到 `config/format.json` 的 `output.dir`，且输出只能位于 `dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`；脚本会优先从正文标题生成正式文件名，如 `机动车管理相关政策调研报告.docx`，同名文件已存在时自动追加 `_v1`、`_v2`。如用户明确要求保存文件名，再传入 `--output 文件名.docx`。多行正文不得直接放进 `--text` 参数，避免命令行传参破坏换行，导致整篇 Word 被识别成一个段落、标题和正文样式全部错乱。`--text` 只用于一句话以内的极短示例文本。
+调用前必须先把正文写入本 Skill 工作目录下的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/` 临时 `.txt` 或 `.md` 文件，再把文件路径传给脚本。默认保存到 `config/format.json` 的 `output.dir`，且输出只能位于 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`；脚本会优先从正文标题生成正式文件名，如 `机动车管理相关政策调研报告.docx`，同名文件已存在时自动追加 `_v1`、`_v2`。如用户明确要求保存文件名，再传入 `--output 文件名.docx`。多行正文不得直接放进 `--text` 参数，避免命令行传参破坏换行，导致整篇 Word 被识别成一个段落、标题和正文样式全部错乱。`--text` 只用于一句话以内的极短示例文本。
 
 ### 红头文件命令
 
 红头文件 = 普通格式文档 + 红头表格 + 国标版记。
 
 生成策略：
-- 自用版和 public 版均使用代码化红头生成，不依赖 Word 模板。
+- 统一使用代码化红头生成，不依赖 Word 模板。
 - 红头、发文字号、签发人、函件红线、会议纪要表头和版记由脚本按文种生成。
 
 工作流程：
@@ -166,7 +166,7 @@ python3 <skillDir>/scripts/format_document.py \
 - 交付 Word 时简单提示：文档已按公文常用字体设置；如打开端缺少对应字体，Word/WPS 可能自动替换，需以本机打开后的显示为准。
 - 当前版本不支持自动生成 PDF，也不主动提及 PDF 交付能力。用户明确要求 PDF、转 PDF、输出 PDF 时，仍只生成最终 Word 或红头 Word，并提示用户使用本机 Word/WPS 另存或导出为 PDF。
 - 不要同时发送 Markdown 草稿、完整正文、中间文件或搜索结果 JSON。
-- 执行过搜索时，正式 Word（及产出物 HTML 的正文页）不得内嵌素材使用情况、知识专库链接或长 URL；可点击溯源由产出物 HTML 承载（正文页角标可点开来源），不生成 Word 版溯源报告。**分清两份正文**：带 `[n]` 角标的正文用于 `build_trace_json.py` 装配溯源 JSON（角标在产出物 HTML 正文页变成可点击跳转）；交给 `format_document.py` 生成 Word 的正文**不得含角标**（脚本已内置剥离兜底，但不得依赖兜底而把带角标正文当正式正文）。同一份带角标正文两用时，Word 交付物会残留大量角标。**带角标正文只保存在会话工作区产物目录 `dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/`**；`build_trace_json.py` 会拒绝该目录之外的正文文件。**交付与展示只允许最终 HTML / Word**：**dsh 交付**：产物直接生成在会话工作区 `dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`（Word 与产出物 HTML）——dsh 以工作区为文件视图、访达也可直达，直接向用户展示脚本实际打印的产物路径即可，无需交付复制；Markdown 正文不交付、不复制、不列入 `present_files`。**对话交付说明中的文号同样只认材料清单 `发文字号` 字段**：正文因 G6 删除的文号，不得在交付说明、总结或聊天补充里保留；说明中出现的每个文号都必须能在材料清单找到。**先出 HTML、后补 Word 时**：只从带角标正文派生一份无角标 Word 副本，所有格式整理只改副本；**不得修改带角标正文、不得重新装配溯源 JSON、不得重渲染已交付的 HTML**。补交 Word 时只向用户展示 Word 文件路径，不重复展示 HTML——HTML 的引用数、角标绑定和已交付状态保持不变。
+- 执行过搜索时，正式 Word（及产出物 HTML 的正文页）不得内嵌素材使用情况、知识专库链接或长 URL；可点击溯源由产出物 HTML 承载（正文页角标可点开来源），不生成 Word 版溯源报告。**分清两份正文**：带 `[n]` 角标的正文用于 `build_trace_json.py` 装配溯源 JSON（角标在产出物 HTML 正文页变成可点击跳转）；交给 `format_document.py` 生成 Word 的正文**不得含角标**（脚本已内置剥离兜底，但不得依赖兜底而把带角标正文当正式正文）。同一份带角标正文两用时，Word 交付物会残留大量角标。**带角标正文只保存在会话工作区产物目录 `dknowc-output/<会话ID前8位>/official-docs/input/`**；`build_trace_json.py` 会拒绝该目录之外的正文文件。**交付与展示只允许最终 HTML / Word**：**dsh 交付**：产物直接生成在会话工作区 `dknowc-output/<会话ID前8位>/official-docs/output/`（Word 与产出物 HTML）——dsh 以工作区为文件视图、访达也可直达，直接向用户展示脚本实际打印的产物路径即可，无需交付复制；Markdown 正文不交付、不复制、不列入 `present_files`。**对话交付说明中的文号同样只认材料清单 `发文字号` 字段**：正文因 G6 删除的文号，不得在交付说明、总结或聊天补充里保留；说明中出现的每个文号都必须能在材料清单找到。**先出 HTML、后补 Word 时**：只从带角标正文派生一份无角标 Word 副本，所有格式整理只改副本；**不得修改带角标正文、不得重新装配溯源 JSON、不得重渲染已交付的 HTML**。补交 Word 时只向用户展示 Word 文件路径，不重复展示 HTML——HTML 的引用数、角标绑定和已交付状态保持不变。
 - Word 与产出物 HTML 同时返回时，必须说明二者关系：Word 是正式成稿，产出物 HTML 的正文页即同一正式内容、另两页为溯源与知识专库。
 - 普通 Word 文件内不保留任何 AI 提示（正文与属性元数据均不写入），AI 标识由交付时的对话说明承担；旧版稿件正文中的“【AI生成提示】”行应视为残留，红头脚本会自动移除，不得手动补回。
 - Markdown 草稿属于内部中间文件，只能用于调用 Word 生成脚本；生成后必须继续生成 `.docx`，不得向用户展示、链接、发送或让用户审阅 `.md`。
@@ -198,7 +198,6 @@ python3 <skillDir>/scripts/template_generator.py 通知 \
 | `--org` | 发文机关（可选） | XX单位 |
 | `--doc-number` | 发文字号（可选） | XX〔2026〕25号 |
 | `--signer` | 签发人（上行文需要，可选） | |
-| `--content` | 正文文件路径 | dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/content.txt |
 
 支持的文种：
 - 下行文：通知、通报
@@ -233,7 +232,7 @@ python3 <skillDir>/scripts/template_generator.py 通知 \
 
 ## 三、公文格式标准（附录A）
 
-所有正文格式配置统一存储在 `config/format.json`，遵循《XX单位公文格式样本（试行）》。
+所有正文格式配置统一存储在 `config/format.json`，遵循 `config/format.json` 与 `reference/standards/` 的格式规范。
 
 | 元素 | 字体 | 字号 | 缩进 | 行距 |
 |-----|------|------|------|------|
@@ -290,7 +289,7 @@ python3 <skillDir>/scripts/template_generator.py 通知 \
 
 ---
 
-# 附：Word 输出与产出物交付（自 SKILL.md 迁入）
+# 附：Word 输出与产出物交付
 
 
 
@@ -299,7 +298,7 @@ python3 <skillDir>/scripts/template_generator.py 通知 \
 溯源 JSON 按 `reference/materials_pipeline.md` 装配并通过 `check_materials.py` 校验后，调用：
 
 ```bash
-python3 <skillDir>/scripts/source_note_html.py dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_溯源核验报告.json
+python3 <skillDir>/scripts/source_note_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/标题_溯源核验报告.json
 ```
 
 输出单文件 `XXX.html`（三页切换）。正文页只放干净正式内容；溯源核验报告页承载角标、引文胶囊、核验单；知识专库页展示全部召回材料。不得由模型手写完整 HTML，不得自行拼接 `<a>`、`onclick`、按钮、卡片或页面样式。产物已在会话工作区（dsh 交付），直接展示脚本打印的路径。
@@ -333,10 +332,10 @@ python3 <skillDir>/scripts/initialize.py --organization "用户提供的单位" 
 普通 Word：
 
 ```bash
-python3 <skillDir>/scripts/format_document.py dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/official_doc_content.txt
+python3 <skillDir>/scripts/format_document.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/official_doc_content.txt
 ```
 
-调用前先把正文写入本 Skill 工作目录下的 `dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/` 临时正文文件。默认保存到 `config/format.json` 的 `output.dir`，且输出只能位于 `dknowc-output/${DSH_SESSION_ID:0:8}/dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`；脚本默认从正文标题生成正式文件名，并在同名文件已存在时追加 `_v1`、`_v2`。如用户明确要求保存文件名，可传入 `--output 文件名.docx`。只有一句话以内的极短文本才允许使用 `--text`；多行正文不得直接通过命令行参数传入，避免换行被破坏后整篇文档变成一个段落。
+调用前先把正文写入本 Skill 工作目录下的 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/input/` 临时正文文件。默认保存到 `config/format.json` 的 `output.dir`，且输出只能位于 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`；脚本默认从正文标题生成正式文件名，并在同名文件已存在时追加 `_v1`、`_v2`。如用户明确要求保存文件名，可传入 `--output 文件名.docx`。只有一句话以内的极短文本才允许使用 `--text`；多行正文不得直接通过命令行参数传入，避免换行被破坏后整篇文档变成一个段落。
 
 红头 Word：
 
@@ -350,7 +349,7 @@ python3 <skillDir>/scripts/template_generator.py 通知 --input 普通Word文件
 
 生成成功后，按本次判定返回产物路径和一句简短说明：命中公文范式返回 `.docx` 路径；执行过搜索返回产出物 HTML（`XXX.html`）路径。两者都有时，以正式成稿（Word）为主文件、产出物 HTML 为含溯源与知识专库的辅助文件（其正文页即正式内容），并向用户说明二者关系。不要发送 Markdown 草稿、正文初稿、完整正文或中间文件路径。
 
-**dsh 交付**：产物直接生成在会话工作区 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/output/`（Word 与产出物 HTML）——dsh 以工作区为文件视图、访达也可直达，直接向用户展示脚本实际打印的产物路径即可，无需交付复制；Markdown 正文不交付、不复制、不列入 `present_files`。不得为省事手工把产物复制到其他目录，避免放错目录或覆盖同名文件。
+**dsh 交付**：产物直接生成在会话工作区 `dknowc-output/<会话ID前8位>/official-docs/output/`（Word 与产出物 HTML）——dsh 以工作区为文件视图、访达也可直达，直接向用户展示脚本实际打印的产物路径即可，无需交付复制；Markdown 正文不交付、不复制、不列入 `present_files`。不得为省事手工把产物复制到其他目录，避免放错目录或覆盖同名文件。
 
 如需先把正文落为临时 Markdown 文件供脚本读取，必须在同一工作流中继续生成 `.docx`；不得停在 Markdown 草稿，也不得把 Markdown 文件作为阶段性成果发给用户。只有用户明确要求“先看草稿”“先发 Markdown”“不要生成 Word”时，才可以交付 Markdown 或正文预览。
 
