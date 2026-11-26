@@ -5,15 +5,15 @@
 key 写入，或宿主安全更新后不再加载 shell 导出变量（WorkBuddy 5.5.3 持续
 读不到）。因此 Key 持久化统一落在本机专用配置文件（XDG 规范路径），脚本直读
 文件，避免误报缺失、触发不必要的手机号验证码引导，也免去"写完 key 必须重启
-宿主"的限制。读取顺序：进程环境变量 → 专用配置文件 → 历史 ~/.zshrc 块（早期版本
-迁移期兜底，读到即视为已持久化）。key 仅在本机解析并用于调用深知接口，不写入
+的限制。读取顺序：进程环境变量（含 dsh 插件注入的 DSH_DKNOWC_API_KEY）→
+本机专用配置文件（主文件，写不进去时读同目录 api_key.fallback）。不读取、
+不写入任何 shell 配置文件；key 仅在本机解析并用于调用深知接口，不写入
 任何其他位置，不随公开包分发。
 """
 
 from __future__ import annotations
 
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -43,26 +43,8 @@ def fallback_key_file_path() -> Path:
     return api_key_file_path().with_name(KEY_FILE_NAME + ".fallback")
 
 
-def _read_legacy_zshrc() -> str:
-    """兼容：从历史 ~/.zshrc 块读取 Key（历史写入位置）。"""
-    zshrc = Path.home() / ".zshrc"
-    try:
-        text = zshrc.read_text(encoding="utf-8", errors="ignore")
-    except OSError:
-        return ""
-    pattern = re.compile(
-        r'^\s*export\s+' + re.escape(API_KEY_ENV) + r'\s*=\s*[\'"]?([^\'"\r\n#]+?)[\'"]?\s*$',
-        re.M,
-    )
-    for value in reversed(pattern.findall(text)):
-        value = value.strip()
-        if value:
-            return value
-    return ""
-
-
 def resolve_api_key() -> tuple[str, str]:
-    """返回 (key, source)。source ∈ {'environment', 'keyfile', 'zshrc', ''}（空串表示未找到）。"""
+    """返回 (key, source)。source ∈ {'environment', 'keyfile', 'keyfile-fallback', ''}（空串表示未找到）。"""
     value = os.environ.get(API_KEY_ENV, "").strip()
     if value:
         return value, "environment"
@@ -89,7 +71,4 @@ def resolve_api_key() -> tuple[str, str]:
     if value:
         return value, "keyfile-fallback"
 
-    legacy = _read_legacy_zshrc()
-    if legacy:
-        return legacy, "zshrc"
     return "", ""

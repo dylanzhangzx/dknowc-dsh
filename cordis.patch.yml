@@ -1,5 +1,5 @@
 # dknowc-dsh bundle 插件层
-# 挂载 skill provider（3 个深知 skill）+ MCP client（深知可信工作台接口转接层）
+# 挂载 skill provider（6 个深知 skill）+ MCP client（深知可信工作台接口转接层）
 - insert:
     - id: dknowc-skills
       name: dknowc-dsh

@@ -14,6 +14,14 @@
 **产品文档**：`dknowc-dsh-产品文档.html`（仓库根，10 节结构：概览 / 能力矩阵 / 全景流程 / 交付物 / 文件清单 / 红线 / 接口与Key / 分发渠道 / 版本历史 / 已知问题；不入 npm 包）。版本定稿后与母版同步同批维护。
 
 ## 逐版变更要点
+## v2.4.1 变更要点
+
+- **审核整改（skill审核 驳回 2 项 must-fix）**：
+  - MF-1 运行期产物入包：公文 skill official-docs/ 下 7 个文件（search-results 6 JSON + input/引用对照 1 JSON，3.6 MB，为 .gitignore 忽略的未跟踪文件但 npm files 白名单带上了）；修复 = 删除工作树文件 + package.json files 白名单加否定模式（`!skills/*/official-docs/**`、`!skills/*/runs/**`、`!skills/*/outline-results/**`，非破坏，prepack 还原为仅 __pycache__ 清理）；tarball 361→352 文件、4.4→3.1 MB。
+  - MF-2 公文 api_key.py 仍读 ~/.zshrc：移除 `_read_legacy_zshrc` 与 resolve 尾部 zshrc 回退、删 re import、docstring 与 SKILL.md/README 口径同步「不读写 shell 配置文件」（其余五 skill 本就对齐）。
+  - 观察项顺手修：src/index.js 与 cordis.patch.yml 头注释 3→6 skill。
+- 验证：npm check 全过、api_key 三态 resolve 实测（env/DSH 注入/落盘）、provider 6 skill 加载、tarball 零运行期产物、残留扫描 zshrc 表述仅剩「不读写」声明。
+
 ## v2.4.0 变更要点
 
 - **母版大版本同步（公文 3.9.10 / 搜索 1.8.2 / PPT 1.7.0）**：三 skill 整包重建（母版一个月内核级改动），渲染命令/交付/注册段全部重适配；修复旧版 SKILL.md 遗留的一处 `dknowc-output` 双前缀笔误。

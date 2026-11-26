@@ -1,8 +1,9 @@
 /**
  * dknowc-dsh —— 深知可信办公全家桶 skill provider
  *
- * 把 3 个内嵌 skill（dknowc-trusted-search /
- * dknowc-ppt-assistant / dknowc-official-doc-writer）注册进 dsh 的 `ctx.skills`，使它们出现在
+ * 把 6 个内嵌 skill（dknowc-trusted-search / dknowc-ppt-assistant /
+ * dknowc-official-doc-writer / dk-trace-report / dknowc-legal-assistant /
+ * dknowc-tax-assistant）注册进 dsh 的 `ctx.skills`，使它们出现在
  * 会话的 <available_skills> 目录中，可被模型的 `skill` 工具加载。
  *
  * 注册范式对照官方 `@deepseek-ai/dsh-skill-badge`：

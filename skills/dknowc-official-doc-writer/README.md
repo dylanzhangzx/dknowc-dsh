@@ -111,7 +111,7 @@ https://platform.dknowc.cn/auth/#/login
 https://open.dknowc.cn/open-api/maas/dependable/v2/search
 ```
 
-用户检索凭证（API Key）只能通过环境变量 `DKNOWC_API_KEY` 注入或本机专用配置文件（`~/.config/dknowc/api_key`）持久化，不得硬编码、不得写入公开包；渠道注册通行码是例外（只用于申请注册验证码、读不到检索数据、按渠道可吊销），见 `scripts/register.mjs`。脚本读取顺序为进程环境变量优先、缺失时自动读取配置文件，历史 `~/.zshrc` 中的 Key 块仅作迁移期兜底，无需重启宿主。
+用户检索凭证（API Key）只能通过环境变量 `DKNOWC_API_KEY` 注入或本机专用配置文件（`~/.config/dknowc/api_key`）持久化，不得硬编码、不得写入公开包；渠道注册通行码是例外（只用于申请注册验证码、读不到检索数据、按渠道可吊销），见 `scripts/register.mjs`。脚本读取顺序为进程环境变量优先、缺失时自动读取配置文件，不读取、不写入任何 shell 配置文件，无需重启宿主。
 
 ## 交付形态
 
