@@ -1,0 +1,46 @@
+{
+  "brand": {
+    "product_name": "深知税务助手"
+  },
+  "channels": {
+    "route_keywords": {
+      "trusted": [
+        "可信",
+        "税务"
+      ]
+    },
+    "labels": {
+      "trusted": "可信补搜"
+    },
+    "summary": {
+      "trusted": "可信补搜 {trusted} 路",
+      "fallback": "深知税务检索 {n} 路"
+    },
+    "step1_fallback": "深知税务检索",
+    "internal_token_filter": [
+      "联网",
+      "可信联网",
+      "宿主 WebSearch"
+    ],
+    "tokens": {
+      "深知税务检索·联网": "深知税务检索"
+    }
+  },
+  "agent_track": {
+    "enabled": true,
+    "require_evidence": true
+  },
+  "official_host_allow": [
+    "mpfa.org.hk"
+  ],
+  "stage": {
+    "enable": false
+  },
+  "charts": {
+    "enable": true
+  },
+  "verify": {
+    "enabled": true,
+    "required": true
+  }
+}

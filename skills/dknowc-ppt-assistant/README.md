@@ -23,13 +23,13 @@ dknowc-ppt-assistant/
 │   ├── initialize.py            # 环境与 Key 检查
 │   ├── register_key.mjs         # MaaS 注册取 Key / save-key（MCP 授权路径落盘）
 │   ├── attribution.py           # 来源声明头构造（X-Dknowc-Attribution）
-│   ├── mcp_direct.py            # dsh：MCP 返回直调落盘（应急兜底通道）
 │   ├── trusted_search.py        # 深知可信搜索（内容层，未连接 MCP 时）
 │   ├── mcp_convert.py           # MCP trusted_search 返回 → REST 形态转换
-│   ├── render_trace_html.py     # 溯源核验报告（提纲版/成稿版）
+│   ├── build_trace_input.py     # 溯源核验报告统一入口（渲染内核在兄弟 skill dk-trace-report）
 │   ├── preview_slide_html.py    # SVG 页面 HTML 预览页（首页确认/进度查看）
 │   └── svg_to_pptx 等           # 第三方开源（MIT）抽取的编译器组件
-└── …（运行时产物不落 skill 目录：项目工作区在会话工作区 `dknowc-projects/`，检索/报告中间文件在 `dknowc-output/<会话ID前8位>/official-docs/`）
+├── dknowc-projects/                    # 项目工作区（内容包/SVG/导出产物）
+└── dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/               # 检索结果与溯源中间文件
 ```
 
 ## 依赖
@@ -55,17 +55,15 @@ dknowc-ppt-assistant/
 
 1. 初始化：`python3 {skillDir}/scripts/initialize.py`
 2. 主题模式检索：`python3 {skillDir}/scripts/trusted_search.py "问题" --service-area 地域 --json-only --output dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/xx.json`
-3. 提纲版报告：`python3 {skillDir}/scripts/render_trace_html.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/xx.json --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/<项目短名>_outline.md --title "<标题> 提纲 · 溯源核验报告"`
-4. 质检：`python3 {skillDir}/scripts/svg_quality_checker.py projects/<项目> --quick-generate`
-5. 导出：`uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pptx.py projects/<项目> --quick-generate -o "projects/<项目>/exports/<演示名>.pptx"`
+3. 提纲版报告（两步）：`python3 {skillDir}/scripts/build_trace_input.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/xx.json --run "$RUN" --output input.json --answer-file dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/<项目短名>_outline.md` → `python3 {skillDir}/../dk-trace-report/scripts/render_trace_html.py "$RUN/input.json" --run "$RUN" --config {skillDir}/config/trace_report.config.json --title "<标题> 提纲 · 溯源核验报告"`
+4. 质检：`python3 {skillDir}/scripts/svg_quality_checker.py dknowc-projects/<项目> --quick-generate`
+5. 导出：`uv run --with python-pptx --with XlsxWriter python3 {skillDir}/scripts/svg_to_pptx.py dknowc-projects/<项目> --quick-generate -o "dknowc-projects/<项目>/exports/<演示名>.pptx"`
 
 完整流程（内容包、确认门、溯源）见 `SKILL.md` 与 `workflows/generate-pptx.md`。
 
 ## 版本说明
 
-当前版本 `1.5.2-dsh`（2026-10-29）。
-
-版本历史与逐版变更详见 GitHub Releases：<https://github.com/dylanzhangzx/dknowc-dsh/releases>。
+当前版本 `1.7.0-dsh`（2026-11-25）：渲染内核抽离到插件内兄弟 skill「溯源核验报告生成器」（dk-trace-report），本包保留业务入口 `build_trace_input.py` 与 `config/trace_report.config.json`；注册默认通行码通道；产物落会话工作区。
 
 ## 路线图
 

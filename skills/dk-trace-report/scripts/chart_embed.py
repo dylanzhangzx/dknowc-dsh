@@ -341,8 +341,11 @@ def render_script(charts: List[Dict[str, Any]], echarts_src: str) -> str:
             f"for(var id in O){{"
             f"var el=document.getElementById(id);if(!el||!window.echarts)continue;"
             f"var ec=window.echarts.default||window.echarts;"
+            f"function S(u){{try{{var x=new URL(u,window.location.href);"
+            f"if(x.protocol==='http:'||x.protocol==='https:')return x.href;}}catch(e){{}}return '';}}"
             f"try{{var ch=ec.init(el);ch.setOption(O[id]);"
-            f"ch.on('click',function(p){{if(p&&p.data&&p.data.url)window.open(p.data.url,'_blank');}});}}"
+            f"ch.on('click',function(p){{if(p&&p.data&&p.data.url){{"
+            f"var u=S(p.data.url);if(u)window.open(u,'_blank');}}}});}}"
             f"catch(e){{el.style.display='none';}}"
             f"}}"
             f"}})();</script>")

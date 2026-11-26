@@ -36,18 +36,9 @@ import sys
 import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
-import os as _os
-_ws = _os.environ.get("DKNWOC_WS_ROOT")
-if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
-    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
-    _sid = _os.environ.get("DSH_SESSION_ID", "")
-    _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
-WS_ROOT = Path(_ws).resolve()
-SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
+from run_paths import RunPathError, resolve_input_path, resolve_output_path, resolve_run_dir
 
 # 公文标题前后缀归一（合并去重用）
 TITLE_PREFIX = ("关于印发", "关于", "印发", "发布", "印发《")
@@ -79,6 +70,35 @@ def _first_value(item: Dict[str, Any], *keys: str) -> str:
     return ""
 
 
+def _norm_url(raw: Any) -> str:
+    """URL 归一（只用于去重键）：去 fragment、常见 tracking 参数、尾斜杠。"""
+    text = str(raw or "").strip()
+    if not text:
+        return ""
+    try:
+        parsed = urlparse(text)
+    except ValueError:
+        return ""
+    if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+        return text
+    # 与 websearch_convert.py 的 TRACKING_PARAMS 保持完全一致（2026-11-09 审核）：
+    # 两处归一化规则不一致会导致阶段二 ?source=wechat 与阶段三同文无法合并。
+    drop = {"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+            "gclid", "fbclid", "spm", "scm", "from", "share_token", "share_source",
+            "ref", "ref_src", "source", "campaign"}
+    query = [(k, v) for k, v in parse_qsl(parsed.query, keep_blank_values=True)
+             if k.lower() not in drop]
+    path = parsed.path.rstrip("/") or "/"
+    return urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), path, "",
+                       urlencode(sorted(query)), ""))
+
+
+def _is_unofficial(article: Dict[str, Any]) -> bool:
+    """非官方判定：外部联网标记或接口数据权威性=非权威。"""
+    return bool(article.get("非官方来源") or article.get("待核验") or article.get("pending")) or str(
+        article.get("数据权威性") or article.get("authority") or "").strip() in ("非权威", "non-authoritative")
+
+
 def _dedupe_paragraphs(paragraphs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """段落级去重：**按归一化内容判重**，id 仅无语料时兜底，保留顺序。
 
@@ -105,16 +125,24 @@ def _dedupe_paragraphs(paragraphs: List[Dict[str, Any]]) -> List[Dict[str, Any]]
 
 
 def _merge_article(target: Dict[str, Any], incoming: Dict[str, Any]) -> None:
-    """同材料合并：段落并集 + 字段取并集（非空优先）+ 搜索条件合并。"""
+    """同材料合并（仅用于双方权威性质相同：都官方或都外部）。
+
+    官方 vs 外部的同 URL 合并不进入本函数——由调用方让官方记录整体胜出，
+    不吸收外部段落/元数据/通道/分组（2026-11-09 复审阻塞项）。
+    """
     para_key = "段落" if "段落" in target or "段落" in incoming else "paragraphs"
     merged_paras = list(target.get(para_key) or []) + list(incoming.get(para_key) or [])
     target[para_key] = _dedupe_paragraphs(merged_paras)
     for key, value in incoming.items():
-        if key == para_key:
+        if key in (para_key, "_route_idx", "_para_contrib"):
             continue
         if value not in (None, "", [], {}):
             if key not in target or target[key] in (None, "", [], {}):
                 target[key] = value
+    for _owner, _cnt in (incoming.get("_para_contrib") or {}).items():
+        if isinstance(_owner, int) and isinstance(_cnt, int) and _cnt > 0:
+            _tpc = target.setdefault("_para_contrib", {})
+            _tpc[_owner] = _tpc.get(_owner, 0) + _cnt
     # 检索通道：不同则顿号拼接保留双通道（2026-10-14 修复——字段并集"非空优先"会让
     # 先入的深搜标签吃掉补搜标签，单条材料的通道归属失真；与句子指纹去重处同款）
     for ch_key in ("检索通道", "channel"):
@@ -151,6 +179,57 @@ def _merge_article(target: Dict[str, Any], incoming: Dict[str, Any]) -> None:
             target[all_key] = vals
 
 
+def _paragraphs(article: Dict[str, Any]) -> list:
+    paragraphs = article.get("段落") or article.get("paragraphs") or []
+    chunks = []
+    if isinstance(paragraphs, list):
+        for p in paragraphs:
+            if isinstance(p, dict):
+                chunks.append(str(p.get("内容") or p.get("text") or p.get("content") or ""))
+            else:
+                chunks.append(str(p or ""))
+    if not chunks:
+        chunks.append(str(article.get("内容") or article.get("content") or ""))
+    return [c for c in chunks if c.strip()]
+
+
+def _paragraph_text(article: Dict[str, Any]) -> str:
+    return "\n".join(_paragraphs(article)).strip()
+
+
+def _is_version_index_text(text: str) -> bool:
+    value = (text or "").strip()
+    if value.startswith("生效时间：") and "所属地域：" in value:
+        return True
+    if value.startswith("修订说明") and "相关文件有下面这些版本" in value:
+        return True
+    return False
+
+
+def _apply_citability(article: Dict[str, Any]) -> None:
+    """按最终段落重算“可引用”（1.7.3）。
+
+    政策库多版本 policy 记录只有版本索引元数据、没有正文，不能作为正文依据。
+    在 merge 末尾统一重算，避免同材料合并后沿用旧的不可引用标记。
+    """
+    texts = _paragraphs(article)
+    substantive = any(not _is_version_index_text(t) for t in texts)
+    if substantive:
+        article["可引用"] = True
+        article.pop("不可引用原因", None)
+        if article.get("材料性质") in ("版本索引", "无正文"):
+            article.pop("材料性质", None)
+        return
+    article["可引用"] = False
+    if str(article.get("文章类型") or "").strip() == "policy" or any(
+            _is_version_index_text(t) for t in texts):
+        article["材料性质"] = "版本索引"
+        article["不可引用原因"] = "policy 版本索引记录，仅含生效时间/修订说明，无正文段落"
+    else:
+        article["材料性质"] = "无正文"
+        article["不可引用原因"] = "接口未返回可引用的正文段落"
+
+
 def _to_article(item: Dict[str, Any], default_key: str = "") -> Dict[str, Any]:
     """把深度产物条目/可信产物条目归一为检索文章字段（渲染器 source_from_article 契约）。"""
     article = {
@@ -167,6 +246,13 @@ def _to_article(item: Dict[str, Any], default_key: str = "") -> Dict[str, Any]:
         if snap:
             article["screenShotPath"] = snap
             break
+    # 发文机构透传（1.7.3）：V2/V3 在文章级返回「发布或实施机构」（政策路实测覆盖），
+    # 渲染器 source_display 只认这三个字段。此前白名单漏掉它们，导致接口明明返回了机构、
+    # 来源卡仍显示「发文机构待补」；数据源仍不进入展示链路。
+    for issuer_key in ("发布或实施机构", "发布机关", "unit"):
+        issuer_value = item.get(issuer_key)
+        if issuer_value not in (None, "", [], {}):
+            article[issuer_key] = issuer_value
     # 文号键链（2026-10-23）：「发文字号」是 V2 可信路文章级实际键名（policy 路实测返回，
     # 如 商办消费函〔2021〕58号）——缺它则 V2 文号全靠 policyFiles 本地匹配兜底（writtenText
     # 偶发为空，兜底不稳）；`writtenText` 为深搜接口 10-23 新增文章级键（标题命中 policyFiles
@@ -180,8 +266,20 @@ def _to_article(item: Dict[str, Any], default_key: str = "") -> Dict[str, Any]:
     # 及接口 dataAuthority 返回的 数据权威性（实测联网结果为"非权威"）——渲染层按双口径打徽标
     if item.get("非官方来源"):
         article["非官方来源"] = True
+    if item.get("待核验") or item.get("pending"):
+        article["待核验"] = True
     if _first_value(item, "数据权威性", "authority"):
         article["数据权威性"] = _first_value(item, "数据权威性", "authority")
+    # 可引用性（1.7.3）：deep_convert 已标记的显式透传；历史 JSON/其他渠道缺字段时按段落重算
+    if item.get("可引用") is False:
+        article["可引用"] = False
+    if item.get("材料性质"):
+        article["材料性质"] = item.get("材料性质")
+    if item.get("不可引用原因"):
+        article["不可引用原因"] = item.get("不可引用原因")
+    if "文章类型" in item:
+        article["文章类型"] = item.get("文章类型")
+    _apply_citability(article)
     key = _first_value(item, "搜索条件", "search_key", "deep_group") or default_key
     if key:
         article["搜索条件"] = key
@@ -225,8 +323,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="多路检索结果合并（可信/深度混合 → 渲染器统一形态）")
     parser.add_argument("--input", action="append", required=True, help="输入 JSON（可多次传入，每路一个）")
     parser.add_argument("--search-key", action="append", help="对应 --input 路次的搜索条件分组标签（可多次，缺省自动）")
-    parser.add_argument("--output", "-o", help="输出文件名，默认 official-docs/search-results/merged_all.json")
+    parser.add_argument("--run", help="本次运行的独立目录（必须在 Skill 安装目录之外）")
+    parser.add_argument("--output", "-o", help="输出文件名；相对名落在 --run 目录，默认 merged_all.json")
     args = parser.parse_args()
+
+    try:
+        run_dir = resolve_run_dir(args.run) if args.run else None
+    except RunPathError as exc:
+        raise SystemExit(f"错误：{exc}") from None
 
     if args.search_key and len(args.search_key) != len(args.input):
         raise SystemExit("错误：--search-key 数量必须与 --input 一致（或缺省）。")
@@ -238,11 +342,10 @@ def main() -> None:
     total_in = 0
 
     for _ri, (input_path_str, key) in enumerate(zip(args.input, keys)):
-        raw_path = Path(input_path_str).expanduser()
-        if not raw_path.is_absolute():
-            raw_path = (SEARCH_RESULTS_DIR / raw_path.name).resolve()
-        if not raw_path.is_file():
-            raise SystemExit(f"错误：输入文件不存在: {raw_path}")
+        try:
+            raw_path = resolve_input_path(input_path_str, run_dir, {".json"})
+        except RunPathError as exc:
+            raise SystemExit(f"错误：{exc}") from None
         before = len(articles)
         _collect_route(raw_path, key, articles, policy_files, route_idx=_ri)
         total_in += len(articles) - before
@@ -258,24 +361,61 @@ def main() -> None:
 
     # 合并式去重
     for art in articles:
+        # 保留 _route_idx 到去重结束：官方整体替换/丢弃外部卡、近似重复丢弃外部卡时，
+        # 需要回滚该卡原先计入的 new_articles（2026-11-09 三验重要项）。
         _ri = art.get("_route_idx")
-        art.pop("_route_idx", None)
         if isinstance(_ri, int) and 0 <= _ri < len(call_stats):
             call_stats[_ri]["articles_in"] += 1
         title = str(art.get("文章标题") or "").strip()
         url = str(art.get("源网址") or "").strip()
         norm = _norm_title(title)
-        key = f"{norm}|{url}" if url else norm
+        url_key = _norm_url(url) if url else ""
+        key = f"{norm}|{url_key}" if url_key else norm
         if not key:
             continue
         if key in by_key:
-            _before = len(by_key[key].get("段落") or [])
-            _merge_article(by_key[key], art)
-            _delta = max(0, len(by_key[key].get("段落") or []) - _before)
+            target = by_key[key]
+            target_unofficial = _is_unofficial(target)
+            incoming_unofficial = _is_unofficial(art)
+            if target_unofficial != incoming_unofficial:
+                # 官方 vs 外部：官方记录整体胜出，且与 --input 顺序无关。
+                # 不吸收外部段落、数据源、发布日期、文号、快照、检索通道、分组。
+                if not incoming_unofficial:
+                    # 官方后入：整卡替换先入的外部卡。外部卡原先计入其所属路次的
+                    # new_articles 必须回滚，官方路次改为 +1，否则过程条会随
+                    # --input 顺序给出不同的“新增 N 篇”（2026-11-09 三验重要项）。
+                    _prev_owner = target.get("_route_idx")
+                    if isinstance(_ri, int) and 0 <= _ri < len(call_stats):
+                        if (isinstance(_prev_owner, int) and _prev_owner != _ri
+                                and 0 <= _prev_owner < len(call_stats)):
+                            call_stats[_prev_owner]["new_articles"] = max(
+                                0, call_stats[_prev_owner]["new_articles"] - 1)
+                        call_stats[_ri]["new_articles"] += 1
+                        call_stats[_ri]["added_paragraphs"] += 0
+                    # 外部卡此前由其他外部路合并进来的段落同样不进入官方卡，
+                    # 其 added_paragraphs 贡献必须逐路回滚（2026-11-09 四验重要项）。
+                    for _owner, _cnt in (target.get("_para_contrib") or {}).items():
+                        if (isinstance(_owner, int) and 0 <= _owner < len(call_stats)
+                                and isinstance(_cnt, int) and _cnt > 0):
+                            call_stats[_owner]["added_paragraphs"] = max(
+                                0, call_stats[_owner]["added_paragraphs"] - _cnt)
+                    art["_para_contrib"] = {}
+                    by_key[key] = art  # 官方后入：替换掉先入的外部卡
+                # 官方先入：直接丢弃外部卡（该外部卡从未计入 new_articles，
+                # 也未获得过 added_paragraphs 贡献）
+                continue
+            # 双方权威性质相同（都官方或都外部）才做常规合并
+            _before = len(target.get("段落") or [])
+            _merge_article(target, art)
+            _delta = max(0, len(target.get("段落") or []) - _before)
             if isinstance(_ri, int) and 0 <= _ri < len(call_stats):
                 call_stats[_ri]["new_articles"] += 0
                 call_stats[_ri]["added_paragraphs"] += _delta
+                if _delta > 0:
+                    _pc = target.setdefault("_para_contrib", {})
+                    _pc[_ri] = _pc.get(_ri, 0) + _delta
         else:
+            art.setdefault("_para_contrib", {})
             by_key[key] = art
             if isinstance(_ri, int) and 0 <= _ri < len(call_stats):
                 call_stats[_ri]["new_articles"] += 1
@@ -313,7 +453,12 @@ def main() -> None:
             si, sj = _fps[_i], _fps[_j]
             inter = len(si & sj) if (si and sj) else 0
             if inter >= 4 and inter / min(len(si), len(sj)) >= 0.55:
-                if len(si) != len(sj):
+                # 权威优先：官方材料 > 外部联网材料（外部近似重复不得吞掉官方卡片）
+                _i_unofficial = _is_unofficial(merged[_i])
+                _j_unofficial = _is_unofficial(merged[_j])
+                if _i_unofficial != _j_unofficial:
+                    keep_idx = _j if _i_unofficial else _i
+                elif len(si) != len(sj):
                     keep_idx = _i if len(si) > len(sj) else _j
                 else:
                     ti = merged[_i].get("文章标题") or ""
@@ -321,7 +466,37 @@ def main() -> None:
                     keep_idx = _i if (_is_official_title(ti) or not _is_official_title(tj)) else _j
                 drop_idx = _j if keep_idx == _i else _i
                 keep, drop = merged[keep_idx], merged[drop_idx]
-                # 段落取并集（内容级去重；后续统一编号）
+                keep_unofficial = _is_unofficial(keep)
+                drop_unofficial = _is_unofficial(drop)
+                if keep_unofficial != drop_unofficial:
+                    # 官方 vs 外部近似重复：官方整体胜出，外部卡直接丢弃，
+                    # 不吸收外部段落/数据源/日期/文号/快照/通道/分组。
+                    # 被丢弃卡原先计入其所属路次的 new_articles 同步回滚，
+                    # 保证过程条“新增 N 篇”与最终材料池一致。
+                    _drop_owner = drop.get("_route_idx")
+                    if (isinstance(_drop_owner, int) and 0 <= _drop_owner < len(call_stats)):
+                        call_stats[_drop_owner]["new_articles"] = max(
+                            0, call_stats[_drop_owner]["new_articles"] - 1)
+                    # 被丢弃卡此前由其他路合并进来的段落也不进入保留卡，
+                    # 其 added_paragraphs 贡献逐路回滚（2026-11-09 四验重要项）。
+                    for _owner, _cnt in (drop.get("_para_contrib") or {}).items():
+                        if (isinstance(_owner, int) and 0 <= _owner < len(call_stats)
+                                and isinstance(_cnt, int) and _cnt > 0):
+                            call_stats[_owner]["added_paragraphs"] = max(
+                                0, call_stats[_owner]["added_paragraphs"] - _cnt)
+                    merged.pop(drop_idx)
+                    _fps.pop(drop_idx)
+                    _near_dup += 1
+                    if drop_idx == _i:
+                        _j = _i + 1
+                    continue
+                # 双方权威性质相同：段落取并集（内容级去重；后续统一编号）
+                # 被并卡不再是独立材料，其所属路次已计入的 new_articles 同步回滚 -1；
+                # 否则同名分组汇总时会出现“召回 1 条 / 新增 2 篇”（2026-11-09 六验重要项）。
+                _drop_owner = drop.get("_route_idx")
+                if (isinstance(_drop_owner, int) and 0 <= _drop_owner < len(call_stats)):
+                    call_stats[_drop_owner]["new_articles"] = max(
+                        0, call_stats[_drop_owner]["new_articles"] - 1)
                 _seen_para = {re.sub(r"\s+", "", str(p.get("内容") or p.get("content") or ""))
                               for p in (keep.get("段落") or [])}
                 for p in (drop.get("段落") or []):
@@ -331,10 +506,16 @@ def main() -> None:
                         keep.setdefault("段落", []).append(p)
                 # 字段取并集：保留篇空字段用被并篇补；检索通道不同则拼接保留双通道
                 for f, v in drop.items():
-                    if f == "段落":
+                    if f in ("段落", "_route_idx", "_para_contrib"):
                         continue
                     if not keep.get(f) and v:
                         keep[f] = v
+                # 双方同为官方/外部：被并卡的段落贡献随内容一起进入保留卡，
+                # 贡献记录同步合并（后续保留卡若被官方丢弃，才能完整回滚）。
+                for _owner, _cnt in (drop.get("_para_contrib") or {}).items():
+                    if isinstance(_owner, int) and isinstance(_cnt, int) and _cnt > 0:
+                        _kpc = keep.setdefault("_para_contrib", {})
+                        _kpc[_owner] = _kpc.get(_owner, 0) + _cnt
                 # 通道拼接同款 token 去重（2026-10-16，与字段并集处同口径）
                 _inc = (drop.get("检索通道") or "").strip()
                 if _inc:
@@ -382,6 +563,16 @@ def main() -> None:
         if drop_set:
             article["段落"] = [p for i, p in enumerate(paras) if i not in drop_set]
 
+    # 可引用性按合并后的最终段落重算（1.7.3）：同材料合并可能补入正文，
+    # 不能沿用合并前的“版本索引/无正文”标记。
+    for _art in merged:
+        _apply_citability(_art)
+
+    # 内部路次标记与段落贡献记录不进入产物（去重/统计结束后统一剥离）
+    for _art in merged:
+        _art.pop("_route_idx", None)
+        _art.pop("_para_contrib", None)
+
     # 显式材料编号（1.4.0）：给每篇材料盖上 `编号` = 它在合并产物中的 1-based 序号。
     # 渲染器优先读材料上的显式编号（render_trace_html.source_from_article 的 explicit_id），
     # 答案角标 [n] 因此锚定在一个"读得到"的编号上，不必让模型去数数组位置——
@@ -404,14 +595,10 @@ def main() -> None:
         pf_seen.add(pf_key)
         pf_out.append(p)
 
-    out_name = args.output or "merged_all.json"
-    out = Path(out_name).expanduser()
-    if not out.is_absolute():
-        out = (SEARCH_RESULTS_DIR / out.name).resolve()
     try:
-        out.relative_to(SEARCH_RESULTS_DIR.resolve())
-    except ValueError:
-        raise SystemExit(f"错误：输出文件必须位于 {SEARCH_RESULTS_DIR}") from None
+        out = resolve_output_path(args.output, run_dir, {".json"}, ".json", "merged_all.json")
+    except RunPathError as exc:
+        raise SystemExit(f"错误：{exc}") from None
 
     result = {
         "search_meta": {"merged": True, "input_routes": len(args.input), "merged_from": [str(Path(x).name) for x in args.input]},
@@ -463,7 +650,7 @@ def main() -> None:
     # 每路调用增量（1.6.0）：渲染过程条按真实调用次数展示每条补搜的实际贡献
     result["search_meta"]["calls"] = call_stats
 
-    # official-docs/ 不随发布包携带（平台不接受 .gitkeep，目录由脚本运行期自动创建）
+    # 产物只写 --run 指定的会话目录；Skill 安装目录下不再创建 official-docs/。
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"✓ 合并完成：{len(args.input)} 路 / 输入 {total_in} 篇 → 合并去重后 {len(merged)} 篇"

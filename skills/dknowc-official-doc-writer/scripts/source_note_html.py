@@ -31,13 +31,91 @@ SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 
 
 def load_renderer():
-    path = Path(__file__).with_name("render_trace_html.py")
+    # dsh：渲染内核抽离到插件内兄弟 skill「溯源核验报告生成器」（dk-trace-report）；
+    # 母版同目录形态下兄弟不存在，回退本目录文件、行为不变。
+    path = Path(__file__).resolve().parent.parent.parent / "dk-trace-report" / "scripts" / "render_trace_html.py"
+    if not path.exists():
+        path = Path(__file__).with_name("render_trace_html.py")
+    # dsh：内核模块间相互 import，需把内核目录注入 sys.path（兄弟目录形态）。
+    _kr = str(path.resolve().parent)
+    if _kr not in sys.path:
+        sys.path.insert(0, _kr)
     spec = importlib.util.spec_from_file_location("dknowc_trace_renderer", path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"无法加载可信溯源报告模板: {path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_checker():
+    path = Path(__file__).with_name("check_materials.py")
+    spec = importlib.util.spec_from_file_location("dknowc_check_materials", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"无法加载引用校验脚本: {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def discover_merged_data(trace: dict) -> dict | None:
+    """加载该任务装配时记录的合并产物，用于比对 quote 是否真在该材料原文里。
+
+    只认 trace["merged_json"] 指向的文件（避免拿别的任务的合并产物误判）；
+    路径必须落在本技能 official-docs（search-results / input）之内——越界一律不读，
+    防止溯源 JSON 里写任意绝对路径把别的文件读进来。未记录、越界或读不到时返回 None，
+    调用方按"缺合并产物"处理（有角标时拒绝渲染）。
+    """
+    raw = str(trace.get("merged_json") or "").strip()
+    if not raw:
+        return None
+    try:
+        _mp = Path(raw).expanduser()
+        # dsh：装配时记录的相对路径以会话工作区（WS_ROOT）为基准；绝对路径与母版行为不变。
+        if not _mp.is_absolute():
+            _mp = WS_ROOT / _mp
+        path = _mp.resolve()
+    except (OSError, RuntimeError):
+        return None
+    allowed = [(WS_ROOT / "official-docs" / "search-results").resolve(),
+               (WS_ROOT / "official-docs" / "input").resolve()]
+    if path.suffix.lower() != ".json":
+        return None
+    if not any(path.is_relative_to(base) for base in allowed):
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def enforce_citation_gate(data: dict) -> None:
+    """渲染前强制校验：引用不全或版本/地域不合规时拒绝生成 HTML。
+
+    G4 不能只写成流程要求——渲染器本身要卡住，否则漏跑 check_materials 就能出报告。
+    """
+    checker = load_checker()
+    body = str(data.get("document_content") or "")
+    has_marks = bool(re.search(r"[\[【]\s*\d+\s*[\]】]", body))
+    merged = discover_merged_data(data)
+    # 没有合并产物就无法比对 quote 是否真在原文里：此时宁可不渲染，也不放行（不 fail-open）
+    if has_marks and merged is None:
+        print(
+            "错误：无法校验引文原文——找不到可读的合并产物，已阻止渲染。\n"
+            f"- 溯源 JSON 的 merged_json：{data.get('merged_json') or '（未填写）'}\n"
+            "- 请恢复该合并产物（official-docs/search-results/merged_*.json），"
+            "或用 build_trace_json.py 重新装配后再渲染。",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+    errors = checker.check_material_metadata(data)
+    errors += checker.check_citation_binding(data, merged)
+    if errors:
+        print("错误：引用校验未通过，已阻止渲染 HTML。请修正后重试：", file=sys.stderr)
+        for err in errors:
+            print(f"- {err}", file=sys.stderr)
+        raise SystemExit(1)
 
 
 def resolve_input(value: str) -> Path:
@@ -233,13 +311,26 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
                 "快照链接": normalize_snapshot_url(first_value(item, "snapshot_url", "快照链接", "screenShotPath", "screenshot_path")) if SNAPSHOT_ENABLED else "",
                 "policyUrl": first_value(item, "policyUrl", "policy_url"),
                 "类型": first_value(item, "type", "素材类型") or "材料",
+                # 渲染内核读「发布机构」展示发文机关；「来源性质」含"政策"时按政策文件处理
+                "发布机构": first_value(item, "发布或实施机构", "发布机关", "issue_org"),
+                "来源性质": first_value(item, "type", "素材类型"),
+                # 引用实例（逐处原文片段）：渲染层按段匹配后展示"本段用到的那段原文"
+                "citations": item.get("citations") or [],
+                # 版本与地域元数据：知识专库/来源卡可展示
+                "status": first_value(item, "status", "效力状态"),
+                "region": first_value(item, "region", "地域属性"),
                 # V2 新增文章级字段（D5 展示 / 追溯）
                 "发文字号": first_value(item, "发文字号", "doc_number", "文号"),
                 "生效日期": first_value(item, "生效日期", "effectiveDate"),
                 "失效日期": first_value(item, "失效日期", "expiryDate"),
                 "文章类型": first_value(item, "文章类型", "文章类别"),
                 "发布或实施机构": first_value(item, "发布或实施机构", "发布机关"),
+                # 素材清单的发布机关落在 issue_org：渲染层来源卡取不到前两者时兜底使用
+                "issue_org": first_value(item, "issue_org", "发布机关", "发文机关"),
                 "文件标签": first_value(item, "文件标签"),
+                # 外部联网材料标记（联网检索/宿主 WebSearch 路）：渲染层打「非官方来源」徽标
+                "非官方来源": True if item.get("非官方来源") else "",
+                "数据权威性": first_value(item, "数据权威性", "authority"),
                 "核验": first_value(item, "verification", "核验", "核验说明"),
                 # 所属搜索条件（多路检索时按来源分组筛选）与引用状态
                 "搜索条件": first_value(item, "search_key", "搜索条件"),
@@ -249,22 +340,31 @@ def to_trace_payload(data: dict) -> tuple[dict, str, str]:
             })
     # 知识专库链接区已随 3.6.0 未引用召回全量展示移除：召回内容都在报告材料面板中，
     # JSON 中残留的 knowledge_bases 字段被忽略（兼容旧 JSON，不报错）。
-    content = {"data": {"检索文章": articles}}
-    payload = {"answer": answer, "question": title, "content": content}
-    if isinstance(data.get("检索记录"), list):
-        payload["检索记录"] = data.get("检索记录")
-        # 渲染入口会 unwrap 到 content 层，必须同步放进 content（与 selfCheck 同处理）
-        content["检索记录"] = data.get("检索记录")
+    # 渲染内核（1.0.2 通用输入契约）直接读顶层 materials 数组——上游由
+    # build_report_input.py 承担的"接口产物 → 通用 JSON"转换在本技能由本函数完成。
+    payload = {"answer": answer, "question": str(data.get("question") or ""), "materials": articles}
+    # 逐次调用增量（过程条"新增 N 篇 · 补充 K 段"）：检索记录按 label=搜索目的 对齐到分组行
+    searches = data.get("检索记录")
+    if isinstance(searches, list):
+        calls = []
+        for rec in searches:
+            if not isinstance(rec, dict):
+                continue
+            calls.append({
+                "label": first_value(rec, "purpose", "query"),
+                "new_articles": rec.get("new_articles") or 0,
+                "added_paragraphs": rec.get("added_paragraphs") or 0,
+            })
+        if calls:
+            payload["search_meta"] = {"calls": calls}
     # 成稿自检结果（5 项）由生成流程写入溯源 JSON；未写入时渲染器如实显示"未记录"
     self_check = data.get("self_check") or data.get("selfCheck")
     if isinstance(self_check, dict):
         payload["selfCheck"] = self_check
-        content["selfCheck"] = self_check
     # 生成流程写入的核验说明清单，用于报告底部核验方法说明
     verify_checks = data.get("verification_checks") or data.get("verificationChecks")
     if isinstance(verify_checks, list) and verify_checks:
         payload["verificationChecks"] = [str(x) for x in verify_checks]
-        content["verificationChecks"] = [str(x) for x in verify_checks]
     return payload, title, answer
 
 
@@ -282,6 +382,7 @@ def main() -> None:
         SNAPSHOT_ENABLED = False
     input_path = resolve_input(args.input)
     data = json.loads(input_path.read_text(encoding="utf-8"))
+    enforce_citation_gate(data)
     payload, title, answer = to_trace_payload(data)
     articles = payload.get("content", {}).get("data", {}).get("检索文章", [])
     # 2026-10-08：链接连通性检测已移除——接口返回的链接原样进报告；
@@ -299,11 +400,17 @@ def main() -> None:
         raise SystemExit(1)
     output_path = safe_output(args.output, title)
     renderer = load_renderer()
+    # 载入本技能的渲染配置（品牌/通道/自检标签/Agent 轨开关/官方信源白名单）。
+    # 内核缺省值通用，缺配置文件时按默认渲染，不阻断。
+    config_path = SKILL_ROOT / "config" / "trace_report.config.json"
+    if config_path.is_file():
+        renderer.apply_config(renderer.load_config(str(config_path)))
     # 2026-10-08：溯源报告必须含"完整的原问题"才能独立使用。
     # 仅取溯源 JSON 顶层的 question（用户原话全文，由 build_trace_json --question 写入）；
     # 历史 JSON 未带该字段时传空（渲染端不显示该行）——不得用报告标题冒充原问题。
     question = str(data.get("question") or "").strip()
-    rendered = renderer.render_html(payload, title, answer_override=answer, question_override=question)
+    rendered = renderer.render_html(payload, title, answer_override=answer, question_override=question,
+                                    snapshot_enabled=SNAPSHOT_ENABLED)
     output_path.write_text(rendered, encoding="utf-8")
     print(f"产出物 HTML（正文/溯源核验报告/知识专库 三页）已生成: {output_path}")
 

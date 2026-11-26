@@ -1,0 +1,96 @@
+[
+  {
+    "id": "c1",
+    "type": "direct",
+    "text": "现行《消防法》第十六条规定七项职责",
+    "count": 7,
+    "quote": "（一）落实消防安全责任制；（二）配置消防设施；（三）全面检测；（四）保障疏散通道；（五）组织防火检查；（六）组织消防演练；（七）法律、法规规定的其他消防安全职责。",
+    "answer_anchor": "第十六条规定七项职责",
+    "jurisdiction": "全国",
+    "source_ids": [
+      "s1"
+    ],
+    "elements": [
+      {
+        "element": "主体适格",
+        "fact": "双方存在劳动合同（2023-03 入职）",
+        "evidence_ids": [
+          "s1"
+        ],
+        "gap": ""
+      },
+      {
+        "element": "解除情形",
+        "fact": "公司以经营困难裁员",
+        "evidence_ids": [
+          "s1",
+          "s2"
+        ],
+        "gap": "是否达到第41条人数门槛待用户补充"
+      }
+    ]
+  },
+  {
+    "id": "c2",
+    "type": "negative",
+    "text": "2026年福建省定标准未上调",
+    "as_of": "2026-11-10",
+    "coverage": "公开渠道（省政府、省人社厅、泉州/安溪政府网站及公开报道）",
+    "queries": [
+      "福建省 2026 城乡居民 基础养老金 省定标准",
+      "闽人社文〔2025〕43号"
+    ],
+    "wording": "截至2026-11-10，公开渠道未见2026年调整文件",
+    "answer_anchor": "公开渠道未见2026年调整文件"
+  },
+  {
+    "id": "c3",
+    "type": "inference",
+    "text": "民宿属于公众聚集场所",
+    "wording": "达到宾馆、饭店等规模的民宿，通常按公众聚集场所管理；是否纳入以属地消防救援机构认定为准"
+  },
+  {
+    "id": "c4",
+    "type": "calculation",
+    "text": "第二段2020-08-20至2026-11-10共2,274天，利息747,616.44元",
+    "tool": "calc_period.py",
+    "convention": "include-end",
+    "answer_anchor": "第二段共2,274天",
+    "start": "2020-08-20",
+    "end": "2026-11-10",
+    "principal": "1000000",
+    "annual_rate": "12%",
+    "days": 2274,
+    "interest": "747616.44"
+  },
+  {
+    "id": "c5",
+    "type": "external",
+    "text": "有媒体报道称2026年福建省定基础养老金为208元（待核验）",
+    "source_nature": "次级媒体",
+    "as_of": "2026-11-10",
+    "official_value": "福建省人社厅办事指南：2025-07-01起190元/月",
+    "wording": "官方公开口径仍为190元/月；有媒体报道称208元，未见正式文件，待核验",
+    "jurisdiction": "福建省",
+    "question_jurisdiction": "福建省",
+    "value": "208元/月",
+    "answer_anchor": "官方公开口径仍为190元/月"
+  },
+  {
+    "id": "c6",
+    "type": "calculation",
+    "text": "经济补偿金135,000元（18,000×7.5）",
+    "tool": "calc_legal.py",
+    "mode": "severance",
+    "inputs": {
+      "monthly_wage": 18000,
+      "years": 7,
+      "months": 3
+    },
+    "months_factor": "7.5",
+    "amount": "135000.00",
+    "rule_ref": "c1",
+    "assumptions": "未传入 capped_wage，按未触发三倍社平封顶计算",
+    "answer_anchor": "经济补偿金135,000元"
+  }
+]

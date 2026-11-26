@@ -2,7 +2,7 @@
 
 深知可信办公全家桶 —— DeepSeek Harness（dsh）插件包。
 
-通过一个 bundle 交付彩智科技的三个深知 Skill（深知可信搜索 / 深知可信PPT / 深知公文写作），接口能力统一走**脚本直连**（全量结构化返回），并捆绑深知可信工作台 MCP（trusted_search / deep_query / doc_outline）作为脚本异常时的应急兜底。
+通过一个 bundle 交付彩智科技的六个深知 Skill（深知可信搜索 / 深知可信PPT / 深知公文写作 / 溯源核验报告生成器 / 深知法律助手 / 深知税务助手），接口能力统一走**脚本直连**（全量结构化返回），并捆绑深知可信工作台 MCP（trusted_search / deep_query / doc_outline）作为脚本异常时的应急兜底。
 
 ## 包含什么
 
@@ -11,8 +11,11 @@ dknowc-dsh/
 ├── skills/
 │   ├── dknowc-trusted-search/        深知可信搜索（脚本直连 + deep_convert 转换层；三页产出物 HTML）
 │   ├── dknowc-ppt-assistant/         深知可信PPT（素材检索脚本直连；SVG→原生PPTX 纯本地编译）
-│   └── dknowc-official-doc-writer/   深知公文写作（两阶段检索脚本直连；公文 Word × 产出物 HTML 双开关交付）
-├── src/index.js                      注册 3 个 skill 到 dsh ctx.skills
+│   ├── dknowc-official-doc-writer/   深知公文写作（两阶段检索脚本直连；公文 Word × 产出物 HTML 双开关交付）
+│   ├── dk-trace-report/              溯源核验报告生成器（通用渲染内核，五个业务 skill 共用）
+│   ├── dknowc-legal-assistant/       深知法律助手（法规/司法解释/案例检索脚本直连；结论台账两轨验收）
+│   └── dknowc-tax-assistant/         深知税务助手（税收政策/办税指南检索脚本直连；结论台账两轨验收）
+├── src/index.js                      注册 6 个 skill 到 dsh ctx.skills
 └── cordis.patch.yml                  挂载 skill provider + mcp-client（Bearer 认证）
 ```
 
@@ -21,6 +24,11 @@ dknowc-dsh/
 | 深知可信搜索 | 咨询类政策问答 + 权威材料检索/深度研究（分级），单文件产出物 HTML 三页（正文/溯源核验报告/知识专库，图表一体化，研究资料层） | 脚本直连（`trusted_search.py` / `deep_query.py` + `deep_convert.py` 转换层）；MCP 兜底 `mcp__dknowc__trusted_search` / `mcp__dknowc__deep_query` |
 | 深知公文写作 | 正式公文起草/改写/多轮改稿，交付双开关：15 种法定公文出 Word（可红头）、执行过搜索出产出物 HTML 三页；研究资料层 + 参考范文召回 | 脚本直连（`dkag_search.py`/`deep_query.py`/`deep_convert.py`/`outline_reference.py`）；MCP 兜底 `mcp__dknowc__*` |
 | 深知可信PPT | 演示文稿制作：SVG 逐页创作→编译原生可编辑 .pptx，双版核验报告（提纲/成稿）+ 页面预览页 | 素材检索脚本直连（`trusted_search.py`）；编译纯本地（python-pptx，uv 隔离依赖） |
+| 溯源核验报告生成器 | 通用渲染内核：把材料清单 + 带角标答案渲染成统一版式溯源核验报告 HTML（核验单/引用依据弹窗/知识专库），不调用深知检索接口 | 纯本地渲染（`render_trace_html.py` 等 5 脚本，业务 skill 跨 skill 调用） |
+| 深知法律助手 | 法规/司法解释/权威案例原文检索与法律问答，结论台账两轨验收，交付直接答案 + 溯源核验报告 | 脚本直连（`legal_search.py`/`legal_client.py`）；MCP 兜底 `mcp__dknowc__*` |
+| 深知税务助手 | 税收政策/办税指南检索与口径问答（个税/增值税/企业所得税/征管等），结论台账两轨验收，交付直接答案 + 溯源核验报告 | 脚本直连（`tax_search.py`/`tax_client.py`）；MCP 兜底 `mcp__dknowc__*` |
+
+**渲染内核架构（v2.4.0 起）**：五个业务 skill 的溯源核验报告渲染内核统一抽离到 `dk-trace-report`（与上游「溯源核验报告生成器」逐字节一致，不 fork 不手改）；业务 skill 只保留各自入口脚本与 `trace_report.config.json` 品牌配置，渲染时跨 skill 调用兄弟 skill 内核。
 
 ## dsh 版本兼容性
 

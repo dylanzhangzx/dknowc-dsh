@@ -1,0 +1,10 @@
+ECharts 5.6.0
+https://echarts.apache.org
+
+ECharts is an Apache Software Foundation project.
+Licensed under the Apache License, Version 2.0:
+http://www.apache.org/licenses/LICENSE-2.0
+
+This file (echarts.custom.min.js) is a custom minified build:
+line / bar / pie charts + grid / tooltip / legend / title components, Canvas renderer.
+Modifications: module subsetting and minification for offline single-file embedding.

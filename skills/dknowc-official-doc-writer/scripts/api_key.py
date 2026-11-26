@@ -23,12 +23,24 @@ KEY_FILE_NAME = "api_key"
 
 
 def api_key_file_path() -> Path:
-    """Key 专用配置文件路径。跨平台：macOS/Linux 用 ~/.config/dknowc/api_key，Windows 用 %APPDATA%/dknowc/api_key。"""
+    """Key 专用配置文件路径。跨平台：macOS/Linux 用 ~/.config/dknowc/api_key，Windows 用 %APPDATA%/dknowc/api_key。
+
+    环境变量 DKNOWC_CONFIG_DIR 可覆盖 config 目录（与 Node 侧 register.mjs 的 configDir() 同口径），
+    保证两端写读位置一致（测试与多实例共用时尤其重要）。
+    """
+    override = (os.environ.get("DKNOWC_CONFIG_DIR") or "").strip()
+    if override:
+        return Path(override).expanduser() / KEY_FILE_NAME
     if sys.platform == "win32":
         base = Path(os.environ.get("APPDATA") or Path.home())
     else:
         base = Path(os.environ.get("XDG_CONFIG_HOME") or (Path.home() / ".config"))
     return base / "dknowc" / KEY_FILE_NAME
+
+
+def fallback_key_file_path() -> Path:
+    """兜底凭据文件路径（与主配置同目录，文件名 api_key.fallback）。"""
+    return api_key_file_path().with_name(KEY_FILE_NAME + ".fallback")
 
 
 def _read_legacy_zshrc() -> str:
@@ -57,7 +69,6 @@ def resolve_api_key() -> tuple[str, str]:
 
     # dsh：插件 shell-env 注入的 DSH_DKNOWC_API_KEY（与 MCP Bearer 同源；dsh 的安全机制
     # 会清理名字含 KEY 的隐式环境变量，该 DSH_ 前缀变量是官方显式注入通道）。
-    # 取数脚本与 initialize 门禁同源解析，避免"门禁显示已配置、检索脚本取不到 Key"。
     value = os.environ.get("DSH_DKNOWC_API_KEY", "").strip()
     if value:
         return value, "environment"
@@ -68,6 +79,15 @@ def resolve_api_key() -> tuple[str, str]:
         value = ""
     if value:
         return value, "keyfile"
+
+    # 兜底凭据文件：主配置写不进去时（只读/权限受限的宿主），注册脚本改写到同目录
+    # api_key.fallback（同样 600 权限）；读取链在此兜底，仍不向会话输出明文。
+    try:
+        value = fallback_key_file_path().read_text(encoding="utf-8", errors="ignore").strip()
+    except OSError:
+        value = ""
+    if value:
+        return value, "keyfile-fallback"
 
     legacy = _read_legacy_zshrc()
     if legacy:

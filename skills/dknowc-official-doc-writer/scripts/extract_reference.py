@@ -40,6 +40,7 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
+
 INPUT_DIR = WS_ROOT / "official-docs" / "input"
 
 # 文章列表可能出现的路径（不加 --clean 的原始结构 / 兼容其他同构结构）

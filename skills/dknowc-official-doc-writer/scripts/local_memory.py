@@ -28,13 +28,9 @@ from xml.etree import ElementTree
 
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# dsh 场景：个人素材库与写作偏好属于跨会话持久数据，锚定用户主目录固定位置
-# （~/.dknowc-writer/），跨工作区共享、插件升级不丢失；可经 DKNWOC_HOME_DIR 覆盖。
-import os as _os
-DATA_ROOT = Path(_os.environ.get("DKNWOC_HOME_DIR") or str(Path.home() / ".dknowc-writer")).resolve()
-KB_ROOT = DATA_ROOT / "knowledge-base"
+KB_ROOT = SKILL_ROOT / "knowledge-base"
 INDEX_PATH = KB_ROOT / "_index.json"
-PREF_PATH = DATA_ROOT / "config" / "writing_preferences.json"
+PREF_PATH = SKILL_ROOT / "config" / "writing_preferences.json"
 
 KB_CATEGORIES = {
     "unit-profile": "单位资料",

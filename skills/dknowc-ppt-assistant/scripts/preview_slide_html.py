@@ -9,7 +9,7 @@ svg_output/ 下全部（或指定）页面以 data URI 内嵌到单个 HTML—�
 用法：
   python3 scripts/preview_slide_html.py <项目名> [--output <文件名>] [--title <标题>]
   项目须位于 projects/<项目名>/svg_output/；输出默认 official-docs/output/<项目名>_pages_preview.html，
-  生成后直接向用户展示脚本打印的路径（dsh 产物天然在会话工作区）。
+  生成后直接向用户展示该绝对路径（dsh 会话工作区即文件视图，无需交付复制）。
 """
 
 from __future__ import annotations
@@ -22,15 +22,8 @@ import sys
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-# dsh：项目目录为工作区级 dknowc-projects/（跨会话延续、访达可直达）；预览页落会话隔离产物区
-import os as _os
-_ws = _os.environ.get("DKNWOC_WS_ROOT")
-if not _ws:
-    _sid = _os.environ.get("DSH_SESSION_ID", "")
-    _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
-WS_ROOT = Path(_ws).resolve()
-PROJECTS_DIR = Path(_os.getcwd()).resolve() / "dknowc-projects"
-OUTPUT_DIR = WS_ROOT / "official-docs" / "output"
+PROJECTS_DIR = SKILL_ROOT / "projects"
+OUTPUT_DIR = SKILL_ROOT / "official-docs" / "output"
 
 
 def esc(value: str) -> str:
@@ -92,7 +85,7 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(_page_html(title, len(svgs), "\n".join(sections)), encoding="utf-8")
     print(f"已生成预览页（{len(svgs)} 页）：{out}")
-    print("提示：直接向用户展示上面的预览页路径即可。")
+    print("提示：dsh 下产物已在会话工作区，直接向用户展示上述绝对路径即可。")
     return 0
 
 

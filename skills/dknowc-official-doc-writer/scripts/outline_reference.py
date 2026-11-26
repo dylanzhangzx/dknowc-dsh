@@ -13,7 +13,6 @@ import requests
 
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-API_KEY_ENV = "DKNOWC_API_KEY"
 # 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
 import os as _os
 _ws = _os.environ.get("DKNWOC_WS_ROOT")
@@ -23,6 +22,8 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
+
+API_KEY_ENV = "DKNOWC_API_KEY"
 OUTLINE_RESULTS_DIR = WS_ROOT / "official-docs" / "outline-results"
 OUTLINE_API_URL = "https://open.dknowc.cn/llm-api/proxy-builtin/official-doc-outline/v1"
 MIN_QUERY_LENGTH = 2

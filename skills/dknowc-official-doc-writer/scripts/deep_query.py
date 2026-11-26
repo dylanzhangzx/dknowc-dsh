@@ -31,6 +31,7 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
+
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 
 # 余额/额度用尽的判定：HTTP 状态与业务错误消息双路径。
@@ -58,7 +59,7 @@ def detect_quota_exhausted(status_code=None, errmsg=None):
 
 
 def user_message_for_error(status_code=None, quota_exhausted=False):
-    """按错误类型返回给用户的固定话术（Agent 必须原样转述，不得改写后发挥）。"""
+    """按错误类型返回给用户的固定话术（本地模板，Agent 按原文告知用户，不要改写）。"""
     if quota_exhausted:
         return (f"检索调不动，很可能是积分用完了：到 {MAAS_PLATFORM_URL} 看一下积分，"
                 "完成实名认证可以再领 10 万积分。")

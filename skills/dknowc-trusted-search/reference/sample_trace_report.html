@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>三市人才购房补贴标准对比（效果示例，示例数据） · 溯源核验报告</title>
+<title>三市人才购房补贴标准对比（效果示例，示例数据）</title>
 <style>
 :root{
   --navy:#20242c; --navy-2:#3a4152;
@@ -39,15 +39,20 @@ a{color:var(--brand)}
 @media(max-width:900px){.viz-duo{grid-template-columns:1fr}}
 
 /* ===== 顶栏 ===== */
-.topbar{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:9px 22px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--line)}
-.tb-left{display:flex;align-items:center;gap:10px;min-width:0}
-.tb-stamp{flex:none;font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:4px;text-indent:4px}
-.tb-stamp::before,.tb-stamp::after{content:"";display:inline-block;width:22px;border-top:1px solid var(--line-strong);
+.banner{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:8px 22px 9px}
+.banner-bar{display:flex;align-items:center;gap:14px;max-width:1080px;margin:0 auto}
+.banner-bar .tb-title{flex:0 1 auto;min-width:0;max-width:30%;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;color:var(--muted);font-size:12.5px}
+.banner-bar .view-switch{margin:0 auto}
+.banner-bar .tb-tools{flex:0 0 auto}
+.banner-bar .view-switch{border-color:#d9c9f4;background:#fff;box-shadow:0 1px 3px rgba(24,20,40,.04)}
+.banner-bar .view-switch button{color:#70678a;padding:6px 18px;font-size:13px}
+.banner-bar .view-switch button.on{background:var(--grad);color:#fff}
+.banner .orig-q{max-width:1080px;margin:7px auto 0;color:var(--ink);font-size:13.5px;line-height:1.6;text-align:center}
+.banner .orig-q b{color:var(--brand);margin-right:2px}
+.banner .meta{max-width:1080px;margin:3px auto 0;color:var(--muted);font-size:11.5px;letter-spacing:.3px;text-align:center}
   vertical-align:middle;margin:0 6px}
-.tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:13px}
-.tb-right{display:flex;align-items:center;gap:8px;flex:none}
 .view-switch{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
 .view-switch button{border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:700;
   padding:5px 14px;cursor:pointer}
@@ -68,29 +73,21 @@ a{color:var(--brand)}
 .progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:transparent}
 .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6512ad,#8b5cf6)}
 
-/* ===== Hero ===== */
-.hero{position:relative;background:linear-gradient(180deg,#fbfaff 0%,#f7f4fd 100%);
-  color:var(--ink);padding:32px 22px 58px;text-align:center;border-bottom:1px solid var(--line)}
-.r-badge{display:inline-flex;align-items:center;gap:14px;margin:0 0 8px;
-  background:var(--grad);color:#fff;border-radius:999px;padding:4px 22px;
-  font-size:15px;font-weight:800;letter-spacing:7px;text-indent:7px;line-height:1.6;
-  box-shadow:0 2px 8px rgba(101,18,173,.22)}
-.hero h1{margin:0 0 10px;font-size:24px;line-height:1.5;max-width:860px;margin-left:auto;margin-right:auto;color:var(--ink)}
-.hero .meta{color:var(--muted);font-size:13px;letter-spacing:.5px}
-.hero-switch{margin-top:16px;display:flex;justify-content:center}
-.hero-switch .view-switch{border-color:#d9c9f4;background:#fff;box-shadow:0 1px 3px rgba(24,20,40,.04)}
-.hero-switch .view-switch button{color:#70678a;padding:6px 22px;font-size:13px}
-.hero-switch .view-switch button.on{background:var(--grad);color:#fff}
 
 /* ===== 容器与视图 ===== */
 .container{max-width:1080px;margin:0 auto;padding:0 18px}
-.app[data-view="library"] #view-report{display:none}
-#view-library{display:none}
+#view-body,#view-report,#view-library{display:none}
+.app[data-view="body"] #view-body{display:block}
+.app[data-view="report"] #view-report{display:block}
 .app[data-view="library"] #view-library{display:block}
+#view-body{padding-bottom:26px}
+/* 文头标题（正文页/报告页各自成档的居中标题） */
+.paper-title{margin:14px 0 18px;font-size:20px;font-weight:800;color:var(--ink);text-align:center;line-height:1.55;letter-spacing:.3px}
+@media (max-width:680px){.paper-title{font-size:17.5px;margin-bottom:16px}}
 
 /* ===== 过程回顾条 ===== */
 .process{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-1);
-  padding:15px 20px 13px;margin:-36px auto 16px;position:relative}
+  padding:15px 20px 13px;margin:0 auto 16px;position:relative}
 .p-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
 .p-head b{font-size:14.5px;color:var(--navy);letter-spacing:1px}
 .p-head span{font-size:11.5px;color:var(--muted)}
@@ -142,9 +139,17 @@ a{color:var(--brand)}
 .vi .s.none{color:var(--muted)}
 .vi .d{color:var(--muted);min-width:0}
 .v-note{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--muted);line-height:1.7}
+.v-checks{margin-top:9px}
+.v-checks summary{cursor:pointer;color:var(--brand);font-weight:700;font-size:12.5px;list-style:none;display:inline-flex;align-items:center;gap:5px}
+.v-checks summary::-webkit-details-marker{display:none}
+.v-checks summary::before{content:"＋";font-weight:700;font-size:12px}
+.v-checks[open] summary::before{content:"－"}
+.v-checks ul{margin:7px 0 0 4px;padding-left:16px}
+.v-checks li{font-size:12.5px;color:var(--sub);line-height:1.72;margin:5px 0}
 
 /* 正文（原型复刻）：章节 / 段落 / 角标 / 句后溯源卡 */
 .doc-paper{background:#fff;border-radius:14px;box-shadow:var(--shadow-1);padding:26px 34px 22px;margin:0 0 16px}
+.body-external-note{font-size:12px;line-height:1.65;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 11px;margin:0 0 16px}
 .chapter{margin:40px 0 0}
 .chapter:first-child{margin-top:6px}
 .ch-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;scroll-margin-top:86px}
@@ -152,6 +157,7 @@ a{color:var(--brand)}
 .ch-head::after{content:"";flex-basis:110px;height:1px;background:linear-gradient(90deg,#e9dff9,transparent);order:3;flex-grow:0;flex-shrink:0}
 .ch-head .sec-badge{order:4;flex:none;font-size:11.5px;color:var(--ok);background:var(--policy-soft);border-radius:6px;padding:2px 9px;font-weight:700}
 .ch-head .sec-badge.bad{color:var(--danger);background:#fdecec}
+.ch-head .sec-badge.warn{color:var(--warn);background:#fff6e5}
 @media(min-width:1000px){.ch-head::after{flex-basis:200px}}
 .lead{font-size:15.5px;line-height:1.95;color:var(--body-c);margin:14px 0;padding:0 2px;word-break:break-word}
 .para{font-size:15.5px;line-height:1.95;color:var(--body-c);margin:14px 0;padding:0 2px;word-break:break-word}
@@ -167,8 +173,9 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#3f3d52;
 /* 角标 */
 .cite{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:18px;padding:0 5px;margin:0 2px 2px 3px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--brand);background:var(--tint);border:1px solid var(--tint-bd);border-radius:5px;cursor:pointer;vertical-align:super;line-height:1;transition:.14s;position:relative;top:-1px;user-select:none;font-family:inherit}
 .cite:hover{background:var(--brand);border-color:var(--brand);color:#fff}
-.cite.flash{background:var(--primary-bright);border-color:var(--primary-bright);color:#fff}
-.cite.unresolved{color:var(--danger);border-color:#f6c9cb;background:#fdf7f7}
+.cite a{color:inherit;text-decoration:none;border-bottom:0}
+.cite.flash{background:var(--brand);color:#fff}
+.cite.unresolved{color:var(--danger);background:#fdf7f7;border-color:#f6c9cb}
 
 /* 段落级证据 chips（引文卡） */
 /* 行内引文 jb（原型复刻）：角标后小胶囊，点击展开块级卡（溯源原文+引文摘录） */
@@ -189,6 +196,8 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#3f3d52;
 .jb-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .jb-label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--brand);letter-spacing:.5px}
 .jb-label svg{flex:none}
+.jb-unofficial{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;color:#9a3412;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:0 7px;margin-right:6px;white-space:nowrap}
+.sc-unofficial{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;color:#9a3412;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:0 7px;white-space:nowrap}
 .jb-site{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#70678a;background:#f6f4fa;
   border:1px solid var(--line);border-radius:999px;padding:3.5px 10px;max-width:100%;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap;margin:0 0 2px}
@@ -222,63 +231,69 @@ a.jb-quote{text-decoration:none}
 #view-library{padding:26px 0 30px}
 .lib-head{max-width:860px;margin:0 auto 16px;text-align:center}
 .lib-title{margin-bottom:14px}
-.lib-title b{font-size:17px;color:var(--navy);letter-spacing:2px}
-.lib-title span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.lib-title b{font-size:16px;color:var(--navy);letter-spacing:.5px;line-height:1.5}
 .lib-searchWrap{position:relative;max-width:620px;margin:0 auto}
 .lib-searchIcon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#a6adbd;font-size:16px;font-weight:700}
 .lib-search{width:100%;padding:11px 16px 11px 38px;border:1.5px solid var(--line-strong);border-radius:999px;
   font-size:14px;background:#fff;box-shadow:var(--shadow-1);outline:none}
 .lib-search:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(139,92,246,.18)}
-.hot-terms{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:12px;align-items:center}
-.hot-label{font-size:12px;color:var(--muted)}
-.hot-term{border:0;border-radius:999px;background:var(--brand-soft);color:var(--brand);
-  font-size:12.3px;font-weight:700;padding:3px 13px;cursor:pointer}
-.hot-term:hover{background:var(--grad);color:#fff}
 .lib-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px}
 .lib-tabs button{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);
   padding:4px 13px;font-size:12.3px;cursor:pointer}
 .lib-tabs button.on{background:var(--grad);border-color:var(--brand);color:#fff;font-weight:700}
-.lib-list{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:14px}
+.lib-list{max-width:860px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 .lib-empty{max-width:860px;margin:30px auto;text-align:center;color:var(--muted);font-size:13.5px}
 .lib-empty.hide{display:none}
 .lib-foot{text-align:center;color:var(--muted);font-size:11.5px;padding:18px 0 0;line-height:1.8}
+.lib-unused{max-width:860px;margin:20px auto 0;border-top:1px dashed var(--line);padding-top:12px}
+.lib-unused summary{cursor:pointer;color:var(--muted);font-size:12.5px;padding:6px 0;list-style:none}
+.lib-unused summary::-webkit-details-marker{display:none}
+.lib-unused summary::before{content:"▸";display:inline-block;margin-right:6px;transition:transform .15s}
+.lib-unused[open] summary::before{transform:rotate(90deg)}
+.lib-unused .lib-list{margin-top:10px}
+.lib-unused .scard{opacity:.92}
 
 /* ===== 材料卡 ===== */
-.scard{border:1px solid var(--line);border-left-width:3px;border-radius:12px;padding:14px 18px;
-  background:#fff;box-shadow:var(--shadow-1);transition:box-shadow .25s}
-.scard:hover{box-shadow:var(--shadow-2)}
-.scard.pol{border-left-color:var(--policy)}
-.scard.dat{border-left-color:var(--brand-2)}
-.scard.cas{border-left-color:var(--case)}
-.scard.ref,.scard.mat{border-left-color:var(--ref)}
-.scard.hl{box-shadow:0 0 0 3px rgba(139,92,246,.35),var(--shadow-2)}
+.scard{min-width:0;border:1px solid #e5e9f0;border-left:3px solid #cbd5e1;border-radius:14px;padding:18px 20px;
+  background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:box-shadow .25s,border-color .25s}
+.scard:hover{box-shadow:0 8px 24px rgba(15,23,42,.08);border-color:#d5dce6}
+.scard.pol{border-left-color:var(--brand-2)}
+.scard.dat{border-left-color:#0f766e}
+.scard.cas{border-left-color:#d97706}
+.scard.ref,.scard.mat{border-left-color:#94a3b8}
+.scard.hl{box-shadow:0 0 0 3px rgba(59,130,246,.18),0 8px 24px rgba(15,23,42,.08)}
 .scard.hide{display:none}
-.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:6px}
-.sc-id{font-family:monospace;font-weight:800;font-size:11px;color:#fff;background:var(--grad);
-  border-radius:5px;padding:1px 8px}
-.sc-type{font-size:11px;font-weight:700;border-radius:4px;padding:1px 8px;background:var(--ref-soft);color:var(--ref)}
-.scard.pol .sc-type{background:var(--policy-soft);color:var(--policy)}
-.scard.dat .sc-type{background:var(--brand-soft);color:var(--brand)}
-.scard.cas .sc-type{background:var(--case-soft);color:var(--case)}
-.sc-vk{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}
-.sc-vk.warn{color:var(--warn)}
-.sc-unused{font-size:10.5px;font-weight:800;color:var(--muted);background:#efedf4;border-radius:4px;
-  padding:1px 7px;flex:none}
-.sc-conf{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e6cf8f;
-  border-radius:4px;padding:0 7px;flex:none}
-.scard h4{margin:0 0 5px;font-size:14.5px;color:var(--ink);line-height:1.55}
-.sc-meta{font-size:11.5px;color:var(--muted)}
+.sc-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sc-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;font-size:11px;color:#fff;background:var(--grad);
+  border-radius:6px;padding:2px 8px}
+.sc-type{font-size:11px;font-weight:600;border-radius:5px;padding:2px 8px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
+.scard.pol .sc-type{background:var(--tint);color:var(--brand);border-color:var(--tint-bd)}
+.scard.dat .sc-type{background:#f0fdfa;color:#0f766e;border-color:#ccfbf1}
+.scard.cas .sc-type{background:#fffbeb;color:#b45309;border-color:#fef3c7}
+.sc-vk{margin-left:auto;font-size:11px;font-weight:700;color:#15803d}
+.sc-vk.warn{color:#b45309}
+.sc-unused{font-size:10.5px;font-weight:700;color:#64748b;background:#f1f5f9;border-radius:5px;
+  padding:2px 7px;flex:none}
+.sc-conf{font-size:10.5px;font-weight:600;color:#92400e;background:#fffbeb;border:1px solid #fde68a;
+  border-radius:5px;padding:1px 7px;flex:none}
+.scard h4{margin:0 0 6px;font-size:15px;font-weight:650;color:#0f172a;line-height:1.55}
+.sc-meta{font-size:12px;color:#64748b;line-height:1.7}
 /* 标题链面包屑（模型生成的结构化位置，核验核心抓手）与多段分块 */
-.crumb{font-size:11.5px;color:var(--brand);margin:10px 0 4px;font-weight:600;line-height:1.6;
-  padding:3px 9px;background:var(--tint);border-radius:7px;display:inline-block;max-width:100%;
+.crumb{font-size:11.5px;color:#475569;margin:12px 0 4px;font-weight:500;line-height:1.6;
+  padding:3px 9px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;display:inline-block;max-width:100%;
   overflow-wrap:break-word}
-.crumb i{font-style:normal;color:#c9b3ec;margin:0 2px;font-weight:400}
-.seg-block{margin-top:8px}
-.seg-block:first-child{margin-top:2px}
-.seg-block .sc-excerpt{margin-top:5px}
+.crumb i{font-style:normal;color:#94a3b8;margin:0 2px;font-weight:400}
+.seg-block{margin:0 0 10px;padding:12px 14px;background:#f8fafc;border-left:3px solid #dbe3ec;border-radius:0 9px 9px 0}
+.seg-block:last-child{margin-bottom:0}
+.seg-block .crumb{display:block;margin:0 0 8px;padding:0;background:none;border:0;border-radius:0;
+  font-size:12px;font-weight:600;color:#475569;line-height:1.6}
+.seg-block .sc-excerpt{margin:0;padding:0;border:0;border-radius:0;background:none;
+  font-size:13px;line-height:1.9;color:#334155}
+.seg-empty{margin-top:8px;padding:11px 13px;border:1px dashed #e2e8f0;border-radius:8px;
+  color:#94a3b8;font-size:12px;background:#fcfcfd}
 .sc-vnote{margin-top:5px;font-size:11.3px;color:var(--ok);line-height:1.6}
-.sc-excerpt{margin:8px 0 0;padding:10px 12px;border:1px solid #eceaf2;border-radius:9px;
-  background:#faf9fd;color:#4a4260;font-size:12.3px;line-height:1.75}
+.sc-excerpt{margin:6px 0 0;padding:12px 14px;border:1px solid #e6eaf0;border-left:3px solid #cbd5e1;border-radius:8px;
+  background:#fbfcfd;color:#334155;font-size:12.8px;line-height:1.9}
 .sc-excerpt.rich{overflow-x:auto}
 .sc-excerpt.rich table{width:max-content;min-width:100%;border-collapse:collapse;background:#fff;font-size:12px}
 .sc-excerpt.rich td,.sc-excerpt.rich th{min-width:92px;max-width:220px;padding:7px 8px;border:1px solid var(--line);
@@ -288,7 +303,6 @@ a.jb-quote{text-decoration:none}
 .scard .sc-links{margin-top:4px}
 .no-link{font-size:11.5px;color:var(--muted)}
 .sc-links a.snap{background:#faf5ff;border-color:#d9c9f4;color:#5b21b6}
-.dead-link{font-size:11.5px;color:var(--warn)}
 
 /* ===== 章节目录（spy，长报告） ===== */
 .toc{position:fixed;left:calc((100vw - 1080px)/2 - 168px);top:120px;width:140px;max-height:60vh;overflow:auto;
@@ -296,42 +310,51 @@ a.jb-quote{text-decoration:none}
 .toc a{color:var(--muted);text-decoration:none;padding:4px 10px;border-left:2px solid var(--line);
   line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toc a.on{color:var(--brand);border-left-color:var(--brand);font-weight:700}
-/* 知识专库视图下隐藏章节目录（2026-09-29，对齐公文 3.7.6）：.toc 渲染在 .app 之外，
+/* 知识专库视图下隐藏章节目录（2026-09-29 起）：.toc 渲染在 .app 之外，
    视图切换只由 .app[data-view] 驱动，此前无任何规则处理 .toc，专库视图下目录仍挂在左侧 */
 .app[data-view="library"] ~ .toc,.app[data-view="library"] .toc{display:none}
 @media (max-width:1460px){.toc{display:none}}
 
 .foot{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 0 4px;line-height:1.8}
 
-/* ===== 只看正文（纯净阅读态） ===== */
-body.reading .process,body.reading .verify,body.reading .jb,body.reading .sec-badge,
-body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!important}
 
 /* ===== 打印附录 ===== */
 .print-appendix{display:none}
+
+/* ===== 引用依据弹层 ===== */
+.cite-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:120;opacity:0;pointer-events:none;transition:opacity .18s}
+.cite-mask.show{display:block;opacity:1;pointer-events:auto}
+.cite-modal{display:none;position:fixed;z-index:121;left:50%;top:50%;transform:translate(-50%,-48%);width:min(760px,calc(100vw - 32px));max-height:82vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 80px rgba(15,23,42,.25)}
+.cite-modal.show{display:block}
+.cite-modal-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#fff;border-bottom:1px solid #e5e9f0}
+.cite-modal-head b{font-size:14px;color:#0f172a}
+.cite-modal-close{border:1px solid #e2e8f0;background:#f8fafc;border-radius:8px;padding:4px 10px;font-size:12px;color:#475569;cursor:pointer}
+.cite-modal-body{padding:16px 18px 20px}
+.cite-modal .scard{border:0;box-shadow:none;padding:0}
+.cite-modal .scard:hover{box-shadow:none}
+@media (max-width:680px){
+  .cite-modal{top:auto;bottom:0;left:0;transform:none;width:100%;max-height:86vh;border-radius:16px 16px 0 0}
+}
 
 /* ===== 移动端 ===== */
 .sheet-mask{display:none}
 .sheet{display:none}
 @media (max-width:680px){
   body{font-size:14px;line-height:1.8}
-  .topbar{padding:7px 10px;gap:6px}
-  .tb-stamp{font-size:11px;letter-spacing:2px;text-indent:2px}
-  .tb-stamp::before,.tb-stamp::after{width:12px;margin:0 4px}
-  .tb-title{display:none}
-  .topbar .view-switch{display:none}
+  .banner{padding:6px 10px 7px}
+  .banner-bar{flex-wrap:wrap;justify-content:center;gap:7px}
+  .banner-bar .tb-title{display:none}
+  .banner-bar .view-switch{margin:0}
+  .banner-bar .view-switch button{padding:5px 11px;font-size:12px}
   .tb-tools button{font-size:11.5px;padding:4px 8px}
-  .hero{padding:24px 14px 50px}
   .ch-head{gap:8px;margin-bottom:14px;flex-wrap:nowrap}
   .ch-head h2{font-size:17px;line-height:1.45}
   .ch-head::after{display:none}
   .ch-head .sec-badge{font-size:10.5px;padding:2px 7px;white-space:nowrap}
   .jb-name{max-width:calc(100vw - 72px)}
-  .r-badge{font-size:13.5px;letter-spacing:6px;text-indent:6px;gap:10px}
-  .hero h1{font-size:18.5px}
-  .hero .meta{font-size:11.5px;line-height:1.7}
-  .hero-switch .view-switch button{padding:6px 16px;font-size:12.5px}
-  .process{margin-top:-30px;padding:12px 12px 11px}
+  .banner .meta{font-size:11px;line-height:1.6}
+  .banner .orig-q{font-size:12.5px}
+  .process{padding:12px 12px 11px}
   .p-step{flex:1 1 100%}
   .p-arrow{display:none}
   .verify{padding:13px 14px}
@@ -356,7 +379,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     -webkit-overflow-scrolling:touch;scrollbar-width:none}
   .lib-tabs::-webkit-scrollbar{display:none}
   .lib-tabs button{flex:none}
-  .lib-list{grid-template-columns:1fr;gap:10px}
+  .lib-list{grid-template-columns:minmax(0,1fr);gap:10px}
   .scard{padding:10px 11px}
   .crumb{font-size:11px}
   .sc-excerpt{font-size:11.5px}
@@ -390,19 +413,26 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
 
 /* ===== 打印归档 ===== */
 @media print{
-  .topbar,.process .p-detail,.hero-switch,.tb-tools,.view-switch,.lib-head,.toc,.sheet,.sheet-mask,
-  .progress{display:none!important}
-  #view-library{display:none!important}
-  #view-report{display:block!important}
-  .app[data-view="library"] #view-report{display:block!important}
-  .hero{background:none;border:0;color:var(--ink);padding:10px 0 4px}
-  .hero .meta{color:var(--muted)}
+  .banner-bar,.process .p-detail,.lib-head,.toc,.sheet,.sheet-mask,
+  .cite-mask,.cite-modal,.progress{display:none!important}
+  .banner{position:static;background:none;border:0;padding:0 0 6px}
+  .banner .orig-q{text-align:left;font-size:13px}
+  .banner .meta{color:var(--muted);text-align:left}
+  /* 完整归档：三页顺序打印（正文 → 溯源核验报告 → 知识专库）+ 来源附录；
+     仅正文模式（body.print-body-only）只保留 #view-body */
+  #view-body,#view-report,#view-library{display:block!important}
+  .app[data-view] #view-body,.app[data-view] #view-report,.app[data-view] #view-library{display:block!important}
+  body.print-body-only #view-report,body.print-body-only #view-library,body.print-body-only .print-appendix,
+  body.print-body-only .jb,body.print-body-only .foot{display:none!important}
+  #view-body .doc-paper,#view-report .doc-paper{break-after:page}
+
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .process{box-shadow:none;margin:6px 0 12px}
   .verify{border-color:#bbb;box-shadow:none;break-inside:avoid}
   .doc-paper{box-shadow:none;border-radius:0;padding:0}
   body{background:#fff;font-size:12.5px}
   .sc-excerpt{display:block;-webkit-line-clamp:unset;cursor:auto}
+  .sc-excerpt.rich table,.print-appendix .sc-excerpt.rich table{width:100%!important;min-width:0}
   .scard{break-inside:avoid}
   .cite{background:none!important;color:#333!important;text-decoration:none!important}
   .cite::before{content:"["}.cite::after{content:"]"}
@@ -413,8 +443,6 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   .jb.active{break-inside:avoid}
   .jb.active .jb-body{display:block!important}
   .jb.active .jb-body .jb-quote{break-inside:avoid}
-  body.reading .verify,body.reading .process,body.reading .ev-row,body.reading .sec-badge,
-  body.reading .cite{display:none!important}
   .print-appendix{display:block;break-before:page}
   body.print-body-only .verify,body.print-body-only .process,body.print-body-only .print-appendix,
   body.print-body-only .jb,body.print-body-only .foot{display:none!important}
@@ -425,51 +453,63 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
 </head>
 <body>
 
-<header class="topbar">
-  <div class="tb-left">
-    <span class="tb-stamp">溯源核验报告</span>
+<header class="banner">
+  <div class="banner-bar">
     <span class="tb-title">三市人才购房补贴标准对比（效果示例，示例数据）</span>
-  </div>
-  <div class="tb-right">
-    <div class="view-switch" role="tablist" aria-label="视图切换">
-      <button class="on" data-view="report" type="button">核验报告</button>
-      <button data-view="library" type="button">知识专库</button>
+    <div class="view-switch" role="tablist" aria-label="页面切换">
+      <button data-view="body" type="button">正文（去索引）</button>
+      <button class="on" data-view="report" type="button">溯源核验报告</button>
+      <button data-view="library" type="button">知识专库（9）</button>
     </div>
     <div class="tb-tools">
-      <button id="btn-reading" type="button" aria-pressed="false" title="隐藏核验元素，纯阅读正文">只看正文</button>
       <button id="btn-copy" type="button" title="复制正文纯文本">复制全文</button>
       <span class="print-menu">
-        <button id="btn-print" type="button" aria-haspopup="true" title="浏览器打印／另存为 PDF">打印归档 ▾</button>
-        <span class="print-drop" id="print-drop" hidden>
-          <button id="print-body" type="button">只打印正文</button>
-          <button id="print-full" type="button">完整归档（含来源文章）</button>
+        <button id="btn-export" type="button" aria-haspopup="true" title="导出正文 Markdown 或 PDF">导出 ▾</button>
+        <span class="print-drop" id="export-drop" hidden>
+          <button id="export-md" type="button">导出 Markdown（正文）</button>
+          <button id="export-pdf-body" type="button">导出 PDF（正文）</button>
+          <button id="export-pdf-full" type="button">导出 PDF（溯源核验报告）</button>
         </span>
       </span>
     </div>
   </div>
+  <div class="orig-q" title="杭州、宁波、温州三市人才购房补贴标准对比（示例数据）"><b>原问题</b>：杭州、宁波、温州三市人才购房补贴标准对比（示例数据）</div>
+  <div class="meta">可信补搜 1 次 · 知识专库文章 9 篇 · 正文实际引用 18 处 · 生成于 2026-11-20 17:01 ｜ 来源：深知可信搜索</div>
   <div class="progress" aria-hidden="true"><i></i></div>
 </header>
 
-<div class="hero">
-  <div class="r-badge">溯源核验报告</div>
-  <h1>三市人才购房补贴标准对比（效果示例，示例数据）</h1>
-  <div class="meta">深知检索 3 路 · 来源文章 9 篇 · 正文引用 15 处 · 生成于 2026-09-29 11:27 ｜ 素材来源：深知可信搜索</div>
-  <div class="hero-switch">
-    <div class="view-switch" role="tablist" aria-label="视图切换">
-      <button class="on" data-view="report" type="button">核验报告</button>
-      <button data-view="library" type="button">知识专库（9）</button>
-    </div>
-  </div>
-</div>
-
 <div class="app container" data-view="report">
-  
-    <section class="process" aria-label="生成过程回顾">
-      <div class="p-head"><b>过程回顾</b><span>数字来自本次任务的真实记录</span></div>
+
+  <main class="view" id="view-body" aria-label="正文">
+    <h2 class="paper-title">三市人才购房补贴标准对比（效果示例，示例数据）</h2>
+    <div class="doc-paper">
+    
+    <section class="chapter" id="sec-1"><header class="ch-head"><h2>一、总体结论</h2></header>
+<p class="lead">三市人才购房补贴均按人才层次分档发放，补贴分 5 年发放、每年发放 20%，按&quot;就高不重复&quot;原则不重复享受。</p>
+</section>
+<section class="chapter" id="sec-2"><header class="ch-head"><h2>二、补贴标准对比</h2></header>
+<p class="para"><b class="kw">•</b> 杭州市：A 类 1200 万元、B 类 800 万元、C 类 400 万元。</p>
+<p class="para"><b class="kw">•</b> 宁波市：A 类 1000 万元、B 类 600 万元、C 类 300 万元。</p>
+<p class="para"><b class="kw">•</b> 温州市：A 类 800 万元、B 类 500 万元、C 类 200 万元。</p>
+</section>
+<section class="chapter" id="sec-3"><header class="ch-head"><h2>三、申报条件（摘要）</h2></header>
+<p class="para"><b class="kw">•</b> 与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月。</p>
+<p class="para"><b class="kw">•</b> 首次在本地购房，且为家庭唯一住房。</p>
+</section>
+    </div>
+    <div class="foot">深知可信搜索 · 正文 ｜ 内容由 AI 生成，仅供参考</div>
+  </main>
+
+  <main class="view" id="view-report" aria-label="溯源核验报告">
+    <h2 class="paper-title">溯源核验报告：三市人才购房补贴标准对比（效果示例，示例数据）</h2>
+    
+    
+    <section class="process" aria-label="AI 自验收">
+      <div class="p-head"><b>AI 自验收</b><span>交付前由 AI 自动完成，数字来自本次任务的真实记录</span></div>
       <ol class="p-steps">
         <li class="p-step expandable" id="p-step-search" role="button" tabindex="0" title="展开各路检索明细">
           <span class="p-no">1</span>
-          <div class="p-txt"><b>深知检索 3 路</b><i>共 3 路检索 · 杭州市人才购房补贴政策…</i></div>
+          <div class="p-txt"><b>可信补搜 1 次</b><i>三市人才购房补贴（示例检索）</i></div>
         </li>
         <li class="p-arrow" aria-hidden="true">›</li>
         <li class="p-step">
@@ -484,37 +524,34 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
         <li class="p-arrow" aria-hidden="true">›</li>
         <li class="p-step done">
           <span class="p-no">✓</span>
-          <div class="p-txt"><b>核验完成</b><i>结论：正文依据逐条对过原文</i></div>
+          <div class="p-txt"><b>已核验</b><i>结论：正文依据逐条对过原文</i></div>
         </li>
       </ol>
-      <div class="p-detail" id="p-detail"><div class="pd-row"><b>杭州市人才购房补贴政策</b><span>召回 3 条 · 正文采用 3 条</span></div><div class="pd-row"><b>宁波市人才购房补贴政策</b><span>召回 3 条 · 正文采用 3 条</span></div><div class="pd-row"><b>温州市人才购房补贴政策</b><span>召回 3 条 · 正文采用 3 条</span></div></div>
+      <div class="p-detail" id="p-detail"><div class="pd-row"><b>三市人才购房补贴（示例检索）（可信搜索）</b><span>召回 9 条 · 正文采用 9 条</span></div></div>
     </section>
-
-  <main class="view" id="view-report" aria-label="核验报告正文">
-    
     
     <div class="verify ok">
-      <div class="v-head"><span class="v-shield">✓</span>核验完成，正文依据逐条对过原文<span class="v-stamp">已核验</span></div>
+      <div class="v-head"><span class="v-shield">✓</span>已核验<span class="v-stamp">已核验</span></div>
       
       <div class="v-grid">
-        <div class="vi"><span class="s ok">✓ 依据溯源 9/9</span><span class="d">每条素材摘录可比对，原文或存档快照可回看</span></div><div class="vi"><span class="s ok">✓ 引用对应 15/15</span><span class="d">正文每处 [n] 都能找到对应来源文章</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2025-06～2025-06</span></div><div class="vi"><span class="s ok" title="关键结论均有示例材料支撑；角标与来源文章一一对应；报告与回复同源；示例来源文章日期已核对；无未核验断言">✓ 交付前检查 5/5</span><span class="d">事实有据、角标绑定、答案一致、时效确认、无未核验断言 · 悬停查看说明</span></div>
+        <div class="vi"><span class="s ok">✓ 依据溯源 9/9</span><span class="d">每条素材摘录可比对，原文或存档快照可回看</span></div><div class="vi"><span class="s ok">✓ 引用对应 18/18</span><span class="d">正文每一处引用都已对回来源文章，点开即可核对原文</span></div><div class="vi"><span class="s ok">✓ 材料新旧 已核</span><span class="d">材料日期 2026-01～2026-01</span></div><div class="vi"><span class="s ok">✓ 交付前检查 5/5</span><span class="d">事实有据、角标绑定、答案一致、时效确认、无未核验断言</span></div>
       </div>
-      <div class="v-note">核验方式：先用深知可信搜索找权威来源，再把正文每处依据和原文逐条比对（都能点开原文回看），最后做了交付前五项检查。</div>
+      <div class="v-note">AI 已完成自验收，正文依据可逐条点开原文复核。</div>
     </div>
     
     <div class="doc-paper">
-    <section class="chapter" id="sec-1"><header class="ch-head"><h2>一、总体结论</h2><span class="sec-badge ">本章引用 3 处 · 已核验</span></header>
-<p class="lead">三市均按人才层级分档给予购房补贴，力度依次为杭州 &gt; 宁波 &gt; 温州，且均要求本地就业、社保与无房条件（示例数据，仅供展示报告效果）。<span class="jb" data-cite="1"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">1</i><span class="jb-txt">杭州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/1.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">1</i><span class="sc-excerpt">杭州市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高800万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">1</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="2"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">2</i><span class="jb-txt">宁波市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/4.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">2</i><span class="sc-excerpt">宁波市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高600万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">2</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="3"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">3</i><span class="jb-txt">温州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/7.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">3</i><span class="sc-excerpt">温州市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高500万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">3</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span></p>
+    <section class="chapter" id="rsec-1"><header class="ch-head"><h2>一、总体结论</h2><span class="sec-badge ">本章引用 3 处 · 已核验</span></header>
+<p class="lead">三市人才购房补贴均按人才层次分档发放，补贴分 5 年发放、每年发放 20%，按&quot;就高不重复&quot;原则不重复享受。<sup class="cite"><a class="cite-link" href="#src-1" data-cite="1" title="查看引用依据 [1]">[1]</a></sup><sup class="cite"><a class="cite-link" href="#src-2" data-cite="2" title="查看引用依据 [2]">[2]</a></sup><sup class="cite"><a class="cite-link" href="#src-3" data-cite="3" title="查看引用依据 [3]">[3]</a></sup></p>
 </section>
-<section class="chapter" id="sec-2"><header class="ch-head"><h2>二、补贴标准对比</h2><span class="sec-badge ">本章引用 9 处 · 已核验</span></header>
-<p class="para"><b class="kw">•</b> <strong>A类（顶尖人才）</strong>：杭州最高 800 万元、宁波最高 600 万元、温州最高 500 万元。<span class="jb" data-cite="1"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">1</i><span class="jb-txt">杭州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/1.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">1</i><span class="sc-excerpt">杭州市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高800万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">1</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="2"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">2</i><span class="jb-txt">宁波市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/4.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">2</i><span class="sc-excerpt">宁波市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高600万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">2</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="3"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">3</i><span class="jb-txt">温州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/7.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">3</i><span class="sc-excerpt">温州市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高500万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">3</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span></p>
-<p class="para"><b class="kw">•</b> <strong>B类（领军人才）</strong>：杭州最高 300 万元、宁波最高 240 万元、温州最高 200 万元。<span class="jb" data-cite="4"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">4</i><span class="jb-txt">杭州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/2.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">4</i><span class="sc-excerpt">杭州市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高300万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">4</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="5"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">5</i><span class="jb-txt">宁波市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/5.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">5</i><span class="sc-excerpt">宁波市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高240万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">5</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="6"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">6</i><span class="jb-txt">温州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/8.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">6</i><span class="sc-excerpt">温州市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高200万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">6</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span></p>
-<p class="para"><b class="kw">•</b> <strong>C类（高级人才）</strong>：杭州最高 100 万元、宁波最高 80 万元、温州最高 60 万元。<span class="jb" data-cite="7"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">7</i><span class="jb-txt">杭州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/3.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">7</i><span class="sc-excerpt">杭州市对经认定的C类（高级人才）人才，在市内购买首套自住住房的，按人才层级给予最高100万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">7</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="8"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">8</i><span class="jb-txt">宁波市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/6.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">8</i><span class="sc-excerpt">宁波市对经认定的C类（高级人才）人才，在市内购买首套自住住房的，按人才层级给予最高80万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">8</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="9"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">9</i><span class="jb-txt">温州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/9.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">9</i><span class="sc-excerpt">温州市对经认定的C类（高级人才）人才，在市内购买首套自住住房的，按人才层级给予最高60万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">9</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span></p>
-<div class="chart-inline" aria-label="数据可视化"><h3 class="chart-h3">三市人才购房补贴上限对比（万元；示例数据）</h3><p class="chart-note">图表由已核验材料数据生成，点击图例或数据项可跳转对应来源原文。</p><div class="card viz-duo"><div class="viz-panel"><h3>A类（顶尖人才）补贴上限</h3><div id="chart_metric_0" style="width:100%;height:360px"></div></div><div class="viz-panel"><h3>B类（领军人才）补贴上限</h3><div id="chart_metric_1" style="width:100%;height:360px"></div></div><div class="viz-panel"><h3>C类（高级人才）补贴上限</h3><div id="chart_metric_2" style="width:100%;height:360px"></div></div></div></div>
+<section class="chapter" id="rsec-2"><header class="ch-head"><h2>二、补贴标准对比</h2><span class="sec-badge ">本章引用 9 处 · 已核验</span></header>
+<p class="para"><b class="kw">•</b> 杭州市：A 类 1200 万元、<sup class="cite"><a class="cite-link" href="#src-1" data-cite="1" title="查看引用依据 [1]">[1]</a></sup>B 类 800 万元、<sup class="cite"><a class="cite-link" href="#src-2" data-cite="2" title="查看引用依据 [2]">[2]</a></sup>C 类 400 万元。<sup class="cite"><a class="cite-link" href="#src-3" data-cite="3" title="查看引用依据 [3]">[3]</a></sup></p>
+<p class="para"><b class="kw">•</b> 宁波市：A 类 1000 万元、<sup class="cite"><a class="cite-link" href="#src-4" data-cite="4" title="查看引用依据 [4]">[4]</a></sup>B 类 600 万元、<sup class="cite"><a class="cite-link" href="#src-5" data-cite="5" title="查看引用依据 [5]">[5]</a></sup>C 类 300 万元。<sup class="cite"><a class="cite-link" href="#src-6" data-cite="6" title="查看引用依据 [6]">[6]</a></sup></p>
+<p class="para"><b class="kw">•</b> 温州市：A 类 800 万元、<sup class="cite"><a class="cite-link" href="#src-7" data-cite="7" title="查看引用依据 [7]">[7]</a></sup>B 类 500 万元、<sup class="cite"><a class="cite-link" href="#src-8" data-cite="8" title="查看引用依据 [8]">[8]</a></sup>C 类 200 万元。<sup class="cite"><a class="cite-link" href="#src-9" data-cite="9" title="查看引用依据 [9]">[9]</a></sup></p>
+<div class="chart-inline" aria-label="数据可视化"><h3 class="chart-h3">三市人才购房补贴上限对比（万元；示例数据）</h3><p class="chart-note">图表由已核验材料数据生成，点击图例或数据项可跳转对应来源原文。</p><div class="card"><div class="viz-panel"><h3>并列对比</h3><div id="chart_compare" style="width:100%;height:360px"></div></div></div></div>
 </section>
-<section class="chapter" id="sec-3"><header class="ch-head"><h2>三、申报条件（摘要）</h2><span class="sec-badge ">本章引用 3 处 · 已核验</span></header>
-<p class="para">三地共性条件为：本市用人单位 3 年以上劳动合同、连续缴纳社保满 6 个月、本人及配偶市内无自有住房；补贴均分三年拨付（40%/30%/30%）。<span class="jb" data-cite="4"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">4</i><span class="jb-txt">杭州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/2.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">4</i><span class="sc-excerpt">杭州市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高300万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">4</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="5"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">5</i><span class="jb-txt">宁波市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/5.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">5</i><span class="sc-excerpt">宁波市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高240万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">5</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span><span class="jb" data-cite="6"><button class="jb-name" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><i class="jb-id">6</i><span class="jb-txt">温州市人才购房补贴实施细则（示例标题）</span></button><span class="jb-body"><span class="jb-head"><span class="jb-label"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>溯源原文：</span><a class="jb-src" href="https://www.example.gov.cn/sample/8.html" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span>查看全文</span></a></span><span class="jb-site"><span class="dot"></span>2025-06-30</span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">6</i><span class="sc-excerpt">温州市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高200万元购房补贴，分三年按 40%/30%/30% 拨付。</span></span><span class="jb-quote" role="button" tabindex="0"><i class="jb-no">6</i><span class="sc-excerpt">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</span></span></span></span></p>
-<p class="para">&gt; 本报告为效果展示样例：素材、金额与链接均为示例数据，不代表真实政策口径，不得作为依据引用。</p>
+<section class="chapter" id="rsec-3"><header class="ch-head"><h2>三、申报条件（摘要）</h2><span class="sec-badge ">本章引用 6 处 · 已核验</span></header>
+<p class="para"><b class="kw">•</b> 与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月。<sup class="cite"><a class="cite-link" href="#src-4" data-cite="4" title="查看引用依据 [4]">[4]</a></sup><sup class="cite"><a class="cite-link" href="#src-5" data-cite="5" title="查看引用依据 [5]">[5]</a></sup><sup class="cite"><a class="cite-link" href="#src-6" data-cite="6" title="查看引用依据 [6]">[6]</a></sup></p>
+<p class="para"><b class="kw">•</b> 首次在本地购房，且为家庭唯一住房。<sup class="cite"><a class="cite-link" href="#src-7" data-cite="7" title="查看引用依据 [7]">[7]</a></sup><sup class="cite"><a class="cite-link" href="#src-8" data-cite="8" title="查看引用依据 [8]">[8]</a></sup><sup class="cite"><a class="cite-link" href="#src-9" data-cite="9" title="查看引用依据 [9]">[9]</a></sup></p>
 </section>
     </div>
     <div class="foot">深知可信搜索 · 溯源核验报告 ｜ 内容由 AI 生成，仅供参考</div>
@@ -523,26 +560,30 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   
     <section class="view" id="view-library" aria-label="知识专库">
       <div class="lib-head">
-        <div class="lib-title"><b>知识专库</b>
-          <span>共 9 条 · 已引用 9 · 全部已核验</span>
-        </div>
+        <div class="lib-title"><b>知识专库：三市人才购房补贴标准对比（效果示例，示例数据）</b></div>
         <div class="lib-searchWrap">
           <span class="lib-searchIcon" aria-hidden="true">⌕</span>
           <input class="lib-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源文章">
         </div>
-        <div class="hot-terms" aria-label="热门搜索词"><span class="hot-label">大家都在搜</span><button class="hot-term" type="button">杭州</button><button class="hot-term" type="button">宁波</button><button class="hot-term" type="button">温州</button><button class="hot-term" type="button">房补贴政</button><button class="hot-term" type="button">补贴政策</button><button class="hot-term" type="button">杭州市人</button><button class="hot-term" type="button">宁波市人</button><button class="hot-term" type="button">波市人才</button></div>
-        <div class="lib-tabs" role="tablist" aria-label="按检索分组筛选"><button class="on" data-cond="" type="button">全部（9）</button><button data-cond="杭州市人才购房补贴政策" type="button">杭州市人才购房补贴政策（3）</button><button data-cond="宁波市人才购房补贴政策" type="button">宁波市人才购房补贴政策（3）</button><button data-cond="温州市人才购房补贴政策" type="button">温州市人才购房补贴政策（3）</button></div>
+        
       </div>
-      <div class="lib-list" id="lib-list"><article class="scard mat" id="src-1" data-type="material" data-cite-id="1" data-search="杭州市人才购房补贴政策"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">杭州市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高800万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/1.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-2" data-type="material" data-cite-id="2" data-search="宁波市人才购房补贴政策"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">宁波市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高600万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/4.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-3" data-type="material" data-cite-id="3" data-search="温州市人才购房补贴政策"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">温州市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高500万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/7.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-4" data-type="material" data-cite-id="4" data-search="杭州市人才购房补贴政策"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">杭州市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高300万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/2.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-5" data-type="material" data-cite-id="5" data-search="宁波市人才购房补贴政策"><div class="sc-head"><span class="sc-id">[5]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">宁波市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高240万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/5.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-6" data-type="material" data-cite-id="6" data-search="温州市人才购房补贴政策"><div class="sc-head"><span class="sc-id">[6]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">温州市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高200万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/8.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-7" data-type="material" data-cite-id="7" data-search="杭州市人才购房补贴政策"><div class="sc-head"><span class="sc-id">[7]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">杭州市对经认定的C类（高级人才）人才，在市内购买首套自住住房的，按人才层级给予最高100万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/3.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-8" data-type="material" data-cite-id="8" data-search="宁波市人才购房补贴政策"><div class="sc-head"><span class="sc-id">[8]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">宁波市对经认定的C类（高级人才）人才，在市内购买首套自住住房的，按人才层级给予最高80万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/6.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-9" data-type="material" data-cite-id="9" data-search="温州市人才购房补贴政策"><div class="sc-head"><span class="sc-id">[9]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">温州市对经认定的C类（高级人才）人才，在市内购买首套自住住房的，按人才层级给予最高60万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/9.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article></div>
+      <div class="lib-list" id="lib-list"><article class="scard mat" id="src-1" data-type="material" data-cite-id="1" data-search="三市人才购房补贴（示例检索）"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">杭州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">杭州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">杭州市 A 类（顶尖人才）人才购房补贴上限为 1200 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/1" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-2" data-type="material" data-cite-id="2" data-search="三市人才购房补贴（示例检索）"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">杭州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">杭州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">杭州市 B 类（领军人才）人才购房补贴上限为 800 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/4" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-3" data-type="material" data-cite-id="3" data-search="三市人才购房补贴（示例检索）"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">杭州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">杭州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">杭州市 C 类（高级人才）人才购房补贴上限为 400 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/7" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-4" data-type="material" data-cite-id="4" data-search="三市人才购房补贴（示例检索）"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">宁波市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">宁波市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">宁波市 A 类（顶尖人才）人才购房补贴上限为 1000 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/2" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-5" data-type="material" data-cite-id="5" data-search="三市人才购房补贴（示例检索）"><div class="sc-head"><span class="sc-id">[5]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">宁波市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">宁波市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">宁波市 B 类（领军人才）人才购房补贴上限为 600 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/5" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-6" data-type="material" data-cite-id="6" data-search="三市人才购房补贴（示例检索）"><div class="sc-head"><span class="sc-id">[6]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">宁波市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">宁波市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">宁波市 C 类（高级人才）人才购房补贴上限为 300 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/8" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-7" data-type="material" data-cite-id="7" data-search="三市人才购房补贴（示例检索）"><div class="sc-head"><span class="sc-id">[7]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">温州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">温州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">温州市 A 类（顶尖人才）人才购房补贴上限为 800 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/3" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-8" data-type="material" data-cite-id="8" data-search="三市人才购房补贴（示例检索）"><div class="sc-head"><span class="sc-id">[8]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">温州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">温州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">温州市 B 类（领军人才）人才购房补贴上限为 500 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/6" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard mat" id="src-9" data-type="material" data-cite-id="9" data-search="三市人才购房补贴（示例检索）"><div class="sc-head"><span class="sc-id">[9]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">温州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">温州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">温州市 C 类（高级人才）人才购房补贴上限为 200 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/9" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article></div>
+      
       <div class="lib-empty hide" id="lib-empty">没有符合当前筛选的来源文章。</div>
-      <div class="lib-foot">来源：深知可信搜索 · 每条摘录均取自原文原段</div>
+      <div class="lib-foot">来源：深知可信搜索 · 每段摘录均取自原文原段</div>
     </section>
-  <section class="print-appendix" aria-label="来源文章附录（打印归档）"><h3>来源文章（全 9 篇）</h3><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">杭州市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高800万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/1.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">宁波市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高600万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/4.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">温州市对经认定的A类（顶尖人才）人才，在市内购买首套自住住房的，按人才层级给予最高500万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/7.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">杭州市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高300万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/2.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[5]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">宁波市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高240万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/5.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[6]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">温州市对经认定的B类（领军人才）人才，在市内购买首套自住住房的，按人才层级给予最高200万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/8.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[7]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">杭州市对经认定的C类（高级人才）人才，在市内购买首套自住住房的，按人才层级给予最高100万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/3.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[8]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">宁波市对经认定的C类（高级人才）人才，在市内购买首套自住住房的，按人才层级给予最高80万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/6.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[9]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 已核验</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">2025-06-30</div><div class="seg-block"><div class="sc-excerpt plain">温州市对经认定的C类（高级人才）人才，在市内购买首套自住住房的，按人才层级给予最高60万元购房补贴，分三年按 40%/30%/30% 拨付。</div></div><div class="seg-block"><div class="sc-excerpt plain">申请须同时满足：与本市用人单位签订 3 年以上劳动合同、在当地连续缴纳社保满 6 个月、本人及配偶在市内无自有住房。</div></div><div class="sc-links"><span><a href="https://www.example.gov.cn/sample/9.html" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article></section>
+  <section class="print-appendix" aria-label="来源文章附录（打印归档）"><h3>来源文章（全 9 篇）</h3><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[1]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">杭州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">杭州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">杭州市 A 类（顶尖人才）人才购房补贴上限为 1200 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/1" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[2]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">杭州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">杭州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">杭州市 B 类（领军人才）人才购房补贴上限为 800 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/4" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[3]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>杭州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">杭州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">杭州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">杭州市 C 类（高级人才）人才购房补贴上限为 400 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/7" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[4]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">宁波市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">宁波市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">宁波市 A 类（顶尖人才）人才购房补贴上限为 1000 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/2" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[5]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">宁波市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">宁波市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">宁波市 B 类（领军人才）人才购房补贴上限为 600 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/5" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[6]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>宁波市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">宁波市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">宁波市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">宁波市 C 类（高级人才）人才购房补贴上限为 300 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/8" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[7]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">温州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">温州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">温州市 A 类（顶尖人才）人才购房补贴上限为 800 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/3" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[8]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">温州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">温州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">温州市 B 类（领军人才）人才购房补贴上限为 500 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/6" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article><article class="scard print-only mat"><div class="sc-head"><span class="sc-id">[9]</span><span class="sc-type">材料</span><span class="sc-vk ok" title="摘录可比对，原文或存档快照可回看">✓ 引用核验通过</span></div><h4>温州市人才购房补贴实施细则（示例标题）</h4><div class="sc-meta">温州市人力资源和社会保障局 | 2026-01-01</div><div class="seg-block"><span class="crumb">温州市人才购房补贴实施细则（示例标题） <i>›</i> 第三章 补贴标准</span><div class="sc-excerpt plain">温州市 C 类（高级人才）人才购房补贴上限为 200 万元；补贴分 5 年发放，每年发放 20%；申请人须与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月，且首次在本地购买家庭唯一住房。</div></div><div class="sc-links"><span><a href="https://example.com/sample/9" target="_blank" rel="noopener">查看全文 ↗</a></span></div></article></section>
 </div>
 
 
 
 <div class="ev-panel" id="ev-pop" hidden></div>
+<script type="application/json" id="doc-export">{"title": "三市人才购房补贴标准对比（效果示例，示例数据）", "markdown": "## 一、总体结论\n\n三市人才购房补贴均按人才层次分档发放，补贴分 5 年发放、每年发放 20%，按\"就高不重复\"原则不重复享受。\n\n## 二、补贴标准对比\n\n- 杭州市：A 类 1200 万元、B 类 800 万元、C 类 400 万元。\n- 宁波市：A 类 1000 万元、B 类 600 万元、C 类 300 万元。\n- 温州市：A 类 800 万元、B 类 500 万元、C 类 200 万元。\n\n## 三、申报条件（摘要）\n\n- 与用人单位签订 3 年以上劳动合同，并在本地连续缴纳社会保险满 6 个月。\n- 首次在本地购房，且为家庭唯一住房。\n"}</script>
+<div class="cite-mask" aria-hidden="true"></div>
+<div class="cite-modal" role="dialog" aria-label="引用依据">
+  <div class="cite-modal-head"><b>引用依据</b><button class="cite-modal-close" type="button">收起</button></div>
+  <div class="cite-modal-body"></div>
+</div>
 <div class="sheet-mask" aria-hidden="true"></div>
 <div class="sheet" role="dialog" aria-label="来源文章">
   <div class="sheet-grab"></div>
@@ -559,8 +600,9 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   var app = $(".app");
   var isMobile = function () { return window.matchMedia("(max-width:680px)").matches; };
 
-  /* ===== 1. 双视图切换（保存/恢复各自滚动位置） ===== */
-  var savedScroll = { report: 0, library: 0 };
+  /* ===== 1. 三页切换（正文 / 溯源核验报告 / 知识专库；保存/恢复各自滚动位置） ===== */
+  var savedScroll = { body: 0, report: 0, library: 0 };
+  var viewChangeHook = null; /* 切页后重算目录锚点等 */
   function setView(view) {
     if (!app || app.getAttribute("data-view") === view) return;
     savedScroll[app.getAttribute("data-view") || "report"] = window.scrollY;
@@ -569,6 +611,7 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
       b.classList.toggle("on", b.getAttribute("data-view") === view);
     });
     window.scrollTo(0, Math.max(0, savedScroll[view] || 0));
+    if (viewChangeHook) viewChangeHook(view);
   }
   $$(".view-switch button").forEach(function (b) {
     b.addEventListener("click", function () { setView(b.getAttribute("data-view")); });
@@ -585,26 +628,14 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   window.addEventListener("scroll", updateProgress, { passive: true });
   updateProgress();
 
-  /* ===== 3. 只看正文（纯净阅读态切换） ===== */
-  var readBtn = $("#btn-reading");
-  if (readBtn) {
-    readBtn.addEventListener("click", function () {
-      var on = document.body.classList.toggle("reading");
-      readBtn.setAttribute("aria-pressed", on ? "true" : "false");
-      readBtn.textContent = on ? "显示核验" : "只看正文";
-      /* 只看正文只作用于核验报告视图：正在知识专库时切回报告，专库不受影响 */
-      if (on && app && app.getAttribute("data-view") !== "report") setView("report");
-    });
-  }
-
-  /* ===== 4. 复制全文（章节标题 + 段落 + 表格，去角标） ===== */
+  /* ===== 3. 复制全文（从正文页取：章节标题 + 段落 + 表格，干净无角标） ===== */
   var copyBtn = $("#btn-copy");
   if (copyBtn) {
     copyBtn.addEventListener("click", function () {
       var parts = [];
       /* 按文档流顺序收集章节标题/段落/表格；克隆后剔除引文胶囊与角标，
          只复制正文本身（胶囊标题/展开摘录/编号数字均不带出） */
-      var nodes = $$("#view-report .ch-head h2, #view-report .lead, #view-report .para, #view-report .tbl-wrap");
+      var nodes = $$("#view-body .ch-head h2, #view-body .lead, #view-body .para, #view-body .tbl-wrap");
       nodes.sort(function (a, b) { return (a.compareDocumentPosition(b) & 4) ? -1 : 1; });
       nodes.forEach(function (el) {
         var clone = el.cloneNode(true);
@@ -639,26 +670,45 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     });
   }
 
-  /* ===== 5. 打印归档（PDF）：下拉双选项——只打印正文 / 完整归档 ===== */
-  var printBtn = $("#btn-print");
-  var printDrop = $("#print-drop");
+  /* ===== 5. 导出：正文 Markdown / PDF（浏览器打印另存为 PDF） ===== */
+  var exportBtn = $("#btn-export");
+  var exportDrop = $("#export-drop");
+  function docTitleForFile() {
+    var t = $(".tb-title");
+    var name = (t ? t.textContent.trim() : "") || document.title || "文稿";
+    return name.replace(/[\/:*?"<>|]+/g, "_").trim() || "文稿";
+  }
+  function exportMarkdown() {
+    var el = document.getElementById("doc-export");
+    var data = { title: docTitleForFile(), markdown: "" };
+    if (el) { try { data = JSON.parse(el.textContent) || data; } catch (err) {} }
+    var blob = new Blob([data.markdown || ""], { type: "text/markdown;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = (data.title || docTitleForFile()) + ".md";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 800);
+  }
   function printBy(mode) {
     if (mode === "body") document.body.classList.add("print-body-only");
-    if (printDrop) printDrop.hidden = true;
+    if (exportDrop) exportDrop.hidden = true;
     window.print();
   }
-  if (printBtn && printDrop) {
-    printBtn.addEventListener("click", function (e) {
+  if (exportBtn && exportDrop) {
+    exportBtn.addEventListener("click", function (e) {
       e.stopPropagation();
-      printDrop.hidden = !printDrop.hidden;
+      exportDrop.hidden = !exportDrop.hidden;
     });
-    printDrop.addEventListener("click", function (e) {
+    exportDrop.addEventListener("click", function (e) {
       e.stopPropagation();
       var t = e.target.closest("button");
       if (!t) return;
-      printBy(t.id === "print-body" ? "body" : "full");
+      if (t.id === "export-md") { exportMarkdown(); exportDrop.hidden = true; return; }
+      printBy(t.id === "export-pdf-body" ? "body" : "full");
     });
-    document.addEventListener("click", function () { printDrop.hidden = true; });
+    document.addEventListener("click", function () { exportDrop.hidden = true; });
     /* 打印结束移除临时模式（浏览器打印窗口关闭后触发） */
     window.addEventListener("afterprint", function () { document.body.classList.remove("print-body-only"); });
   }
@@ -719,7 +769,42 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     if (closeBtn) closeBtn.addEventListener("click", closeSheet);
   }
 
-  /* 行内引文 jb（原型行为）：点小胶囊 toggle 展开卡；点角标展开对应 jb 并 flash。
+  /* 行内引用：弹出该来源的引用卡（只含被引用的原文段），不再跳专库。 */
+  var citeModal = $(".cite-modal");
+  var citeMask = $(".cite-mask");
+  function openCite(id) {
+    var card = byId[id];
+    if (!citeModal || !card) {
+      if (card) { setView("library"); card.scrollIntoView({behavior: "smooth", block: "center"}); }
+      return;
+    }
+    var body = citeModal.querySelector(".cite-modal-body");
+    body.innerHTML = "";
+    var clone = card.cloneNode(true);
+    clone.removeAttribute("id");
+    clone.classList.remove("hide");
+    body.appendChild(clone);
+    citeModal.classList.add("show");
+    citeMask.classList.add("show");
+    document.body.style.overflow = "hidden";
+    citeModal.scrollTop = 0;
+  }
+  function closeCite() {
+    if (!citeModal) return;
+    citeModal.classList.remove("show");
+    citeMask.classList.remove("show");
+    document.body.style.overflow = "";
+  }
+  if (citeMask) citeMask.addEventListener("click", closeCite);
+  if (citeModal) {
+    var citeClose = citeModal.querySelector(".cite-modal-close");
+    if (citeClose) citeClose.addEventListener("click", closeCite);
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeCite();
+  });
+
+  /* 行内引文 jb（历史形态，保留兼容）：点小胶囊 toggle 展开卡；点角标展开对应 jb 并 flash。
      未绑定角标红色警示，绝不按位置猜测。 */
   var JB_TABLES = {};
   try {
@@ -772,8 +857,14 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     });
   });
   document.querySelectorAll("sup.cite").forEach(function (btn) {
-    /* 仅剩未绑定角标（红色数字）走到这里：点击控制台留痕 */
-    btn.addEventListener("click", function () {
+    /* 整个角标（含内边距）都可点；真正未绑定的角标才留痕。 */
+    var link = btn.querySelector("a.cite-link");
+    btn.addEventListener("click", function (e) {
+      if (link) {
+        e.preventDefault();
+        openCite(link.getAttribute("data-cite"));
+        return;
+      }
       if (console.error) console.error("[核验] 未绑定角标:", btn.getAttribute("data-cite"));
     });
   });
@@ -820,15 +911,6 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   });
   var search = $(".lib-search");
   if (search) search.addEventListener("input", function () { kw = search.value.trim().toLowerCase(); applyFilter(); });
-  $$(".hot-term").forEach(function (t) {
-    t.addEventListener("click", function () {
-      if (!search) return;
-      search.value = t.textContent.trim();
-      kw = search.value.toLowerCase();
-      applyFilter();
-      if (search.focus) search.focus();
-    });
-  });
 
   /* ===== 8. 过程回顾条：检索步骤展开 ===== */
   var pStep = $("#p-step-search");
@@ -845,15 +927,26 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
   var toc = $(".toc");
   if (toc) {
     var links = $$("a", toc);
-    var secs = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+    /* 正文页锚 sec-N / 报告页锚 rsec-N：href 只是兜底，实际按当前视图前缀定位 */
+    function tocPrefix() {
+      var v = app ? app.getAttribute("data-view") : "";
+      return v === "report" ? "rsec" : (v === "body" ? "sec" : "");
+    }
+    function tocSecs() {
+      var pfx = tocPrefix();
+      if (!pfx) return [];
+      return links.map(function (a) { return document.getElementById(pfx + "-" + a.getAttribute("data-sec")); });
+    }
+    var secs = tocSecs();
     links.forEach(function (a) {
       a.addEventListener("click", function (e) {
         e.preventDefault();
-        var target = document.querySelector(a.getAttribute("href"));
+        var pfx = tocPrefix();
+        var target = pfx ? document.getElementById(pfx + "-" + a.getAttribute("data-sec")) : null;
         if (!target) return;
         /* 手动定位而非 scrollIntoView({block:"start"})：后者把标题顶到视口 y=0，
            会被 sticky 顶栏盖住。偏移量与目录吸顶位置同一基准（顶栏高 + 20px）。 */
-        var bar = document.querySelector(".topbar");
+        var bar = document.querySelector(".banner");
         var offset = (bar ? bar.offsetHeight : 0) + 20;
         var y = target.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
@@ -867,20 +960,22 @@ body.reading .cite,body.reading .toc,body.reading .p-detail{display:none!importa
     }
     window.addEventListener("scroll", spy, { passive: true });
 
-    /* 目录纵向定位（2026-09-29，对齐公文 3.7.6）：此前 CSS 写死 top:120px，目录顶部与页头
+    /* 目录纵向定位（2026-09-29 起）：此前 CSS 写死 top:120px，目录顶部与页头
        齐平、离正文很远。改为——直接跟随正文首节，只保留"不低于顶栏下方"的下限；首屏看不到
        目录属正常，向下滚动后自然吸附在顶栏下方。目录过长由 CSS max-height:60vh+overflow:auto
        内部滚动兜底。 */
-    var topbar = document.querySelector(".topbar");
+    var bannerEl = document.querySelector(".banner");
     function placeToc() {
       var first = secs[0];
       if (!first) return;
-      var stick = (topbar ? topbar.offsetHeight : 0) + 20;
+      var stick = (bannerEl ? bannerEl.offsetHeight : 0) + 20;
       var want = Math.round(first.getBoundingClientRect().top);
       toc.style.top = Math.max(stick, want) + "px";
     }
     window.addEventListener("scroll", placeToc, { passive: true });
     window.addEventListener("resize", placeToc);
+    /* 切页时重算锚点集合与高亮（正文页 sec-N / 报告页 rsec-N；专库页隐藏目录） */
+    viewChangeHook = function () { secs = tocSecs(); spy(); placeToc(); };
     placeToc();
     spy();
   }
@@ -935,6 +1030,6 @@ zrender/lib/zrender.js:
   *)
 */
 </script>
-<script>(function(){var O={"chart_metric_0": {"title": {"text": "A类（顶尖人才）补贴上限", "left": "center", "top": 4, "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis", "confine": true}, "grid": {"left": 48, "right": 24, "top": 46, "bottom": 40, "containLabel": true}, "xAxis": {"type": "category", "data": ["杭州市", "宁波市", "温州市"], "axisLabel": {"fontSize": 11}}, "yAxis": {"type": "value", "name": "万元", "axisLabel": {"fontSize": 10}}, "series": [{"name": "A类（顶尖人才）补贴上限", "type": "bar", "data": [{"value": 800.0, "name": "杭州市", "url": "https://www.example.gov.cn/sample/1.html"}, {"value": 600.0, "name": "宁波市", "url": "https://www.example.gov.cn/sample/4.html"}, {"value": 500.0, "name": "温州市", "url": "https://www.example.gov.cn/sample/7.html"}], "barWidth": 42, "label": {"show": true, "position": "top", "fontSize": 10}, "itemStyle": {"color": "#2a78d6"}}]}, "chart_metric_1": {"title": {"text": "B类（领军人才）补贴上限", "left": "center", "top": 4, "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis", "confine": true}, "grid": {"left": 48, "right": 24, "top": 46, "bottom": 40, "containLabel": true}, "xAxis": {"type": "category", "data": ["杭州市", "宁波市", "温州市"], "axisLabel": {"fontSize": 11}}, "yAxis": {"type": "value", "name": "万元", "axisLabel": {"fontSize": 10}}, "series": [{"name": "B类（领军人才）补贴上限", "type": "bar", "data": [{"value": 300.0, "name": "杭州市", "url": "https://www.example.gov.cn/sample/1.html"}, {"value": 240.0, "name": "宁波市", "url": "https://www.example.gov.cn/sample/4.html"}, {"value": 200.0, "name": "温州市", "url": "https://www.example.gov.cn/sample/7.html"}], "barWidth": 42, "label": {"show": true, "position": "top", "fontSize": 10}, "itemStyle": {"color": "#eb6834"}}]}, "chart_metric_2": {"title": {"text": "C类（高级人才）补贴上限", "left": "center", "top": 4, "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis", "confine": true}, "grid": {"left": 48, "right": 24, "top": 46, "bottom": 40, "containLabel": true}, "xAxis": {"type": "category", "data": ["杭州市", "宁波市", "温州市"], "axisLabel": {"fontSize": 11}}, "yAxis": {"type": "value", "name": "万元", "axisLabel": {"fontSize": 10}}, "series": [{"name": "C类（高级人才）补贴上限", "type": "bar", "data": [{"value": 100.0, "name": "杭州市", "url": "https://www.example.gov.cn/sample/1.html"}, {"value": 80.0, "name": "宁波市", "url": "https://www.example.gov.cn/sample/4.html"}, {"value": 60.0, "name": "温州市", "url": "https://www.example.gov.cn/sample/7.html"}], "barWidth": 42, "label": {"show": true, "position": "top", "fontSize": 10}, "itemStyle": {"color": "#1baf7a"}}]}};for(var id in O){var el=document.getElementById(id);if(!el||!window.echarts)continue;var ec=window.echarts.default||window.echarts;try{var ch=ec.init(el);ch.setOption(O[id]);ch.on('click',function(p){if(p&&p.data&&p.data.url)window.open(p.data.url,'_blank');});}catch(e){el.style.display='none';}}})();</script>
+<script>(function(){var O={"chart_compare": {"title": {"text": "并列对比", "left": "center", "top": 4, "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis", "confine": true}, "grid": {"left": 48, "right": 24, "top": 46, "bottom": 40, "containLabel": true}, "legend": {"top": 26, "left": "center", "itemWidth": 14, "textStyle": {"fontSize": 11}}, "xAxis": {"type": "category", "data": ["A 类（顶尖）", "B 类（领军）", "C 类（高级）"], "axisLabel": {"fontSize": 11}}, "yAxis": {"type": "value", "name": "万元", "nameTextStyle": {"fontSize": 10}, "axisLabel": {"fontSize": 10}}, "series": [{"name": "杭州", "type": "bar", "data": [{"value": 1200.0, "name": "A 类（顶尖）", "url": "https://example.com/sample/1"}, {"value": 800.0, "name": "B 类（领军）", "url": "https://example.com/sample/1"}, {"value": 400.0, "name": "C 类（高级）", "url": "https://example.com/sample/1"}], "barGap": "20%", "barWidth": 34, "symbolSize": 7, "label": {"show": true, "position": "top", "fontSize": 10, "formatter": "{c}"}, "lineStyle": {"width": 2.2}, "itemStyle": {"color": "#2a78d6"}}, {"name": "宁波", "type": "bar", "data": [{"value": 1000.0, "name": "A 类（顶尖）", "url": "https://example.com/sample/2"}, {"value": 600.0, "name": "B 类（领军）", "url": "https://example.com/sample/2"}, {"value": 300.0, "name": "C 类（高级）", "url": "https://example.com/sample/2"}], "barGap": "20%", "barWidth": 34, "symbolSize": 7, "label": {"show": true, "position": "top", "fontSize": 10, "formatter": "{c}"}, "lineStyle": {"width": 2.2}, "itemStyle": {"color": "#eb6834"}}, {"name": "温州", "type": "bar", "data": [{"value": 800.0, "name": "A 类（顶尖）", "url": "https://example.com/sample/3"}, {"value": 500.0, "name": "B 类（领军）", "url": "https://example.com/sample/3"}, {"value": 200.0, "name": "C 类（高级）", "url": "https://example.com/sample/3"}], "barGap": "20%", "barWidth": 34, "symbolSize": 7, "label": {"show": true, "position": "top", "fontSize": 10, "formatter": "{c}"}, "lineStyle": {"width": 2.2}, "itemStyle": {"color": "#1baf7a"}}]}};for(var id in O){var el=document.getElementById(id);if(!el||!window.echarts)continue;var ec=window.echarts.default||window.echarts;try{var ch=ec.init(el);ch.setOption(O[id]);ch.on('click',function(p){if(p&&p.data&&p.data.url)window.open(p.data.url,'_blank');});}catch(e){el.style.display='none';}}})();</script>
 </body>
 </html>

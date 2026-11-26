@@ -1,0 +1,56 @@
+{
+  "brand": {
+    "product_name": "深知公文写作"
+  },
+  "channels": {
+    "route_keywords": {
+      "deep": [
+        "深度"
+      ],
+      "trusted": [
+        "可信"
+      ]
+    },
+    "labels": {
+      "deep": "深度搜索",
+      "trusted": "可信搜索"
+    },
+    "summary": {
+      "deep": "深度搜索 {deep} 路",
+      "trusted": "深知可信搜索 {trusted} 次",
+      "fallback": "深知检索 {n} 路"
+    },
+    "step1_fallback": "深知检索",
+    "internal_token_filter": [
+      "联网",
+      "可信联网",
+      "宿主 WebSearch"
+    ],
+    "tokens": {
+      "宿主 WebSearch（公开网络）": "公开网络检索"
+    }
+  },
+  "selfcheck": {
+    "labels": {
+      "事实有据": "事实有据",
+      "结构完整": "结构完整",
+      "无占位残留": "无占位残留",
+      "无AI味": "无AI味",
+      "格式合规": "格式合规"
+    }
+  },
+  "agent_track": {
+    "enabled": true,
+    "require_evidence": true
+  },
+  "stage": {
+    "enable": false
+  },
+  "charts": {
+    "enable": false
+  },
+  "verify": {
+    "enabled": true,
+    "required": false
+  }
+}

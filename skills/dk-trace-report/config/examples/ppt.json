@@ -1,0 +1,47 @@
+{
+  "brand": {
+    "product_name": "深知可信PPT",
+    "report_title_prefix": "溯源核验报告"
+  },
+  "channels": {
+    "route_keywords": {
+      "trusted": [
+        "可信"
+      ]
+    },
+    "labels": {
+      "trusted": "可信搜索"
+    },
+    "summary": {
+      "trusted": "深知检索 {trusted} 路",
+      "fallback": "深知检索 {n} 路"
+    },
+    "step1_fallback": "深知检索",
+    "internal_token_filter": [
+      "联网",
+      "可信联网",
+      "宿主 WebSearch"
+    ]
+  },
+  "agent_track": {
+    "enabled": true,
+    "require_evidence": true
+  },
+  "official_host_allow": [
+    "mpfa.org.hk"
+  ],
+  "stage": {
+    "enable": true,
+    "labels": {
+      "outline": "提纲版",
+      "final": "成稿版"
+    }
+  },
+  "charts": {
+    "enable": false
+  },
+  "verify": {
+    "enabled": true,
+    "required": false
+  }
+}

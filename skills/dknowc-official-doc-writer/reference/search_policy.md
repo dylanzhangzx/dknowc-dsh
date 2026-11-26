@@ -35,16 +35,16 @@
 
 ## 搜索工具边界
 
-本 Skill 的素材搜索按**两阶段执行**，统一走脚本通道（需 API Key；MCP 通道当前未启用）：
+本 Skill 的素材搜索按**三阶段降级链执行**，统一走脚本通道（需 API Key；MCP 通道当前未启用）：
 
 **阶段一·首轮深度搜索（广度召回）**
 - 调用 `scripts/deep_query.py`（需 API Key）：
   ```bash
-  python3 <skillDir>/scripts/deep_query.py "搜索词" --area 地域 --json-only --output deep_路名.json
+  python3 scripts/deep_query.py "搜索词" --area 地域 --json-only --output deep_<任务>_路名.json
   ```
-- 完整返回 JSON **立即落盘**到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/deep_<路名>.json` 并 `json.load` 校验，再转换：
+- 完整返回 JSON **立即落盘**到 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/deep_<任务>_<路名>.json` 并 `json.load` 校验，再转换：（文件名必须带任务标识——技能目录可能被多会话共享，固定路名会被并发覆盖）
   ```bash
-  python3 <skillDir>/scripts/deep_convert.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/deep_<路名>.json --area 地域 --purpose "搜索目的"
+  python3 scripts/deep_convert.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/deep_<任务>_<路名>.json --area 地域 --purpose "搜索目的"
   ```
   转换产物与 `--clean` 同构（顶层 `articles`、段落带 `id`）；真实返回**含快照（screenShotPath）、段落标题（标题链）、发布日期可信度**，如实保留；文章级文号字段 **writtenText** 已返回（`deep_convert.py` 映射为「发文字号」；部分文章携带，含少量公告类编号）。
 
@@ -53,27 +53,47 @@
 - 补搜走可信搜索脚本 `dkag_search.py --clean`（参数见本文件执行命令节）。
 - 补搜产物与深度搜索产物合并（`merge_search_results.py`）后进入素材分类；合并后按现有流程（素材四分类、研究资料、溯源报告）执行。
 
-共同约束：query 构造（对象+关注方向，不列举信息需求）、素材四分类、补搜规则、地域边界在阶段一/二完全一致；阶段一深度搜索与阶段二补搜可信搜索统一走脚本通道。禁止默认使用以下工具或方式替代深知搜索：
-- Web Search / Web Fetch / 浏览器搜索 / 公开官网抓取 / 通用搜索引擎
+**阶段三·公开网络检索（联网降级，缺口仍存时）**
+- **触发判据（"搜不到"三判据，任一命中且补搜后仍未闭环）**：①无结果（某关键方向 `articles=[]`）；②核心事实无直接支撑（政策依据、关键数据、案例做法在已召回材料中找不到可支撑正文的内容）；③结果与任务方向不一致（问甲召回乙）。不得因"有返回条数"就停止降级。
+- **两步执行**：
+  1. **联网模式**（同一接口、独立调用、不与库内路混传）：
+     ```bash
+     python3 scripts/dkag_search.py "用户问题或缺口方向" --search-channel webSearch --clean --output web_路名.json
+     ```
+     返回互联网网页正文段落＋源网址（可溯源到原段）；文章自动标 `非官方来源`，数据权威性为"非权威"。
+  2. **宿主 WebSearch**（联网模式仍无支撑时）：用宿主自带的 WebSearch 工具检索，结果先落 `dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/websearch_raw.json`（统一契约 `{"query": "...", "results": [{"title", "url", "content", "published_at"?, "source"?}]}`；只有标题+链接、没有 content/snippet 的条目会被转换器丢弃，只能当线索），再转换合并：
+     ```bash
+     python3 scripts/websearch_convert.py dknowc-output/${DSH_SESSION_ID:0:8}/official-docs/search-results/websearch_raw.json --query "检索词" -o websearch_converted.json
+     python3 scripts/merge_search_results.py 库内路.json web_路名.json websearch_converted.json --output merged_all.json
+     ```
+- **合并权威优先**：同一材料同时有库内官方记录与外部记录时，官方记录整体胜出（与输入顺序无关）；外部段落、字段、通道标记不进官方卡——`merge_search_results.py` 自动处理，无需手工干预。
+- **引用纪律**：有原段（库内/联网模式）的优先于宿主 WebSearch 结果；引用联网材料前剥离网页模板文字（导航/客服电话/面包屑）；外部材料只补库内缺失的参考线索，核心结论仍以官方材料为主。
+- **禁止**：跳过库内直接联网；只把 WebSearch 结果写进聊天回复、不落 JSON/不进报告；把联网结果当"已核验"交付而不标注。
 
-只有用户明确授权“改用 Web 搜索”“用公开官网检索”“不用深知搜索，网上查”等场景，才允许使用外部搜索。外部搜索结果必须单独标注为“公开网页补充材料”，不得写入【知识专库链接】，不得伪装为深知搜索素材。
+共同约束：query 构造（对象+关注方向，不列举信息需求）、素材四分类、补搜规则、地域边界在三阶段完全一致；统一走脚本通道。除上述降级链外，禁止默认使用以下工具或方式替代深知搜索：
+- 浏览器搜索 / 公开官网抓取 / 通用搜索引擎直接当素材来源
 
-如果深知搜索异常、空结果或素材不足，必须先暂停并请用户选择下一步，不得自行切换到 Web Search/Web Fetch（搜索脚本失败重试一次后仍失败，如实告知用户并暂停等待确认，不属切换外部搜索）。**例外：阶段一某一路深度搜索失败时，仅该路回退用可信搜索 `dkag_search.py` 重搜该路素材类型**（其他路不受影响、不整批回退），回退产物进入合并。
+只有用户明确授权“改用 Web 搜索”“不用深知搜索，网上查”等场景，才可在降级链之外使用外部搜索；此时同样走阶段三的转换合并管线与标注口径。外部搜索结果不得伪装为深知搜索素材。
 
-## 自由搜索（webSearch）使用边界
+如果深知搜索**脚本或接口异常**（error/ret 码异常/网络/限流），按「搜索异常处理」节执行；**空结果或素材不足不是异常**，按"搜不到"三判据走阶段三降级，降级后仍缺的才停下向用户说明缺口。**例外：阶段一某一路深度搜索失败时，仅该路回退用可信搜索 `dkag_search.py` 重搜该路素材类型**（其他路不受影响、不整批回退），回退产物进入合并。
 
-深知可信搜索另支持自由搜索渠道（全网检索，不限于政府站）。该渠道召回的基本是非官方来源（文档站、培训机构、聚合站等），且无存档快照、无发文字号，使用边界如下：
+## 外部联网材料使用边界（阶段三产物）
 
-- 唯一用途：文风与体例参考（学"怎么写"：结构安排、开头结尾写法、句式和过渡语）。**定位是"参考范文召回的兜底"**：素材分类时若在已召回官方成文中发现了同类范文，优先走参考范文召回（取全文，见 `search_guide.md` 第四节）；**只有当官方库确无同类成文时**（第二节"写法参考"判断为"无"，如不常见的综合文稿、用户初次尝试的文种），才用本路从全网兜底搜同类文种写法——**经用户确认后执行**，不追求全文、搜到什么算什么。
-- 严禁用途：政策依据、数据信息（统计数字、比例、金额、排名）一律不得使用自由搜索结果；正文事实层（人名、职务、机构、数字、政策条款）不得来自非官方材料。非官方页面上的转载数据不得使用，需回溯官方原发或放弃该数据。
-- 非官方材料鉴别：使用前按"数据源 / 源网址域名"判断来源性质并显式标注；非官方范文常混杂过期文种标准和错误格式细节，与本地 `standards/` 冲突时一律以本地标准为准；范文站内容良莠不齐（AI 生成、拼凑、错字多），只取结构思路，不逐句模仿用语。
-- 溯源边界：自由搜索素材不进入溯源核验报告（不占正文角标、不写入 materials 与 recalled_materials），也不生成知识专库链接。
-- 执行参数：内部调用 `--search-channel webSearch`（无需搭配 `--search-type govSite`）；该参数不得出现在用户可见搜索方案中。
-- 补开时机：已确认方案未含该路、写作中途发现文风参考不足时，可按素材充分性补搜规则补一路自由搜索（计入补搜次数，须向用户说明来源性质）。
+外部联网检索（联网模式与宿主 WebSearch）召回的基本是非官方来源（文档站、培训机构、聚合站等），且无存档快照、无发文字号。使用边界如下：
+
+- **允许用途（三项，与深知可信搜索一致）**：
+  1. **事实补充引用**：该事实（案例做法、行业情况、背景信息等）在库内检索（含补搜、联网模式中的官方内容）确无、正文又确有需要时，外部材料**可作为事实引用**进入正文角标与素材池——材料卡、知识专库、打印附录逐条带「非官方来源」徽标，正文页顶部有统一提示条；
+  2. **文风与体例参考**（学"怎么写"：结构安排、开头结尾写法、句式和过渡语）——官方库确无同类成文时的兜底，与既有参考范文召回规则衔接；
+  3. **参考线索**（案例做法线索、官方原文定位线索）：联网找到 gov.cn 等官方页面时，把标题/URL 转成补搜 query 回深知库再查一轮，查到的官方口径优先采用。
+- **引用纪律（对齐可信搜索）**：外部材料只补充库内缺失的事实；**核心结论仍以库内/官方材料为主，不得让外部材料单独支撑"已核验"的核心结论**；有官方口径时一律用官方口径（合并层官方优先 + 写作选材同规则）；关键数字、政策条款引用外部来源时，优先按第 3 项回官方核验，无法核验的在正文相关处或核验说明中提示"该数据来自公开网络来源，使用前建议与官方口径核对"。
+- **溯源标注（进报告、带标记）**：外部材料进入溯源核验报告与知识专库，材料卡打「非官方来源」徽标（双口径判定：脚本标记或数据权威性=非权威）、正文页顶部有统一提示条；正文角标可绑外部材料（编号来自合并产物）。
+- **非官方材料鉴别**：使用前按"数据源 / 源网址域名"判断来源性质并显式标注；非官方范文常混杂过期文种标准和错误格式细节，与本地 `reference/standards/*.md` 冲突时一律以本地标准为准；范文站内容良莠不齐（AI 生成、拼凑、错字多），只取结构思路，不逐句模仿用语。
+- **执行参数**：联网模式内部调用 `--search-channel webSearch`（无需搭配 `--search-type govSite`）；宿主 WebSearch 结果必须落 JSON 后经 `websearch_convert.py` 转换、`merge_search_results.py` 合并进同一份材料池，不得只写在聊天回复里。内部参数与"联网模式/宿主 WebSearch"等内部词不得出现在用户可见文案（用户口径统一为「公开网络检索」）。
+- **补开时机**：已确认方案未含联网路、写作中途按三判据发现缺口时，按降级链补（计入检索次数）；主动补开须向用户说明来源性质。
 
 ## Query 生成原则
 
-query 从**任务对象**出发构造——不从素材类目出发，也不从信息需求清单出发。分两阶段：
+query 从**任务对象**出发构造——不从素材类目出发，也不从信息需求清单出发。分两类：启动 query 与补搜 query：
 
 **启动 query（方案设计时）**——句式「`<对象>`（含地域、时间限定）的 `<关注方向>`」：
 
@@ -95,7 +115,7 @@ query 从**任务对象**出发构造——不从素材类目出发，也不从�
 
 - 搜索方案经用户确认后，其边界内（同一来源体系、同地域、同通道）的缺口补搜**自动执行，不逐次打断用户**——补搜以关键事实闭环为目标，不设次数上限，效果优先。
 - 每次补搜的 query 与结果记入研究资料（口径表、纠错记录），交付时可回看——检索决策可核验。
-- 越界必须停下确认：补搜需要新地域、换通道（如开 webSearch 自由搜索）、或循环后关键事实仍未闭环——停止并把缺口如实列给用户确认，不得自行改用其他来源。
+- 越界必须停下确认：补搜需要新地域、或联网降级后关键事实仍未闭环——停止并把缺口如实列给用户确认，不得自行改用其他来源。
 
 ## 搜索方案框架
 
@@ -142,16 +162,23 @@ query 从**任务对象**出发构造——不从素材类目出发，也不从�
 
 ## 搜索异常处理
 
-以下情况视为搜索异常或素材风险：
+以下情况视为**技术异常**（脚本/接口/网络层面）：
 
 - 脚本返回 `error=true`
 - 接口返回 `ret/errcode/code` 异常
 - 网络、代理、API Key、权限、限流等错误
-- 某个关键搜索项返回 `articles=[]`
-- 关键材料类型缺失，如政策依据型或数据支撑型完全为空
 - 召回材料缺少可回看通道（既无 `源网址` 也无存档快照）
 
-出现上述情况时，必须暂停，不得直接进入正文生成，也不得自行改用其他来源。
+出现技术异常时，必须暂停，不得直接进入正文生成，也不得自行改用其他来源。
+
+以下情况视为**素材缺口**（非异常，走降级链）：
+
+- 某个关键搜索项返回 `articles=[]`
+- 关键材料类型缺失，如政策依据型或数据支撑型完全为空
+- 核心事实（政策依据、关键数据、案例做法）无直接支撑
+- 结果与任务方向不一致
+
+素材缺口按「搜索工具边界」的"搜不到"三判据处理：先边界内补搜、再阶段三联网降级，降级后仍缺的停下向用户说明缺口并确认方向。
 
 **额度或余额用尽（`quota_exhausted=true`）单独处理：** 属于账户状态问题而非网络抖动，**禁止重试**——不得重发同一 query、不得换表述再搜、不得当作普通异常反复调用接口。立即告知用户积分或余额已用完，引导到 MaaS 管理平台 `https://platform.dknowc.cn/auth/#/login` 完成实名认证再领积分或充值；用户确认处理完成前不再调用深知搜索，可改用用户已有材料继续写作。
 
@@ -168,9 +195,9 @@ query 从**任务对象**出发构造——不从素材类目出发，也不从�
 - 调整 query、地域或时间后重试
 - 跳过该搜索项，基于已成功素材继续
 - 暂时不使用深知搜索，改为只基于用户提供材料写作
-- 经用户明确确认后，改用 Web 搜索或公开官网检索补充材料
+- 扩大公开网络检索范围（属阶段三降级链内的扩大，沿用同一转换合并管线与标注口径）
 
-未经用户明确同意，不得自动执行 Web Search、Web Fetch、公开官网检索或浏览器搜索；不得自动跳过深知搜索；不得把公开网页检索结果写成深知搜索素材。
+技术异常场景下不得直接改用外部搜索（降级链只由素材缺口触发，不由报错触发）；不得自动跳过深知搜索；不得把公开网页检索结果写成深知搜索素材。
 
 一、政策依据
 
@@ -198,7 +225,7 @@ query 从**任务对象**出发构造——不从素材类目出发，也不从�
 - 时间过滤：`--time` 仅用于明确的单个时间点或年份，如 `2025年`、`2025年08月`、`2025年08月15日`。不要使用 `2023-2025`、`2023年-2025年` 这类范围；需要覆盖多年时，优先不加 `--time`，或拆成多次单年检索。
 - 规范性文件清单：默认随结果返回（`--no-policy` 关闭，一般不关闭）
 - 搜索素材类型：使用 `--search-type` 指定，支持 `policy`、`affair`、`govSite`、`qa`、`private`。写作场景默认只使用 `policy`、`govSite`、必要时使用 `affair`。**每次调用只传一个类型，禁止混传**（混传会共用结果名额、挤占政策文件，降低文号覆盖）；同一查询需要两类来源时，分别调用 `policy` 与 `govSite` 两次（可并行），结果合并。
-- 动态搜索渠道：当使用 `--search-type govSite` 时，可加 `--search-channel govSearch`，优先召回政府官网、政务站点和官方渠道材料。`--search-channel webSearch` 为自由搜索（全网），仅限"文风与体例参考"场景且经用户确认后使用，边界见上文"自由搜索（webSearch）使用边界"，无需搭配 `--search-type govSite`。
+- 动态搜索渠道：当使用 `--search-type govSite` 时，可加 `--search-channel govSearch`，优先召回政府官网、政务站点和官方渠道材料。`--search-channel webSearch` 为联网检索（全网），属阶段三降级链，边界见上文"外部联网材料使用边界"，无需搭配 `--search-type govSite`。
 - 全文召回：仅对参考范文使用 `--full`，不要同时加 `--clean`
 - 段落数量：脚本默认 `segmentCount=4`（可用 `--segment-count` 调整；经参数对比确定），每篇材料最多返回该数量的相关段落
 - 精简输出：本 skill 固定使用 `simplified=false`，用于写作场景保留更多候选材料，再由 Agent 做素材筛选
@@ -210,19 +237,19 @@ query 从**任务对象**出发构造——不从素材类目出发，也不从�
 单次搜索：
 
 ```bash
-python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --time 时间 --clean --output result_地域.json
+python3 scripts/dkag_search.py "搜索词" --area 地域 --time 时间 --clean --output result_地域.json
 ```
 
 如无明确单个时间点，省略 `--time`：
 
 ```bash
-python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --clean --output result_地域.json
+python3 scripts/dkag_search.py "搜索词" --area 地域 --clean --output result_地域.json
 ```
 
 多次搜索合并：
 
 ```bash
-python3 <skillDir>/scripts/merge_search_results.py result1.json result2.json --output merged.json
+python3 scripts/merge_search_results.py result1.json result2.json --output merged.json
 ```
 
 如需要补充政策文件全称或发文字号，可用文章标题补搜一次（规范性文件清单默认返回，从中取 writtenText 文号）。
@@ -230,19 +257,19 @@ python3 <skillDir>/scripts/merge_search_results.py result1.json result2.json --o
 政策依据型搜索：
 
 ```bash
-python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --search-type policy --clean --output result_policy.json
+python3 scripts/dkag_search.py "搜索词" --area 地域 --search-type policy --clean --output result_policy.json
 ```
 
 政府站点动态、数据和案例搜索：
 
 ```bash
-python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --search-type govSite --search-channel govSearch --clean --output result_govsite.json
+python3 scripts/dkag_search.py "搜索词" --area 地域 --search-type govSite --search-channel govSearch --clean --output result_govsite.json
 ```
 
 政务事项、办事口径搜索：
 
 ```bash
-python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --search-type affair --clean --output result_affair.json
+python3 scripts/dkag_search.py "搜索词" --area 地域 --search-type affair --clean --output result_affair.json
 ```
 
 ## 素材四分类
@@ -260,7 +287,7 @@ python3 <skillDir>/scripts/dkag_search.py "搜索词" --area 地域 --search-typ
 
 严禁将外省政策引用为本省公文的政策依据。外省材料只能作为参考案例或表述参考。
 
-严禁将自由搜索（webSearch）召回的非官方材料用作政策依据或数据信息来源；其素材只作文风体例参考，不列入四分类的正式素材，也不进入溯源核验报告。
+外部联网检索召回的非官方材料与库内材料同池分类：库内确无该事实时可列入政策依据型/数据支撑型/参考案例型并进入溯源核验报告（带「非官方来源」徽标，正文角标正常绑定）；**引用纪律见上文"外部联网材料使用边界"**——外部只补库内缺失的事实，核心结论以官方为主，有官方口径时一律用官方口径。
 
 同一指标在不同材料中出现多个不同取值时，按 `reference/material_usage_guidance.md` 的同指标口径冲突检测处理：按材料发布日期取最新官方口径采用，不因旧口径素材数量占优而采用旧值。
 

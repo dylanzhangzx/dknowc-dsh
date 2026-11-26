@@ -1,6 +1,3 @@
-official-docs/search-results/*
-official-docs/output/*
-!official-docs/search-results/.gitkeep
-!official-docs/output/.gitkeep
+official-docs/
 __pycache__/
 .DS_Store

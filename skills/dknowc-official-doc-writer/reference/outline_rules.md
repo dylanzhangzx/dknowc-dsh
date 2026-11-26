@@ -5,7 +5,7 @@
 正式写作需求进入搜索或正文生成前，先取范文大纲。统一调用脚本接口（需 API Key）：
 
 ```bash
-python3 <skillDir>/scripts/outline_reference.py "用户写作需求" --output outline_任务名.json
+python3 scripts/outline_reference.py "用户写作需求" --output outline_任务名.json
 ```
 
 `用户写作需求` 必须尽量使用用户原始需求的完整表述，保留文种、主题、地域、用途、重点内容和交付要求；不得只传入压缩后的标题或文件名。例如用户要求“关于深圳市人工智能赋能基层治理应用情况的调研报告，重点包括发展背景、主要做法、典型应用场景、存在问题和下一步建议”，不得压缩成“深圳市人工智能赋能基层治理应用情况调研报告”后调用。

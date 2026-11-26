@@ -1,0 +1,65 @@
+{
+  "brand": {
+    "product_name": "深知可信PPT",
+    "report_title_prefix": "溯源核验报告",
+    "lib_foot_source": "来源：深知可信PPT · 深知可信搜索 · 每段摘录均取自原文原段",
+    "lib_foot_external": "来源：深知可信PPT · 部分材料来自公开网络，已标注非官方来源，请以官方口径复核",
+    "source_fallback": "深知可信搜索",
+    "source_fallback_external": "深知可信搜索（含公开网络材料）"
+  },
+  "channels": {
+    "route_keywords": {
+      "trusted": [
+        "可信"
+      ]
+    },
+    "labels": {
+      "trusted": "可信搜索"
+    },
+    "summary": {
+      "trusted": "深知检索 {trusted} 路",
+      "fallback": "深知检索 {n} 路"
+    },
+    "step1_fallback": "深知检索",
+    "internal_token_filter": [
+      "阶段一",
+      "阶段二",
+      "阶段三",
+      "可信联网",
+      "外部联网",
+      "宿主 WebSearch"
+    ]
+  },
+  "selfcheck": {
+    "labels": {
+      "fact_basis": "事实有据",
+      "quality": "质检通过",
+      "placeholders": "无占位残留",
+      "chart_sources": "图表有来源注",
+      "caliber": "口径一致",
+      "checklist": "素材清单齐"
+    }
+  },
+  "agent_track": {
+    "enabled": true,
+    "require_evidence": true
+  },
+  "official_host_allow": [
+    "mpfa.org.hk"
+  ],
+  "stage": {
+    "enable": true,
+    "labels": {
+      "outline": "提纲版",
+      "final": "成稿版"
+    }
+  },
+  "charts": {
+    "enable": false
+  },
+  "verify": {
+    "enabled": true,
+    "required": false,
+    "compare_digests": true
+  }
+}

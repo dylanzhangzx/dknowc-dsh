@@ -1,0 +1,119 @@
+{
+  "brand": {
+    "product_name": "深知可信搜索",
+    "footer_body": "{product} · 正文 ｜ 内容由 AI 生成，仅供参考",
+    "footer_report": "{product} · 溯源核验报告 ｜ 内容由 AI 生成，仅供参考",
+    "argparse_desc": "生成溯源核验报告 HTML（{product}）",
+    "lib_foot_source": "来源：{product} · 每段摘录均取自原文原段",
+    "lib_foot_external": "来源：{product} · 部分材料来自公开网络，已标注非官方来源，请以官方口径复核",
+    "source_fallback": "{product}",
+    "source_fallback_external": "{product}（含公开网络材料）",
+    "report_title_prefix": "溯源核验报告",
+    "default_page_title": "溯源核验报告"
+  },
+  "channels": {
+    "route_keywords": {
+      "web": [
+        "WebSearch",
+        "宿主"
+      ],
+      "deep": [
+        "深度"
+      ],
+      "trusted": [
+        "可信"
+      ]
+    },
+    "labels": {
+      "deep": "深度搜索",
+      "trusted": "可信搜索"
+    },
+    "summary": {
+      "deep": "深度搜索 {deep} 路",
+      "trusted": "可信补搜 {trusted} 次",
+      "fallback": "深知检索 {n} 路"
+    },
+    "step1_fallback": "深知检索",
+    "internal_token_filter": [
+      "联网",
+      "可信联网",
+      "宿主 WebSearch"
+    ],
+    "tokens": {
+      "深知可信搜索·联网": "深知可信搜索"
+    },
+    "user_facing_replacements": [
+      [
+        "宿主 WebSearch",
+        "公开网络检索"
+      ],
+      [
+        "外部联网材料",
+        "公开网络材料"
+      ],
+      [
+        "外部联网",
+        "公开网络"
+      ],
+      [
+        "可信联网",
+        "可信搜索"
+      ],
+      [
+        "阶段三",
+        "补充检索"
+      ],
+      [
+        "阶段二",
+        "补充检索"
+      ],
+      [
+        "阶段一",
+        "检索"
+      ],
+      [
+        "非官方来源 · 待核验",
+        "非官方来源"
+      ],
+      [
+        "（非官方来源，待核验）",
+        "（非官方来源）"
+      ],
+      [
+        "(非官方来源，待核验)",
+        "(非官方来源)"
+      ],
+      [
+        "非官方来源/待核验",
+        "非官方来源"
+      ],
+      [
+        "非官方来源、待核验",
+        "非官方来源"
+      ]
+    ]
+  },
+  "selfcheck": {
+    "labels": {
+      "fact_basis": "事实有据",
+      "binding": "角标绑定",
+      "consistency": "答案一致",
+      "freshness": "时效确认",
+      "no_gap": "无未核验断言"
+    }
+  },
+  "stage": {
+    "enable": false
+  },
+  "charts": {
+    "enable": true
+  },
+  "verify": {
+    "enabled": true,
+    "required": false
+  },
+  "agent_track": {
+    "enabled": true,
+    "require_evidence": true
+  }
+}

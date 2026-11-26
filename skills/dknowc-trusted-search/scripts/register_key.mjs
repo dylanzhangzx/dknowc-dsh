@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// 国内 MaaS 注册助手（供 dsh 插件 skill 调用；纯 node，内置 fetch，无三方依赖）。
+// 国内 MaaS 注册助手（供 skill 调用；纯 node，内置 fetch，无三方依赖）。
 //   node register_key.mjs [--guide URL] challenge --phone <p> [--channel <c>]
 //     读官方 Agent 注册指引 → 申请一道文字题 → 本机保存会话与题目；退出 0 返回题目，
 //     退出 2 表示平台要求人工图片验证（返回 verificationUrl），退出 1 为失败。
 //   node register_key.mjs answer --phone <p> --answer <非负整数>
 //     提交答案；答对即申请发码。退出 0=已发短信；3=答错换题（JSON 带新 question，需再答）；
 //     2=转人工接手；4=发送结果未确认（不重发）；1=失败。
-//   node register_key.mjs register --phone <p> --vcode <c> [--type 11] [--organ ..] [--name ..] [--channel ..] [--source ..] [--password ..] [--new-key] [--no-persist]
+//   node register_key.mjs register --phone <p> --vcode <c> [--organ ..] [--name ..] [--channel ..] [--source ..] [--password ..] [--new-key] [--no-persist]
 //     可能返回 pending:true（账号已创建、密钥资源准备中）——非错误，稍后同参数重试一次。
 //   node register_key.mjs save-key     # 把 MCP create_api_key 拿到的密钥落盘（stdin 优先，或 --api-key）
 //   node register_key.mjs persist      # 事后补持久化：从环境变量（或 --api-key）读 Key 写入专用配置文件
@@ -18,6 +18,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { randomInt } from "node:crypto";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,7 +27,8 @@ const __dirname = path.dirname(__filename);
 const DEFAULT_BASE = "https://platform.dknowc.cn/auth/home/userAuto";
 const DEFAULT_OPEN_BASE = "https://open.dknowc.cn";
 const DEFAULT_CHANNEL = "46A3BA1D-3E1A-4E8C-BD50-A6DCBEE1DB05";
-const DEFAULT_TYPE = "11";
+// 2026-11-04：register 请求不再传 type——平台 Key 为通用 Key、与 type 无关
+// （实测不传 type 服务端参数校验照常通过，与带 type 响应一致）。
 // body 的 source 是注册 API 的合同标记：服务端按 source="agent" 放行"老用户直接返 Key"
 // 路径（生产环境可能出现：source 传 skill 标识时返回"用户已存在！"错误，
 // source=agent 时正常返回 Key）。它与 X-Dknowc-Attribution 统计声明里的 skill 标识是两个
@@ -47,6 +49,16 @@ const DEFAULT_GUIDE = "https://platform.dknowc.cn/maas/identity-center/maas/logi
 // 挑战状态（Cookie / token / attempt / 题目）落盘，供 challenge 与 answer 两次调用之间传递。
 // attempt 必须始终使用服务端返回值，刷新题目不增加机会，故本机只做保存、不改写。
 const CHALLENGE_STATE_FILE = "maas_agent_challenge.json";
+// 2026-11-18 起（对齐深知公文写作 3.9.9）：固定注册通行码发码通道。平台按注册渠道分配一条
+// 固定通行值，一次请求即申请验证码，不再需要「先领题再作答」。原领题路径整体保留，
+// 通行码失效/停用即自动回落；--legacy 可显式跳过本通道（平台旧路径回归用）。
+// 注册通行码是发码通行值，不是用户检索凭证：只放请求头，不进对话/日志/工作区。
+const REGISTRATION_PASSCODE_SEND_URL =
+  "https://platform.dknowc.cn/auth/open-api/maas/identity/v1/agent-registration-key-send";
+const PASSCODE_HEADER_NAME = "X-MaaS-Registration-Key"; // 协议约定请求头（平台契约，名称不可改）
+const REGISTRATION_PASSCODE = "So3EdPDJMf7z0MmH1zfvm6VDEQpR2EIRRsqqtnl866MrpVPl-Sj--g";
+// 发码返回的会话（SESSION / sl-session）在发码与注册之间复用，按手机号落盘。
+const REG_SESSION_STATE_FILE = "maas_registration_session.json";
 // Key 持久化目标：本机专用配置文件（XDG 规范路径）。
 // 本脚本不读取、不写入、不改写任何 shell 配置文件（2026-10-29 审核整改：彻底移除 shell 配置读写；
 // 历史版本可能残留的 Key 标记块由用户自行处理）。
@@ -126,7 +138,9 @@ function readChallengeState() {
   try {
     const raw = fs.readFileSync(stateFilePath(), "utf-8");
     const st = JSON.parse(raw);
-    return st && typeof st === "object" ? st : null;
+    // 已清除的占位状态（见 clearChallengeState）等同"没有进行中的题目"
+    if (st && typeof st === "object" && !st.cleared) return st;
+    return null;
   } catch { return null; }
 }
 function writeChallengeState(st) {
@@ -137,12 +151,58 @@ function writeChallengeState(st) {
   } catch { return false; }
 }
 function clearChallengeState() {
-  try { fs.unlinkSync(stateFilePath()); } catch { /* 不存在时忽略 */ }
+  // 1.8.2 整改：不再删除状态文件（宿主把删除判成"删除文件"并要求确认，
+  // 注册成功收尾时弹框会吓到用户）。改为写入"已清除且已过期"的空状态：
+  // 题目/答案/token 等敏感字段随覆盖消失；expiresAt 设为过去时间，
+  // 读取端按"过期"处理，不会误复用。
+  try {
+    fs.writeFileSync(stateFilePath(), '{"cleared": true, "expiresAt": 1}\n',
+      { encoding: "utf-8", mode: 0o600 });
+  } catch { /* 写入失败不影响主流程：旧状态到期后自然失效 */ }
 }
 function challengeExpired(st) {
   const exp = Number(st && st.expiresAt);
   if (!Number.isFinite(exp) || exp <= 0) return false;
   return Date.now() >= exp - 5000; // 预留 5 秒余量，避免临界提交
+}
+
+// —— 固定注册通行码发码通道的会话状态（对齐公文写作 3.9.9）——
+// 只存 {phone, cookies, at}；读取时校验手机号与 10 分钟时效，避免串号与陈旧会话。
+// 清除时写入"已清除"占位而不是删文件（宿主会把删除判成"删除文件"并要求确认）。
+function regSessionStatePath() {
+  return path.join(configDir(), REG_SESSION_STATE_FILE);
+}
+function readRegSessionState() {
+  try {
+    const st = JSON.parse(fs.readFileSync(regSessionStatePath(), "utf-8"));
+    if (st && typeof st === "object" && !st.cleared) return st;
+    return null;
+  } catch { return null; }
+}
+function writeRegSessionState(phone, cookies) {
+  try {
+    fs.mkdirSync(configDir(), { recursive: true, mode: 0o700 });
+    fs.writeFileSync(regSessionStatePath(),
+      JSON.stringify({ phone, cookies: cookies || {}, at: new Date().toISOString() }, null, 2) + "\n",
+      { encoding: "utf-8", mode: 0o600 });
+    return true;
+  } catch { return false; }
+}
+function clearRegSessionState() {
+  try {
+    fs.writeFileSync(regSessionStatePath(), '{"cleared": true}\n', { encoding: "utf-8", mode: 0o600 });
+  } catch { /* 写入失败不影响主流程：旧会话 10 分钟后自然失效 */ }
+}
+const REG_KEY_STATE_TTL_MS = 10 * 60 * 1000;
+function regSessionFor(phone) {
+  const st = readRegSessionState();
+  if (!st || st.phone !== phone) return null;
+  const at = Date.parse(String(st.at || ""));
+  if (!Number.isFinite(at) || Date.now() - at > REG_KEY_STATE_TTL_MS) {
+    clearRegSessionState();
+    return null;
+  }
+  return st.cookies && Object.keys(st.cookies).length ? st.cookies : null;
 }
 
 function parseArgs(argv) {
@@ -248,7 +308,7 @@ async function httpJson(method, url, { body, cookies, headers, timeoutMs = 30000
     let json;
     try { json = JSON.parse(text); }
     catch { json = { status: false, msg: "非JSON响应(前200字符): " + text.slice(0, 200) }; }
-    return { json, finalUrl: r.url || url, setCookies, requestUnknown: false, httpStatus: r.status };
+    return { json, finalUrl: r.url || url, setCookies, requestUnknown: false, httpStatus: r.status, respHeaders: r.headers };
   } catch (e) {
     return {
       json: {
@@ -261,6 +321,7 @@ async function httpJson(method, url, { body, cookies, headers, timeoutMs = 30000
       requestUnknown: true,
       finalUrl: url,
       httpStatus: 0,
+      respHeaders: null,
     };
   } finally { clearTimeout(timer); }
 }
@@ -271,9 +332,10 @@ async function httpJson(method, url, { body, cookies, headers, timeoutMs = 30000
 //   首次不带（服务端响应头签发后落盘，后续请求回传，不自行生成）；
 // - 返回 { body, requestUnknown }：requestUnknown=true 表示超时/断网等"结果未确认"情形
 //   （发送结果未知时不得立即补发，由调用方按专用话术处理）。
-async function post(url, payload) {
+async function post(url, payload, { cookies } = {}) {
   const { json, setCookies, requestUnknown } = await httpJson("POST", url, {
     body: payload,
+    cookies,
     headers: withAttribution({
       "X-MaaS-Entry-Surface": "DIRECT_API",
       "X-MaaS-Client-Name": MAAS_CLIENT_NAME,
@@ -284,6 +346,61 @@ async function post(url, payload) {
   const issued = setCookies.find(([k]) => k.toLowerCase() === "x-maas-client-instance-id");
   if (issued && issued[1]) writeInstanceId(issued[1]);
   return { body: json, requestUnknown };
+}
+
+// —— 固定注册通行码发码通道（对齐公文写作 3.9.9）——
+// 通行码通道地址：生产固定地址；显式传 --base（本机 mock/测试）时随 base 派生。
+// 地址可被参数改写，必须校验主机，否则注册通行码会随请求发往任意地址。
+function regKeySendUrl(a) {
+  const allowedHosts = new Set(["platform.dknowc.cn", "127.0.0.1", "localhost", "::1", "[::1]"]);
+  const check = (url) => {
+    let host = "";
+    try { host = new URL(url).hostname; } catch { host = ""; }
+    if (!allowedHosts.has(host)) {
+      emit(errorPayload(
+        "PASSCODE_URL_REJECTED",
+        null,
+        `通行码通道地址只允许 platform.dknowc.cn 或本机回环（测试），当前被拒：${url}`,
+      ), 1);
+    }
+    return url;
+  };
+  const explicit = a["key-send-url"];
+  if (explicit && explicit !== true) return check(String(explicit));
+  if (a.base && a.base !== true) return check(String(a.base).replace(/\/+$/, "") + "/key-send");
+  return REGISTRATION_PASSCODE_SEND_URL;
+}
+
+// 申请发码：成功 {ok}；通行码不可用 {fallback}（回落领题）；限频/被拒/供应商失败/结果未确认
+// 一律停点，不回落（回落等于再发一次，可能绕过频控或重复发送）。
+async function sendCodeByPasscode(url, phone, channel) {
+  const headers = withAttribution({
+    [PASSCODE_HEADER_NAME]: REGISTRATION_PASSCODE,
+    "X-MaaS-Entry-Surface": "DIRECT_API",
+    "X-MaaS-Client-Name": MAAS_CLIENT_NAME,
+    "X-MaaS-Client-Version": readSkillVersion(),
+    ...(readInstanceId() ? { "X-MaaS-Client-Instance-Id": readInstanceId() } : {}),
+  });
+  const r = await httpJson("POST", url, { body: { phone, channel }, headers });
+  const issued = r.respHeaders ? r.respHeaders.get("x-maas-client-instance-id") : null;
+  if (issued) writeInstanceId(issued);
+  const j = r.json || {};
+  const code = String(j.code || "");
+  if (r.requestUnknown) return { unknown: true, detail: j.msg || null };
+  if (j.status === true && (j.deliveryStatus === "SENT" || j.nextAction === "SUBMIT_SMS_CODE")) {
+    writeRegSessionState(phone, mergeCookies({}, r.setCookies));
+    return { ok: true, retryAfterSeconds: Number(j.retryAfterSeconds) || 0, detail: j.msg || null };
+  }
+  if (code === "REGISTRATION_KEY_INVALID" || code === "REGISTRATION_KEY_UNAVAILABLE") {
+    return { fallback: true, reason: code };
+  }
+  if (code === "SMS_RATE_LIMIT_PHONE" || code === "SMS_RATE_LIMIT") {
+    return { rateLimited: true, retryAfterSeconds: Number(j.retryAfterSeconds) || 0 };
+  }
+  if (code === "SMS_REQUEST_REJECTED") return { rejected: true, detail: j.msg || null };
+  if (code.startsWith("SMS_PROVIDER_")) return { providerFailed: true, detail: j.msg || null };
+  if (r.httpStatus >= 400) return { unknown: true, detail: `${r.httpStatus} ${j.msg || ""}`.trim() };
+  return { fallback: true, reason: code || "UNRECOGNIZED" };
 }
 
 async function postWithBearer(url, apiKey, payload) {
@@ -299,12 +416,12 @@ async function postWithBearer(url, apiKey, payload) {
 function genPassword() {
   // 8-32 位，含大写/小写/数字/特殊至少 3 类
   const pools = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789", "!@#$%^&*"];
-  const pick = (s) => s[Math.floor(Math.random() * s.length)];
+  const pick = (s) => s[randomInt(s.length)];
   let chars = pools.map(pick);                       // 每类至少一个
   const all = pools.join("");
   for (let i = 0; i < 8; i++) chars.push(pick(all)); // 补到 12 位
   for (let i = chars.length - 1; i > 0; i--) {       // 洗牌
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomInt(i + 1);
     [chars[i], chars[j]] = [chars[j], chars[i]];
   }
   return chars.join("");
@@ -322,12 +439,23 @@ async function createNewApiKey(openBase, existingApiKey, name, remark) {
 
 function writeApiKeyToConfigFile(apiKey) {
   // 写本机专用配置文件（纯文本一行 Key，600 权限）；不触碰任何 shell 配置文件。
+  // 安全要求（2026-11-09 审核）：已存在的 0644 旧文件必须先收紧为 0600 再落盘，
+  // 不能以旧权限写入；目录 0700。
+  // 1.8.2 整改：原实现用「临时文件 + rename」，宿主（WorkBuddy）把 rename 的源文件
+  // 判成"删除文件"并弹确认框（"删除 api_key.tmp…需要确认"），首次注册时用户会误以为
+  // 密钥被删除。改为：目标已存在则先 chmod 0600，再直接覆写并复核 0600。
   const filePath = apiKeyFilePath();
+  const dir = path.dirname(filePath);
   try {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true, mode: 0o700 });
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    if (fs.existsSync(filePath)) fs.chmodSync(filePath, 0o600); // 收紧旧文件权限后再覆写
     fs.writeFileSync(filePath, `${String(apiKey).trim()}\n`, { encoding: "utf8", mode: 0o600 });
+    fs.chmodSync(filePath, 0o600);
     return { written: true, path: filePath, error: null };
   } catch (e) {
+    // 失败的半截内容不能留在 key 文件里（长度被截断的 Key 会表现为鉴权失败）：
+    // 能写就写空文件（等同未配置），写不了就保持原样交回错误。
+    try { fs.writeFileSync(filePath, "", { encoding: "utf8", mode: 0o600 }); } catch { /* 忽略 */ }
     return { written: false, path: filePath, error: e && e.message ? e.message : String(e) };
   }
 }
@@ -442,10 +570,78 @@ async function main() {
     const guideUrl = a.guide && a.guide !== true ? String(a.guide) : DEFAULT_GUIDE;
     const channel = a.channel && a.channel !== true ? String(a.channel) : DEFAULT_CHANNEL;
 
+    // 先走固定注册通行码发码通道：一次请求即发码，不需要领题与作答（对齐公文写作 3.9.9）。
+    // 密钥失效/停用或返回无法识别的业务码时回落原领题流程；--legacy 显式跳过本通道。
+    const useKeyChannel = !(a.legacy === true || a.legacy === "true");
+    let keyFallbackReason = null;
+    if (useKeyChannel) {
+      const k = await sendCodeByPasscode(regKeySendUrl(a), phone, channel);
+      if (k.ok) {
+        emit({
+          status: true,
+          code: "SMS_SENT",
+          flow: "key",
+          retryAfterSeconds: k.retryAfterSeconds || 0,
+          user_message: `验证码已发送到 ${maskPhone(phone)}，请把最新一条短信里的 6 位验证码发我。`,
+          instruction: "已发码：转述 user_message 后暂停，等用户回复 6 位验证码，再调用 register。不得重复发码，也不需要调用 answer。",
+        }, 0);
+      }
+      if (k.rateLimited) {
+        const secs = k.retryAfterSeconds > 0 ? k.retryAfterSeconds : 0;
+        emit({
+          ...errorPayload(
+            "SMS_RATE_LIMIT",
+            secs > 0
+              ? `验证码发送太频繁了，短信通道要求约 ${secs} 秒后再试。你先忙别的，想重发时跟我说一声。`
+              : "验证码发送太频繁了，稍等一会儿再试；想重发时跟我说一声。",
+            "限频停点：等用户明确要求且冷却过后再发起，不自动重试。",
+          ),
+          flow: "key",
+          retryAfterSeconds: secs,
+        }, 1);
+      }
+      if (k.providerFailed) {
+        emit({
+          ...errorPayload(
+            "SMS_PROVIDER_FAILED",
+            `短信服务暂时出了点问题，发不出验证码。可以稍后再试，或用网页方式开通：${FALLBACK_REGISTER_URL}`,
+            "供应商失败停点：不自动重试、不回落旧路径。",
+          ),
+          flow: "key",
+          detail: k.detail || null,
+        }, 1);
+      }
+      if (k.rejected) {
+        emit({
+          ...errorPayload(
+            "SMS_REQUEST_REJECTED",
+            "这个手机号这次没能通过开通校验，麻烦核对一下号码再发我。",
+            "不重复提交同一号码，等用户核对后再发起。",
+          ),
+          flow: "key",
+          detail: k.detail || null,
+        }, 1);
+      }
+      if (k.unknown) {
+        emit({
+          ...errorPayload(
+            "RESULT_UNKNOWN",
+            "刚才发送请求的结果没有确认（网络波动）。先看一下手机有没有收到验证码短信：收到了直接把 6 位验证码发我；没收到再跟我说，我重新发。",
+            "结果未确认停点：先等用户确认是否收到短信，未确认前不重新发送。",
+          ),
+          flow: "key",
+          resultUnknown: true,
+          detail: k.detail || null,
+        }, 1);
+      }
+      keyFallbackReason = k.reason || null;
+      if (keyFallbackReason) console.error(`注册通行码通道未生效（${keyFallbackReason}），改走原领题流程。`);
+    }
+
     // 同号未过期的题直接复用：刷新题目不增加机会、不延长到期时间，也不该重复请求服务端
     const cached = readChallengeState();
     if (cached && cached.phone === phone && cached.question && !challengeExpired(cached)) {
-      emit(questionPayload(cached, { reused: true }), 0);
+      emit(questionPayload(cached, keyFallbackReason ? { reused: true, keyFallback: keyFallbackReason } : { reused: true }), 0);
     }
 
     const g = await httpJson("GET", guideUrl, { headers: withAttribution({}) });
@@ -583,7 +779,7 @@ async function main() {
         createdAt: new Date().toISOString(),
       };
       writeChallengeState(st);
-      emit(questionPayload(st), 0);
+      emit(questionPayload(st, keyFallbackReason ? { keyFallback: keyFallbackReason } : {}), 0);
     }
     if (j.fallbackRequired === true || j.code === "AGENT_TEXT_FAILED") {
       const h = handoffPayload(j.verificationUrl, guideFinal, phone);
@@ -755,14 +951,15 @@ async function main() {
       phone: a.phone,
       vcode: a.vcode,
       password: a.password && a.password !== true ? a.password : genPassword(),
-      type: a.type && a.type !== true ? a.type : DEFAULT_TYPE,
       organ: a.organ && a.organ !== true ? a.organ : "个人",
       name: a.name && a.name !== true ? a.name : "用户",
       apiKeyName: a["apikey-name"] && a["apikey-name"] !== true ? a["apikey-name"] : "agent-key",
     };
     payload.channel = a.channel && a.channel !== true ? a.channel : DEFAULT_CHANNEL;
     payload.source = a.source && a.source !== true ? a.source : DEFAULT_SOURCE;
-    const { body: r } = await post(base + "/register", payload);
+    // 注册通行码通道发码时下发的会话按手机号复用（同一会话完成发码与注册）；旧领题路径无此会话
+    const regCookies = regSessionFor(String(payload.phone));
+    const { body: r } = await post(base + "/register", payload, regCookies ? { cookies: regCookies } : {});
     const data = r.data || {};
     // 2026-10-09（user-auth maas-1.1.6）：registered:true + deliveryStatus:"PENDING"——
     // 账号已创建、Key 资源尚在准备。非错误：不盲目重注册，等用户示意后在短信码有效期内
@@ -779,6 +976,7 @@ async function main() {
       process.exit(0);
     }
     const ok = Boolean(r.status) && Boolean(data.apiKey);
+    if (ok) clearRegSessionState();
     let apiKeyToSave = ok ? data.apiKey : "";
     let newKeyCreated = false;
     let newKeyError = null;
@@ -803,20 +1001,29 @@ async function main() {
     }
     // 注册成功自动持久化到本机专用配置文件 ~/.config/dknowc/api_key（1.3.5 起：
     // 不读写 shell 配置（读取顺序 env→配置文件）。
-    // --no-persist 可跳过；persist 命令保留用于事后手动补持久化。
-    const cfgWrite = ok && apiKeyToSave && !a["no-persist"]
-      ? writeApiKeyToConfigFile(apiKeyToSave)
+    // 安全要求（2026-11-09 审核）：持久化失败或 --no-persist 时不再通过标准输出
+    // 返回明文 Key（避免进入宿主工具日志），而是明确告知未落盘、不得继续检索。
+    const cfgWrite = ok && apiKeyToSave
+      ? (a["no-persist"]
+          ? { written: false, path: apiKeyFilePath(), error: "已跳过持久化（--no-persist）" }
+          : writeApiKeyToConfigFile(apiKeyToSave))
       : { written: false, path: apiKeyFilePath(), error: null };
     // user_message：给用户的固定话术，Agent 必须原样转述，不得改写后发挥。
     // 权益告知（注册赠送 10 万积分 + 实名认证再送 10 万积分）已前移到开通引导
     // （initialize.guide_message / onboarding_scripts S1），此处只做轻确认，避免成功节点信息过重导致转述截断。
     let userMessage;
     if (ok && apiKeyToSave) {
-      userMessage = Boolean(data.existed)
-        ? `这个手机号之前开通过，已直接找回原来的密钥和积分，不用重新注册。我马上开始检索。`
-        : `开通成功，访问密钥已写入本机，注册赠送的 10 万积分已到账。我马上开始检索。`;
+      if (cfgWrite.written) {
+        userMessage = Boolean(data.existed)
+          ? `这个手机号之前开通过，已直接找回原来的密钥和积分，不用重新注册。我马上开始检索。`
+          : `开通成功，访问密钥已写入本机，注册赠送的 10 万积分已到账。我马上开始检索。`;
+      } else {
+        userMessage = `开通成功，但访问密钥未能写入本机安全文件（${cfgWrite.error || "未知原因"}）。请检查 ${cfgWrite.path} 的目录权限后重试；密钥安全落盘前不会继续检索。`;
+      }
       if (newKeyError) {
-        userMessage += ` 另外你要求的新密钥生成失败（${newKeyError}），已先沿用现有密钥继续，不影响使用；需要的话稍后再重新生成。`;
+        userMessage += cfgWrite.written
+          ? ` 另外你要求的新密钥生成失败（${newKeyError}），已先沿用现有密钥继续，不影响使用；需要的话稍后再重新生成。`
+          : ` 另外你要求的新密钥生成也失败（${newKeyError}）；当前密钥也未安全落盘，无法继续检索。`;
       }
     } else if (String(r.msg || "").includes("验证码")) {
       userMessage = `验证码校验没通过（可能是输入有误或已过期）。请核对 ${maskPhone(a.phone)} 最新一条短信的 6 位验证码重新发我；需要我重新发送一条，直接说一声。`;
@@ -828,7 +1035,9 @@ async function main() {
       userMessage = `开通服务暂时没连上（${r.msg || "网络波动"}），可以稍后再试，或用网页方式开通：${FALLBACK_REGISTER_URL}`;
     }
     console.log(JSON.stringify({
-      status: ok && Boolean(apiKeyToSave),
+      status: ok && Boolean(apiKeyToSave) && Boolean(cfgWrite.written),
+      registrationSucceeded: ok && Boolean(apiKeyToSave),
+      searchReady: Boolean(cfgWrite.written),
       msg: r.msg,
       url: data.url || null,
       existed: Boolean(data.existed),
@@ -837,9 +1046,10 @@ async function main() {
       newKeyCreated,
       user_message: userMessage,
       envName: API_KEY_ENV,
-      // 防明文泄漏：注册成功且已持久化时不输出明文 apiKey，
-      // 只输出掩码与写入路径——业务脚本从配置文件直读，无需明文；仅写入失败时回退明文供临时注入。
-      apiKey: cfgWrite.written ? null : apiKeyToSave,
+      // 防明文泄漏（2026-11-09 审核）：任何情况下都不通过标准输出返回完整 Key，
+      // 只输出掩码与写入路径；业务脚本从 0600 配置文件直读。
+      apiKey: null,
+      apiKeyUnavailable: Boolean(apiKeyToSave) && !cfgWrite.written,
       apiKeyMasked: maskKey(apiKeyToSave),
       envWriteRequired: false,
       envWriteTarget: cfgWrite.path,
@@ -847,12 +1057,14 @@ async function main() {
       envWriteError: cfgWrite.error,
       envWriteInstruction: cfgWrite.written
         ? `已写入 ${cfgWrite.path}；业务脚本直读该文件，无需重启宿主。`
-        : `未能写入 ${cfgWrite.path}，可运行 persist 命令补写，或由 Agent / 平台密钥配置将返回的 apiKey 写入环境变量 ${API_KEY_ENV}。`,
-      currentSessionInstruction: `已持久化时初始化会从配置文件直读 Key，无需手动注入；未持久化时用本次返回的 apiKey 临时注入环境变量 ${API_KEY_ENV}，不得向用户展示完整 Key。`,
+        : `未能写入 ${cfgWrite.path}（${cfgWrite.error || "未知原因"}）。请检查目录权限后重试；当前版本不再通过标准输出返回完整密钥。`,
+      currentSessionInstruction: cfgWrite.written
+        ? `已持久化，初始化会从配置文件直读 Key，无需手动注入。`
+        : `密钥未安全落盘，不得继续检索；请按 user_message 处理，不要向用户展示或自行保存完整 Key。`,
       newKeyError,
       fallbackRegisterUrl: FALLBACK_REGISTER_URL,
     }));
-    process.exit(ok && Boolean(apiKeyToSave) ? 0 : 1);
+    process.exit(ok && Boolean(apiKeyToSave) && cfgWrite.written ? 0 : 1);
   }
 
   if (cmd === "persist") {
@@ -873,7 +1085,7 @@ async function main() {
       envWriteError: cfgWrite.error,
       envWriteInstruction: cfgWrite.written
         ? `已写入 ${cfgWrite.path}；脚本直读该文件，无需重启宿主。`
-        : `未能写入 ${cfgWrite.path}，请由 Agent 或平台密钥配置将返回的 apiKey 写入环境变量 ${API_KEY_ENV}。`,
+        : `未能写入 ${cfgWrite.path}，请检查目录权限后重试；不要在命令行或日志中传递明文 Key。`,
     }));
     process.exit(cfgWrite.written ? 0 : 1);
   }

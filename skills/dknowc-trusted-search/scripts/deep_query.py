@@ -18,20 +18,11 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from source_display import source_identity
+from run_paths import RunPathError, resolve_output_path, resolve_run_dir
 
 
 DEFAULT_ENDPOINT = "https://open.dknowc.cn/api/services/deep-query/v3"
-SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
-import os as _os
-_ws = _os.environ.get("DKNWOC_WS_ROOT")
-if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
-    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
-    _sid = _os.environ.get("DSH_SESSION_ID", "")
-    _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
-WS_ROOT = Path(_ws).resolve()
-SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 
 # 余额/额度用尽的判定：HTTP 状态与业务错误消息双路径。
 # 命中后返回 quota_exhausted=true，Agent 必须停止重试并引导用户到 MaaS 处理，不得反复调用。
@@ -90,23 +81,11 @@ def _fail_request(stage: str, reason: str, status_code=None, errmsg=None):
 
 
 
-def resolve_output_json(output_path: str) -> Path:
-    """把深度搜索结果 JSON 落到 official-docs/search-results/，阻断路径遍历。"""
-    raw_path = Path(output_path).expanduser()
-    if raw_path.is_absolute():
-        resolved = raw_path.resolve()
-    elif raw_path.parent == Path("."):
-        resolved = (SEARCH_RESULTS_DIR / raw_path.name).resolve()
-    else:
-        resolved = raw_path.resolve()
-
-    if resolved.suffix.lower() != ".json":
-        resolved = resolved.with_suffix(".json")
-    try:
-        resolved.relative_to(SEARCH_RESULTS_DIR.resolve())
-    except ValueError:
-        raise ValueError(f"输出文件必须位于 official-docs/search-results/ 内: {output_path}")
-    return resolved
+def resolve_output_json(output_path: str, run_dir: Optional[Path] = None) -> Path:
+    """深度搜索结果只写会话工作区的 run 目录；拒绝写回 Skill 安装目录。"""
+    if not Path(output_path).expanduser().is_absolute() and run_dir is None:
+        raise RunPathError("相对 --output 必须同时用 --run 指定运行目录")
+    return resolve_output_path(output_path, run_dir, {".json"}, ".json", "deep_query.json")
 
 
 def _pick(*values: Optional[str]) -> str:
@@ -265,7 +244,7 @@ def _print_summary(body: Dict[str, Any], show_materials: int) -> None:
         print(f"\n重点材料（前 {min(show_materials, len(articles))} 篇）")
         for idx, item in enumerate(articles[:show_materials], start=1):
             title = item.get("文章标题") or "未命名材料"
-            agency = item.get("数据源") or ""
+            agency, _, _, _ = source_identity(item)
             date = item.get("发布日期") or ""
             area = item.get("办理地域") or ""
             url = item.get("源网址") or ""
@@ -290,12 +269,19 @@ def main() -> None:
     parser.add_argument("--show-payload", action="store_true", help="打印请求参数")
     parser.add_argument("--dry-run", action="store_true", help="只打印请求参数，不发起请求")
     parser.add_argument("--json-only", action="store_true", help="仅输出接口原始 JSON")
-    parser.add_argument("--output", "-o", help="深度搜索结果 JSON 文件名，写入 official-docs/search-results/（配合 --json-only 使用）")
+    parser.add_argument("--run", help="本次运行的独立目录（必须在 Skill 安装目录之外；重复运行自动另建）")
+    parser.add_argument("--output", "-o", help="深度搜索结果 JSON 文件名；相对名落在 --run 目录，配合 --json-only 使用")
     parser.add_argument("--show-materials", type=int, default=5, help="摘要中展示前 N 篇材料")
     # 默认 600s（2026-10-20 同号修正）：深度链路网关超时已由 60s 放宽至 10 分钟（2026-09-24 群内
     # 调整；实测单地域 63–101s、重题可达 3–10 分钟），默认 300s 有重题被客户端提前掐断的风险。
     parser.add_argument("--timeout", type=int, default=600, help="请求超时秒数（默认 600，与链路 10 分钟上限对齐）")
     args = parser.parse_args()
+
+    try:
+        run_dir = resolve_run_dir(args.run) if args.run else None
+    except RunPathError as exc:
+        print(f"错误：{exc}", file=sys.stderr)
+        sys.exit(2)
 
     endpoint = _pick(
         args.endpoint,
@@ -341,11 +327,14 @@ def main() -> None:
                 _a["检索通道"] = "深知深度搜索"
         raw_json = json.dumps(body, ensure_ascii=False, indent=2)
         if args.output:
-            output_path = resolve_output_json(args.output)
+            try:
+                output_path = resolve_output_json(args.output, run_dir)
+            except RunPathError as exc:
+                print(f"错误：{exc}", file=sys.stderr)
+                sys.exit(2)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(raw_json, encoding="utf-8")
-            # 绝对路径输出（2026-09-28 修复）：同 trusted_search.py，避免 Agent 到 cwd 找不到而全盘 find
-            print(f"已保存深度搜索结果 JSON（位于 skill 工作区，绝对路径）：{output_path}")
+            print(f"已保存深度搜索结果 JSON（会话运行目录，绝对路径）：{output_path}")
         else:
             print(raw_json)
         return

@@ -52,15 +52,15 @@
 
 ### S3-1 · 领题与作答（对用户完全不可见）
 
-使用条件：用户已同意开通并提供了手机号，进入 `register_key.mjs challenge` → `answer` 阶段。
+使用条件：用户已同意开通并提供了手机号，进入 `register_key.mjs challenge` 阶段。默认由注册通行码一次请求即发码（`flow:"key"`），**没有答题环节**，直接按 S3a 处理。
 
-**此阶段不产生任何用户话术**：不告知在答题、不展示题目、不复述答错。题目由 Agent 当场计算并提交；答错换题（含首次最多 3 次）时静默重算，只有三种情况才回到对用户说话——发码成功（S3a）、平台要求人工验证（S3b）、本轮失败（S3d）。
+**此阶段不产生任何用户话术**：不告知在答题、不展示题目、不复述答错。只有在注册通行码通道不可用、回落到原领题流程（输出带 `keyFallback`、`flow:"agent-text"`）时才需要答题：题目由 Agent 当场计算并提交；答错换题（含首次最多 3 次）时静默重算，只有三种情况才回到对用户说话——发码成功（S3a）、平台要求人工验证（S3b）、本轮失败（S3d）。
 
 要点：不把题目内容发进对话（题目是发给 Agent 的，不是发给用户的）；不重复领题刷新机会；不把 attempt 改小或重置。若输出 `flow:"legacy"`（平台回退到旧发码分支），本环节没有答题，直接按 S3a / S3b 处理，不需要调用 answer。
 
 ### S3a · 验证码已发送
 
-使用条件：`register_key.mjs answer` 返回 `status:true`（退出 0，`code:"SMS_SENT"`），或 challenge 回退分支（`flow:"legacy"`）退出 0 即已发码（脚本 `user_message` 优先，本条为口径一致备份）。
+使用条件：`register_key.mjs challenge` 走注册通行码通道返回 `status:true`（`flow:"key"`，退出 0），或 `answer` 返回 `status:true`（`flow:"agent-text"`），或 challenge 回退分支（`flow:"legacy"`）退出 0 即已发码（脚本 `user_message` 优先，本条为口径一致备份）。
 
 ```text
 验证码已发送到 <脱敏手机号>，请把最新一条短信里的 6 位验证码发我。

@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
-"""可信溯源核验报告渲染器：把搜索结果 JSON + 最终答案渲染为单文件可核验 HTML。
+"""溯源核验报告生成器：把通用材料 JSON + 最终答案渲染为单文件可核验 HTML。
 
-深知可信搜索 dsh 版（渲染层与深知系列核验报告同构，数据口径保持自有与真实）。
-输入直读 trusted_search.py / deep_query.py 的 --json-only 输出（可信搜索 content.data
-或深度搜索 deep-query/v3 格式），正文用 --answer-file 传入最终答案（关键结论带 [n] 角标），
-成稿自检用 --self-check-file 传入五项结果。
+输入为一种通用 JSON 格式（materials 数组 + answer），不依赖任何特定接口产物；
+各业务 Skill 只需把检索/研究结果的要素映射到这份 JSON，即可获得统一版式的溯源核验报告。
+正文用 --answer-file 传入最终答案（关键结论带 [n] 角标），成稿自检用 --self-check-file 传入五项结果。
 
 报告定位：不止展示"材料从哪来"（溯源），更要传达"我们查过了，可以交付"（核验）。
-架构（参考深知晓交互原型）：
+架构：
 - 顶栏：身份章 + 标题 + 工具组（只看正文 / 复制全文 / 打印归档）+ 阅读进度条
 - Hero：大标题 + 真实统计（N 次检索 · M 篇来源文章 · K 处引用）+ 双视图切换
-- 过程回顾条：检索 → 入库 → 逐条比对 → 核验完成（静态回放，数字全部真实计算；
-  无思考流数据就不展示"思考"步骤——硬造即违背核验诚实性）
-- 核验报告视图（默认）：核验报告单 + 正文分节卡；角标点击跳知识专库定位
-- 知识专库视图（全屏）：大搜索 + 热词（标题/正文高频词真实计算）+ 检索分组 tabs + 材料卡
+- 过程回顾条：检索 → 入库 → 逐条比对 → 核验完成（静态回放，数字全部真实计算）
+- 核验报告视图（默认）：核验报告单 + 正文分节卡；角标点击弹「引用依据」弹窗
+- 知识专库视图（全屏）：大搜索 + 检索分组 tabs + 材料卡（未引用材料折叠区）
 三个核验层次：报告级（核验报告单）／材料级（来源卡核验链标记）／引用级（角标一一绑定）。
-诚实原则：脚本真实计算的结果才打勾；无法自动判定的项不虚构展示（"现行效力"人工复核提示行已移除，2026-09-19 起）。
-生成前预处理（内置）：policyFiles 发文字号本地匹配、存档快照兜底（screenShotPath /A/ 容错 + 格式校验；
-原文链接原样进报告、不做活性探测——2026-10-08 起，--skip-link-check 保留为兼容 no-op），
---no-snapshot 关闭）；缺原文链接不拖垮核验结论，按提醒呈现。
+诚实原则：脚本真实计算的结果才打勾；无法自动判定的项不虚构展示。
+核验口径（脚本管字面、模型管语义）：硬错误判"核验未通过"，语义类只作"待人工复核"。
+原文链接原样进报告、不做活性探测；--no-snapshot 关闭存档快照兜底。
 布局为单文件静态 HTML；打印归档模式单栏全展开并附材料附录。
-所有输入输出经路径安全层限制在 skill 工作区 official-docs/ 内。
+所有输入输出经路径安全层限制在会话 run 目录（--run）内，拒绝写回 Skill 安装目录。
 """
 
 from __future__ import annotations
@@ -34,66 +31,118 @@ import unicodedata
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import chart_embed  # noqa: E402  图表渲染共享模块（1.4.0，与可视化报告共用）
-
-
-SKILL_ROOT = Path(__file__).resolve().parent.parent
-# 工作区根：dsh 场景通过环境变量 DKNWOC_WS_ROOT 指向会话工作区，未设置时回退到 cwd
-import os as _os
-_ws = _os.environ.get("DKNWOC_WS_ROOT")
-if not _ws:
-    # dsh 会话隔离：每会话独立产物目录 <工作区>/dknowc-output/<DSH_SESSION_ID前8位>/，
-    # 多会话共用同一工作区时互不混杂；非 dsh 环境回退为工作区本身。
-    _sid = _os.environ.get("DSH_SESSION_ID", "")
-    _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
-WS_ROOT = Path(_ws).resolve()
-SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
-OUTPUT_DIR = WS_ROOT / "official-docs" / "output"
+from run_paths import RunPathError, resolve_input_path, resolve_output_path, resolve_run_dir
+import chart_embed  # 图表渲染共享模块（1.0.1，opt-in：传 --charts-json 才画）
+import trust_digest  # 核验记录指纹（1.0.1，--verify-file 的失效检测）
 
 
-def _is_within(path: Path, parent: Path) -> bool:
+# ============================================================
+# 配置系统（1.0.1）：品牌 / 通道 / 自检标签 / 双版 / 图表 / 域内核验
+# ============================================================
+# 各业务 Skill 通过 --config 传入自己的 trace_report.config.json；
+# 未传时使用下列默认值（通用报告形态，品牌=溯源核验报告生成器）。
+# 设计约束：定制只走配置，不在渲染代码里 fork。
+
+DEFAULT_CONFIG: Dict[str, Any] = {
+    "brand": {
+        "product_name": "溯源核验报告生成器",
+        "footer_body": "{product} · 正文 ｜ 内容由 AI 生成，仅供参考",
+        "footer_report": "{product} · 溯源核验报告 ｜ 内容由 AI 生成，仅供参考",
+        "argparse_desc": "生成溯源核验报告 HTML（{product}）",
+        "lib_foot_source": "来源：{product} · 每段摘录均取自原文原段",
+        "lib_foot_external": "来源：{product} · 部分材料来自公开网络，已标注非官方来源，请以官方口径复核",
+        "source_fallback": "{product}",
+        "source_fallback_external": "{product}（含公开网络材料）",
+        "report_title_prefix": "溯源核验报告",
+        "default_page_title": "溯源核验报告",
+    },
+    "channels": {
+        "tokens": {},
+        "route_keywords": {},
+        "labels": {},
+        "summary": {"fallback": "通用检索 {n} 路"},
+        "step1_fallback": "通用检索",
+        "internal_token_filter": ["联网", "公开网络", "宿主 WebSearch"],
+        "user_facing_replacements": [],
+    },
+    "selfcheck": {
+        "labels": {
+            "fact_basis": "事实有据",
+            "binding": "角标绑定",
+            "consistency": "答案一致",
+            "freshness": "时效确认",
+            "no_gap": "无未核验断言",
+        }
+    },
+    # 1.0.2 两轨验收：Agent 轨要求"结论 + 可回查证据"；关掉 require_evidence 退回 1.0.1 行为
+    "agent_track": {"enabled": True, "require_evidence": True},
+    # 官方外部信源白名单（1.0.2 配置化）：法定机构自有域名，政府域名之外的第二条官方判据。
+    # 业务 Skill 可在 config 里增删（如属地公积金局/立法会等）。
+    "official_host_allow": ["mpfa.org.hk"],
+    "stage": {"enable": False, "labels": {}},
+    "charts": {"enable": True},
+    "verify": {"enabled": True, "required": False, "compare_digests": True},
+}
+
+CONFIG: Dict[str, Any] = json.loads(json.dumps(DEFAULT_CONFIG))
+
+
+def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    """递归合并配置：override 覆盖 base，未知键保留（向前兼容）。"""
+    out = json.loads(json.dumps(base))
+    for key, value in (override or {}).items():
+        if isinstance(value, dict) and isinstance(out.get(key), dict):
+            out[key] = _deep_merge(out[key], value)
+        else:
+            out[key] = value
+    return out
+
+
+def apply_config(override: Optional[Dict[str, Any]]) -> None:
+    """载入业务 Skill 配置（缺省键回退默认值）。"""
+    global CONFIG
+    CONFIG = _deep_merge(DEFAULT_CONFIG, override or {})
+
+
+def load_config(path: Optional[str]) -> Dict[str, Any]:
+    if not path:
+        return {}
     try:
-        path.relative_to(parent.resolve())
-        return True
-    except ValueError:
-        return False
+        data = json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"错误：配置文件无法读取（{exc}）：{path}", file=sys.stderr)
+        raise SystemExit(2) from None
+    if not isinstance(data, dict):
+        print(f"错误：配置文件必须是 JSON 对象：{path}", file=sys.stderr)
+        raise SystemExit(2) from None
+    return data
 
 
-def _safe_input_path(value: str, allowed_suffixes: set) -> Path:
-    """输入文件必须位于 skill 工作区内且后缀合法，阻断路径遍历。
-
-    兼容只写文件名的调用（1.4.0）：形如 `xxx.json` 的相对路径先在 SKILL_ROOT 下找，
-    找不到再到 official-docs/search-results/ 找——避免 Agent 因"文件不在预期位置"
-    转而全盘 find/grep 触发宿主安全策略。
-    """
-    raw = Path(value).expanduser()
-    if not raw.is_absolute() and raw.parent == Path("."):
-        candidate = SKILL_ROOT / raw
-        if not candidate.exists() and (SEARCH_RESULTS_DIR / raw.name).exists():
-            raw = SEARCH_RESULTS_DIR / raw.name
-    resolved = raw.resolve() if raw.is_absolute() else (SKILL_ROOT / raw).resolve()
-    if resolved.suffix.lower() not in allowed_suffixes:
-        raise ValueError(f"输入文件后缀必须是 {sorted(allowed_suffixes)} 之一: {value}")
-    if not (_is_within(resolved, SEARCH_RESULTS_DIR) or _is_within(resolved, SKILL_ROOT / "config") or resolved == SKILL_ROOT / "SKILL.md"):
-        # 允许工作区内任意位置的答案/自检/搜索 JSON（search-results、output、根下临时文件）
-        if not _is_within(resolved, SKILL_ROOT):
-            raise ValueError(f"输入文件必须位于 skill 工作区内: {value}")
-    return resolved
+def brand_text(key: str) -> str:
+    """品牌模板渲染：{product} 占位符替换为配置的产品名。"""
+    brand = CONFIG.get("brand") or {}
+    template = str(brand.get(key) or "")
+    return template.replace("{product}", str(brand.get("product_name") or "溯源核验报告生成器"))
 
 
-def _safe_output_path(value: str, allowed_suffixes: set, default_suffix: str) -> Path:
-    """输出文件必须位于 official-docs/output/ 内且后缀合法。"""
-    raw = Path(value).expanduser()
-    if raw.suffix.lower() not in allowed_suffixes:
-        raw = raw.with_suffix(default_suffix)
-    resolved = raw.resolve() if not raw.is_absolute() else raw
-    if not _is_within(resolved, OUTPUT_DIR):
-        if raw.is_absolute():
-            raise ValueError(f"输出文件必须位于 official-docs/output/ 内: {value}")
-        resolved = (OUTPUT_DIR / raw.name).resolve()
-    return resolved
+def selfcheck_labels() -> Dict[str, str]:
+    labels = (CONFIG.get("selfcheck") or {}).get("labels") or {}
+    return {str(k): str(v) for k, v in labels.items()}
+
+
+def _safe_input_path(value: str, allowed_suffixes: set,
+                     run_dir: Optional[Path] = None) -> Path:
+    """输入文件支持绝对路径、run 目录内相对路径，或旧 Skill 目录产物。"""
+    return resolve_input_path(value, run_dir, allowed_suffixes)
+
+
+def _safe_output_path(value: Optional[str], allowed_suffixes: set, default_suffix: str,
+                      run_dir: Optional[Path]) -> Path:
+    """产物只写会话工作区的 run 目录，拒绝写回 Skill 安装目录。"""
+    if value and not Path(value).expanduser().is_absolute() and run_dir is None:
+        raise RunPathError("相对 --output 必须同时用 --run 指定运行目录")
+    return resolve_output_path(value, run_dir, allowed_suffixes, default_suffix,
+                               "溯源核验报告.html")
 
 
 
@@ -180,7 +229,7 @@ def verify_snapshots(articles: List[Dict[str, Any]]) -> int:
 
     不做网络可达检测：attach 前置雷池 WAF 的拦截与请求方 IP 风控相关
     （检测机高频请求会被拦而普通用户正常），可达性实测会误杀好快照；
-    快照文件本身的存在性由可信搜索侧的数据质量保障。
+    快照文件本身的存在性由检索来源侧的数据质量保障。
     """
     dropped = 0
     for a in articles:
@@ -200,59 +249,6 @@ def _normalize_title_for_match(value: str) -> str:
     text = re.sub(r"[《》〈〉「」『』\[\]【】()（）]", "", text)
     text = re.sub(r"\s+", "", text)
     return text
-
-
-def attach_doc_numbers(articles: List[Dict[str, Any]], payload: Dict[str, Any]) -> int:
-    """从同一响应的 policyFiles 区按标题本地匹配发文字号（writtenText）。
-
-    文号与检索文章分开展示在同一响应里，本地标题匹配即可拿到，无需接口改动；
-    新闻/解读类不在 policyFiles 中（本就无文号），匹配不上则不显示。
-    检索库对同一政策文件常有多个抓取变体（新闻稿版/发文版，文号挂在发文版条目上），
-    标题精确匹配不上时**不做模糊猜测**（宁缺勿错）——变体识别与回填由 SKILL.md
-    选材规则执行：Agent 引用政策文件时优先带文号的发文版条目。
-    """
-    doc_numbers: Dict[str, str] = {}
-    for holder in (payload.get("content") if isinstance(payload.get("content"), dict) else {},
-                   (payload.get("content") or {}).get("data") if isinstance((payload.get("content") or {}).get("data"), dict) else {},
-                   payload.get("data") if isinstance(payload.get("data"), dict) else {}):
-        for pf in (holder.get("policyFiles") or []):
-            if not isinstance(pf, dict):
-                continue
-            doc_no = first_str(pf.get("writtenText"), pf.get("发文字号"))
-            title = first_str(pf.get("title"), pf.get("标题"))
-            if doc_no and title:
-                doc_numbers.setdefault(_normalize_title_for_match(title), doc_no)
-    if not doc_numbers:
-        return 0
-    matched = 0
-    for a in articles:
-        if a.get("文号"):
-            continue
-        no = doc_numbers.get(_normalize_title_for_match(first_str(a.get("文章标题"), a.get("title"), a.get("标题"))))
-        if no:
-            a["文号"] = no
-            matched += 1
-    return matched
-
-
-def preprocess_articles(articles: List[Dict[str, Any]], payload: Dict[str, Any],
-                        skip_link_check: bool = False, snapshot_enabled: bool = True) -> None:
-    """extract_sources 前的统一预处理：文号匹配、快照兜底。
-
-    直接改写文章 dict（注入 文号 / 快照链接 字段），供 source_from_article 读取；
-    均为幂等操作，多轮渲染不叠加。
-    原文链接活性检测已整体移除（2026-10-08 起）——接口返回的链接原样进报告；
-    skip_link_check 参数保留为兼容 no-op。
-    """
-    attach_doc_numbers(articles, payload)
-    if snapshot_enabled:
-        for a in articles:
-            raw_snap = first_str(a.get("screenShotPath"), a.get("screenshot_path"), a.get("快照链接"), a.get("snapshot"))
-            a["快照链接"] = normalize_snapshot_url(raw_snap) if raw_snap else ""
-        verify_snapshots(articles)
-    else:
-        for a in articles:
-            a["快照链接"] = ""
 
 
 # ============================================================
@@ -340,7 +336,9 @@ def paragraph_text(item: Dict[str, Any]) -> str:
         if text:
             return text
     return clean_paragraph_noise(first_str(
+        item.get("原文"),
         item.get("摘录"),
+        item.get("excerpt"),
         item.get("摘要"),
         item.get("相关段落"),
         item.get("支撑内容"),
@@ -371,6 +369,56 @@ def content_segments(item: Dict[str, Any]) -> List[Dict[str, str]]:
     return segments
 
 
+# ============================================================
+# 来源等级：官方外部信源（政府域名/法定机构）不算"非官方"
+# ============================================================
+OFFICIAL_HOST_RE = re.compile(r"(^|\.)gov(\.|$)", re.I)
+# 法定机构自有域名（非 .gov 后缀）：按机构白名单判定，避免把官方页误标"非官方来源"。
+# 1.0.2 起白名单可由 config 的 official_host_allow 覆盖（默认仍为此常量）。
+OFFICIAL_HOST_ALLOW = ("mpfa.org.hk",)
+
+
+def official_host_allow() -> Tuple[str, ...]:
+    """官方外部信源白名单（法定机构自有域名），config 可覆盖。"""
+    values = CONFIG.get("official_host_allow")
+    if isinstance(values, (list, tuple)):
+        cleaned = tuple(str(v).strip().lower() for v in values if str(v).strip())
+        if cleaned:
+            return cleaned
+    return OFFICIAL_HOST_ALLOW
+# 机构名判据：必须以机关后缀结尾（避免"外部站""编辑部"这类词误判为官方）。
+# 发布机构字段用全表；标题判据用收窄表——去掉"局/厅/署"单字后缀，
+# 媒体标题（"XX税务局通报…"发在媒体站）不再被单字"局"误判官方；"管理局/总局/金管局"
+# 等多字机关词与法定机构专名仍有效。
+OFFICIAL_ORG_RE = re.compile(
+    r"(人民政府|政府|委员会|委員會|管理局|监管局|監管局|总局|總局|局|厅|廳|署|法院|檢察院|检察院|"
+    r"立法會|立法会|积金局|積金局|央行|中央银行|中央銀行|统计处|統計處|金管局)\s*$"
+)
+OFFICIAL_ORG_TITLE_RE = re.compile(
+    r"(人民政府|政府|委员会|委員會|管理局|监管局|監管局|总局|總局|法院|檢察院|检察院|"
+    r"立法會|立法会|积金局|積金局|央行|中央银行|中央銀行|统计处|統計處|金管局)\s*$"
+)
+
+
+def is_official_external(url: str, issuer: str = "", title: str = "") -> bool:
+    """外部（非库内）信源是否官方：政府域名或官方机构名。"""
+    host = ""
+    try:
+        from urllib.parse import urlparse
+        host = (urlparse(str(url or "")).hostname or "").lower()
+    except Exception:
+        host = ""
+    if host and (OFFICIAL_HOST_RE.search(host) or host.endswith((".gov.cn", ".gov.hk", ".gov.mo"))
+                 or any(host == d or host.endswith("." + d) for d in official_host_allow())):
+        return True
+    for text, org_re in ((issuer or "", OFFICIAL_ORG_RE), (title or "", OFFICIAL_ORG_TITLE_RE)):
+        # 去掉末尾空白与括号（"…（積金局）"要能按机构名判定），再做机关后缀匹配
+        text = re.sub(r"[\s\-—_·（）()\[\]【】]+$", "", str(text))
+        if org_re.search(text):
+            return True
+    return False
+
+
 def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict[str, str]] = None) -> Dict[str, str]:
     vo = item.get("vo") if isinstance(item.get("vo"), dict) else {}
     segment = segment or {}
@@ -392,36 +440,37 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
     if explicit_id:
         match = re.search(r"\d+", explicit_id)
         explicit_id = match.group(0) if match else ""
+    title = first_str(
+        item.get("文章标题"),
+        item.get("material_name"),
+        item.get("材料名称"),
+        item.get("title"),
+        item.get("标题"),
+        item.get("name"),
+        vo.get("showTitle"),
+        vo.get("title"),
+        "未命名来源文章",
+    )
+    # 发布机构：直接从通用 JSON 字段读取（不做标题推导）。
+    issuer = first_str(item.get("发布机构"), item.get("issuer"), item.get("发布机关"), vo.get("issuer"))
+    agency = issuer
+    is_policy = "政策" in str(item.get("来源性质", "")) or "policy" in str(item.get("素材类型", "")).lower()
+
     source = {
         "id": explicit_id or str(index),
-        "title": first_str(
-            item.get("文章标题"),
-            item.get("material_name"),
-            item.get("材料名称"),
-            item.get("title"),
-            item.get("标题"),
-            item.get("name"),
-            vo.get("showTitle"),
-            vo.get("title"),
-            "未命名来源文章",
-        ),
-        "agency": first_str(
-            item.get("unit") if not isinstance(item.get("unit"), list) else "、".join(str(x) for x in item.get("unit")[:3]),
-            item.get("sourceElement"),
-            item.get("数据源"),
-            item.get("发布或实施机构"),
-            item.get("发布机关"),
-            item.get("来源"),
-            vo.get("typeName"),
-            vo.get("sourceName"),
-        ),
+        "title": title,
+        "agency": agency,
+        "data_source": "",
+        "issuer": issuer,
+        "is_policy": is_policy,
         "date": first_str(item.get("发布日期"), item.get("date"), item.get("发布时间"), item.get("createDate"), vo.get("dateTime"), vo.get("createDate")),
-        "url": first_str(item.get("sourceUrl"), item.get("source_url"), item.get("源网址"), item.get("原文链接"), item.get("url"), item.get("原文"), vo.get("sourceUrl"), vo.get("url")),
+        # 1.0.1：兜底链不得含「原文」——契约里它是必填摘录文本，兜底会令 has_link 恒真、缺链提醒失效
+        "url": first_str(item.get("sourceUrl"), item.get("source_url"), item.get("源网址"), item.get("原文链接"), item.get("url"), vo.get("sourceUrl"), vo.get("url")),
         "policy_url": first_str(item.get("policyUrl"), item.get("policy_url"), vo.get("policyUrl")),
         "excerpt": segment.get("text") or paragraph_text(item),
         "section": first_str(item.get("正文对应"), item.get("section"), item.get("支撑")),
         "kind": first_str(item.get("类型"), item.get("type"), item.get("素材类型"), vo.get("typeName"), "材料"),
-        "verify_note": first_str(item.get("核验"), item.get("verification"), item.get("核验说明")),
+        "verify_note": user_facing_text(first_str(item.get("核验"), item.get("verification"), item.get("核验说明"))),
         "area": first_str(item.get("intentionArea"), item.get("area"), item.get("地域")),
     }
     # 段落级数据（多段分块展示用）：每段 {chain:[文章,章节,子节...], text}
@@ -440,17 +489,41 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
     first_chain = segments[0]["chain"][1:] if segments else []
     source["doc_section"] = " › ".join(first_chain)
     source["chain_full"] = " › ".join(segments[0]["chain"]) if segments else ""
-    # 发文字号（接口 policyFiles.writtenText，本地标题匹配）
-    source["doc_number"] = first_str(item.get("文号"), item.get("doc_number"))
+    # 发文字号：单路原始 JSON 与 merge 归一后的 JSON 都要兼容。
+    # - 可信 V2 文章级字段为「发文字号」；深搜 V3 文章级字段为 writtenText；
+    # - merge 会把两者归一为「文号」，但单路直接渲染不经过 merge，必须在本层兜住。
+    source["doc_number"] = first_str(
+        item.get("文号"),
+        item.get("发文字号"),
+        item.get("writtenText"),
+        item.get("doc_number"),
+    )
     # 所属搜索条件（多路检索分组）与引用状态（未引用=接口召回但正文未采用）
-    source["search_key"] = first_str(item.get("搜索条件"), item.get("search_key"))
-    # 检索通道（深知深度搜索 / 深知可信搜索）：由检索脚本在产物上打标、merge 透传，
+    # 分组标签面向用户：过滤「公开网络/外部联网/阶段X」等内部实现词
+    source["search_key"] = user_facing_text(first_str(item.get("检索分组"), item.get("搜索条件"), item.get("search_key")))
+    # 检索通道（通用检索来源 / 溯源核验报告生成器）：由检索脚本在产物上打标、merge 透传，
     # 供过程条/hero 按接口通道拆分计数；历史 JSON 无该字段时为空（渲染层回退旧文案）
     source["channel"] = first_str(item.get("检索通道"), item.get("channel"))
     # 非官方来源：联网路（searchChannel=webSearch）召回的非权威站点材料。
     # 双口径判定：联网路脚本打标 非官方来源=True；或接口 dataAuthority 返回 数据权威性=非权威。
-    source["unofficial"] = bool(item.get("非官方来源")) or str(
-        item.get("数据权威性") or item.get("authority") or "").strip() in ("非权威", "non-authoritative")
+    source["unofficial"] = (
+        bool(item.get("非官方来源"))
+        or str(item.get("来源性质") or item.get("source_kind") or "").strip().lower() in ("unofficial", "非官方", "非官方来源")
+        or str(item.get("数据权威性") or item.get("authority") or "").strip() in ("非权威", "non-authoritative")
+    )
+    source["pending"] = bool(item.get("待核验") or item.get("pending"))
+    # 1.0.2：外部信源再判等级——官方外部（政府域名/法定机构）不作"非官方"处理。
+    _issuer_text = str(source.get("issuer") or "")
+    _title_text = str(source.get("title") or "")
+    source["official_external"] = bool(source["unofficial"]
+                                      and is_official_external(source.get("url") or "", _issuer_text, _title_text))
+    if source["official_external"]:
+        source["unofficial"] = False
+    # 可引用性（1.7.3）：policy 版本索引/无正文材料不得作为正文依据。
+    # 缺字段时按摘录是否有内容兜底（历史 JSON 兼容）。
+    source["citable"] = item.get("可引用") is not False
+    source["material_kind"] = first_str(item.get("材料性质"))
+    source["uncitable_reason"] = first_str(item.get("不可引用原因"))
     source["used"] = item.get("已引用", item.get("used", True))
     if not isinstance(source["used"], bool):
         source["used"] = True
@@ -459,159 +532,91 @@ def source_from_article(item: Dict[str, Any], index: int, segment: Optional[Dict
     source["snapshot"] = first_str(item.get("快照链接"), item.get("snapshot"), item.get("screenShotPath"))
     # 发布日期可信度（实测：「高」=模型治理入库、标题模型精抽；「较高」=门户抓取、标题规则提取）
     source["conf"] = first_str(item.get("发布日期可信度"), item.get("可信度"), item.get("confidence"))
-    key, label, css = normalize_kind(source["kind"])
+    # 材料类型只用于卡片左侧色条（内部样式），不再作为文字标签展示，也不再参与统计（1.0.2）。
+    key, _label, css = normalize_kind(source["kind"])
     source["type_key"] = key
-    source["type_label"] = label
     source["type_css"] = css
     live_url = bool(source["url"] and source["url"] != "接口未返回")
     source["has_link"] = live_url or bool(source["policy_url"]) or bool(source["snapshot"])
-    # 核验状态只看摘录可比对；原文链接死活与快照有无是回看通道问题，不影响核验结论
-    source["verified"] = bool(source["excerpt"])
+    # 核验状态只看结构：摘录可比对且材料可引用。原文链接死活与快照有无是回看通道问题，
+    # 不影响核验结论；"引用是否被核验通过"这类内容判断不由脚本采信（1.0.2 归 AI 轨）。
+    source["verified"] = bool(source["excerpt"]) and source["citable"]
     return source
 
 
-def extract_articles_from_search(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """可信搜索 dependable/search 格式：content.data.检索文章。"""
-    content = payload.get("content") if isinstance(payload.get("content"), dict) else payload
-    data = content.get("data") if isinstance(content.get("data"), dict) else content.get("data")
-    if isinstance(data, dict) and isinstance(data.get("检索文章"), list):
-        return [x for x in data["检索文章"] if isinstance(x, dict)]
-    return []
+def load_materials(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """从通用 JSON 读取材料列表。
 
-
-def extract_articles_from_deep(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """深度搜索 deep-query/v3 非流式格式：{"data": {"searches": [{"result": [...]}], "common_articles": [...]}}。
-
-    按源网址去重摊平；为每篇材料注入"搜索条件"（子查询的地域·查询词），供知识专库检索分组筛选。
+    顶层 materials / 材料 / sources 均可；顶层是数组也接受。
+    每条材料必须有"标题"与"原文"（摘录）；编号缺省按数组顺序 1-based。
     """
-    data = payload.get("data")
-    if not isinstance(data, dict):
-        return []
-    searches = data.get("searches")
-    if not isinstance(searches, list):
-        return []
-    seen: set = set()
-    out: List[Dict[str, Any]] = []
-
-    def _add(article: Any, search_key: str) -> None:
-        if not isinstance(article, dict):
-            return
-        key = str(article.get("源网址") or article.get("文章标题") or "")
-        if key and key in seen:
-            return
-        if key:
-            seen.add(key)
-        if search_key and not article.get("搜索条件"):
-            article["搜索条件"] = search_key
-        out.append(article)
-
-    for search in searches:
-        if not isinstance(search, dict):
-            continue
-        areas = "、".join(str(a) for a in (search.get("areas") or []))
-        query = str(search.get("query") or "").strip()
-        label = f"{areas}·{query[:14]}" if areas else query[:18]
-        for article in search.get("result") or []:
-            _add(article, label)
-    for article in data.get("common_articles") or []:
-        # 多查询公共文章给独立分组名（空 key 落不进任何分组 tab，无法筛选）
-        _add(article, "多查询公共")
-    return out
-
-
-def extract_reference_materials(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
-    materials = payload.get("referenceMaterials")
-    if isinstance(materials, list):
-        return [x for x in materials if isinstance(x, dict)]
-    return []
+    raw = payload.get("materials")
+    if not isinstance(raw, list):
+        raw = payload.get("材料")
+    if not isinstance(raw, list):
+        raw = payload.get("sources")
+    if not isinstance(raw, list) and isinstance(payload.get("data"), list):
+        # 顶层数组经 load_json 包装为 {"data": [...]}（兼容裸材料数组输入）
+        raw = payload["data"]
+    if not isinstance(raw, list):
+        if isinstance(payload, list):
+            raw = payload
+        else:
+            return []
+    articles = [x for x in raw if isinstance(x, dict)]
+    # 编号缺省补齐
+    for idx, item in enumerate(articles):
+        if not first_str(item.get("编号"), item.get("角标"), item.get("index")):
+            item["编号"] = str(idx + 1)
+    return articles
 
 
 def extract_sources(payload: Dict[str, Any],
-                    skip_link_check: bool = False, snapshot_enabled: bool = True) -> List[Dict[str, str]]:
-    raw_sources: List[Dict[str, Any]] = []
-    raw_sources.extend(extract_reference_materials(payload))
-    is_deep = bool(extract_articles_from_deep(payload))
-    raw_sources.extend(extract_articles_from_search(payload))
-    raw_sources.extend(extract_articles_from_deep(payload))
-    if not is_deep:
-        # 可信搜索单次检索：材料统一标注"本次检索"分组（多轮检索由 Agent 合并 JSON 后各自携带）
-        for item in raw_sources:
-            if not item.get("搜索条件"):
-                item["搜索条件"] = "本次检索"
+                    snapshot_enabled: bool = True) -> List[Dict[str, str]]:
+    """通用 JSON → 渲染器内部 source dict 列表。"""
+    raw_sources = load_materials(payload)
 
-    # 生成前预处理：文号匹配（policyFiles）、快照兜底（不做链接活性探测）
-    preprocess_articles(raw_sources, payload, skip_link_check=skip_link_check, snapshot_enabled=snapshot_enabled)
+    # 快照兜底
+    if snapshot_enabled:
+        for a in raw_sources:
+            raw_snap = first_str(a.get("快照链接"), a.get("snapshot"), a.get("screenShotPath"))
+            a["快照链接"] = normalize_snapshot_url(raw_snap) if raw_snap else ""
+        verify_snapshots(raw_sources)
+    else:
+        for a in raw_sources:
+            a["快照链接"] = ""
 
     sources: List[Dict[str, str]] = []
-    seen = set()
+    seen_ids = set()
     for item in raw_sources:
-        # 一篇材料一张卡：段落合并为摘录（paragraph_text 拼接全部段落），不按段落拆卡——
-        # 溯源 JSON 的 materials 与正文角标按"材料"粒度一一对应，拆段会使编号错位。
         source = source_from_article(item, len(sources) + 1)
-        # 去重键（2026-10-08 修复）：归一化「标题+URL」。旧键含 id（递增序号每条不同）
-        # 等于从不去重——同一篇文章跨提取器/多段片段全部出卡（实测曾出现同名卡片 ×17）。单边缺失退用其一，均缺失退摘录前缀。
-        t_key = re.sub(r"\s+", "", source["title"] or "")
-        u_key = (source["url"] or "").strip().rstrip("/")
-        if u_key == "接口未返回":
-            u_key = ""
-        if t_key and u_key:
-            key = ("tu", t_key, u_key)
-        elif t_key:
-            key = ("t", t_key)
-        elif u_key:
-            key = ("u", u_key)
-        else:
-            key = ("e", (source["excerpt"] or "")[:80])
-        if key in seen:
-            continue
-        seen.add(key)
-        if not source["id"]:
-            source["id"] = str(len(sources) + 1)
+        # 编号重复报错
+        if source["id"] in seen_ids:
+            print(f"错误：材料编号 {source['id']} 重复（标题：{source['title'][:30]}）。"
+                  "请检查通用 JSON 中各材料的 编号 字段。", file=sys.stderr)
+            raise SystemExit(2)
+        seen_ids.add(source["id"])
+        if not source["search_key"]:
+            source["search_key"] = "本轮检索"
         sources.append(source)
     return sources
 
 
 def extract_answer(payload: Dict[str, Any]) -> str:
-    resp = payload.get("resp")
-    if isinstance(resp, dict):
-        answer = first_str(resp.get("content"), resp.get("answer"), resp.get("text"))
-        if answer:
-            return normalize_citations(answer)
-    answer = first_str(payload.get("answer"), payload.get("contentText"), payload.get("text"))
+    answer = first_str(payload.get("answer"), payload.get("答案"))
     if answer:
         return normalize_citations(answer)
-    articles = extract_articles_from_search(payload)
-    if articles:
-        rows = ["可信搜索召回了以下重点来源文章："]
-        for idx, item in enumerate(articles[:8], start=1):
-            rows.append(f"[{idx}] {first_str(item.get('文章标题'), item.get('title'), item.get('标题'), '未命名来源文章')}")
+    materials = load_materials(payload)
+    if materials:
+        rows = ["以下材料已入库，但未传入答案正文；请用 --answer-file 传入带 [n] 角标的最终答案："]
+        for idx, item in enumerate(materials[:8], start=1):
+            rows.append(f"[{idx}] {first_str(item.get('标题'), item.get('title'), item.get('name'), '未命名材料')}")
         return "\n".join(rows)
-    deep_articles = extract_articles_from_deep(payload)
-    if deep_articles:
-        rows = ["深度搜索召回了以下重点来源文章："]
-        for idx, item in enumerate(deep_articles[:8], start=1):
-            vo = item.get("vo") if isinstance(item.get("vo"), dict) else {}
-            rows.append(f"[{idx}] {first_str(item.get('文章标题'), vo.get('showTitle'), vo.get('title'), item.get('title'), '未命名来源文章')}")
-        return "\n".join(rows)
-    return "接口返回中未识别到正文内容；请查看知识专库或原始 JSON。"
+    return "输入 JSON 中未识别到答案正文；请用 --answer-file 传入。"
 
 
 def extract_question(payload: Dict[str, Any]) -> str:
-    content = payload.get("content") if isinstance(payload.get("content"), dict) else payload
-    data = content.get("data") if isinstance(content.get("data"), dict) else {}
-    first_query = ""
-    searches = data.get("searches") if isinstance(data.get("searches"), list) else None
-    if searches and isinstance(searches[0], dict):
-        first_query = str(searches[0].get("query") or "")
-    return first_str(
-        payload.get("question"),
-        payload.get("input"),
-        payload.get("query"),
-        data.get("用户问题"),
-        first_query,
-        content.get("query"),
-        content.get("question"),
-    )
+    return first_str(payload.get("question"), payload.get("问题"), payload.get("query"))
 
 
 def citation_ids(answer: str) -> List[str]:
@@ -627,19 +632,9 @@ def citation_ids(answer: str) -> List[str]:
 # 核验计算（报告级）
 # ============================================================
 
-SELF_CHECK_ITEMS = [
-    ("fact_basis", "事实有据"),
-    ("binding", "角标绑定"),
-    ("consistency", "答案一致"),
-    ("freshness", "时效确认"),
-    ("no_gap", "无未核验断言"),
-]
-
-SELF_CHECK_LABELS = dict(SELF_CHECK_ITEMS)
-SELF_CHECK_LABELS.update({
-    "事实有据": "事实有据", "角标绑定": "角标绑定", "答案一致": "答案一致",
-    "时效确认": "时效确认", "无未核验断言": "无未核验断言",
-})
+def self_check_items() -> List[Tuple[str, str]]:
+    """当前配置的五项自检（key, 显示名）；业务 Skill 可整体替换标签集。"""
+    return [(str(k), str(v)) for k, v in selfcheck_labels().items()]
 
 
 def classify_check_value(raw: Any) -> Tuple[str, str]:
@@ -661,19 +656,152 @@ def classify_check_value(raw: Any) -> Tuple[str, str]:
     return "none", text
 
 
-def normalize_self_check(raw: Any) -> Optional[Dict[str, Tuple[str, str]]]:
+# ============================================================
+# 两轨验收：Agent 轨（标准由我们定义，Agent 提交结论与证据）
+# ============================================================
+# 可核对要素：材料编号、条款号、文号、日期、标准号——任一项即可回查。
+CHECKABLE_PATTERNS = (
+    re.compile(r"\[\d+\]"),
+    re.compile(r"第[一二三四五六七八九十百零〇\d]+条"),
+    re.compile(r"§\s*\d+"),
+    re.compile(r"〔\s*20\d{2}\s*〕"),
+    re.compile(r"20\d{2}\s*[-/.年]\s*\d{1,2}"),
+    re.compile(r"20\d{2}\s*年"),
+    re.compile(r"[A-Za-z0-9_./-]+\.(?:json|txt|md|html|csv)", re.I),
+    re.compile(r"GB(?:/T)?\s*\d+", re.I),
+)
+
+
+def has_checkable_element(text: Any) -> bool:
+    """证据里是否至少有一处可回查的要素（编号/条款/文号/日期/标准号）。"""
+    value = str(text or "")
+    return any(pattern.search(value) for pattern in CHECKABLE_PATTERNS)
+
+
+def agent_track_config() -> Dict[str, Any]:
+    return dict(CONFIG.get("agent_track") or {})
+
+
+def _normalize_verdict(raw: Any) -> str:
+    text = str(raw or "").strip().lower()
+    if not text:
+        return "none"
+    for prefix in ("pending", "待定", "待确认", "待人工复核", "待复核"):
+        if text.startswith(prefix):
+            return "pending"
+    for prefix in ("fail", "未通过", "不通过", "不合格", "false", "否", "✗", "no"):
+        if text.startswith(prefix):
+            return "fail"
+    for prefix in ("pass", "已通过", "通过", "合格", "ok", "true", "是", "✓", "yes"):
+        if text.startswith(prefix):
+            return "pass"
+    return "none"
+
+
+def parse_agent_check(raw: Any, require_evidence: bool = True) -> Dict[str, Any]:
+    """把一项（Agent 轨）自检解析为结构化结果。
+
+    支持新旧两种写法：
+    - 旧：`"通过：说明文字"`（字符串，兼容 1.0.1 及以前）
+    - 新：`{"verdict": "pass|fail|pending", "basis": "…", "evidence": ["[1] …第五条"]}`
+    返回 status ∈ pass / fail / pending / none / evidence_missing。
+    """
+    verdict = "none"
+    basis = ""
+    evidence: List[str] = []
+
+    if isinstance(raw, dict):
+        verdict = _normalize_verdict(raw.get("verdict") or raw.get("结论") or raw.get("status"))
+        basis = str(raw.get("basis") or raw.get("依据") or raw.get("note") or "").strip()
+        ev = raw.get("evidence") or raw.get("证据") or []
+        if isinstance(ev, (list, tuple)):
+            evidence = [str(x).strip() for x in ev if str(x).strip()]
+        elif str(ev).strip():
+            evidence = [str(ev).strip()]
+    else:
+        status, note = classify_check_value(raw)
+        verdict = status if status in ("pass", "fail") else "none"
+        basis = note
+
+    # 旧写法的说明文字就是唯一"证据"来源
+    if not evidence and basis:
+        evidence = [basis]
+
+    if verdict in ("pending", "none", "fail"):
+        return {"verdict": verdict, "status": verdict, "basis": basis,
+                "evidence": evidence, "missing": ""}
+
+    # verdict = pass：必须有可核对证据，否则只作"证据不足"，不计通过
+    if require_evidence:
+        joined = "；".join(evidence)
+        if not joined.strip() or not has_checkable_element(joined):
+            return {"verdict": "pass", "status": "evidence_missing", "basis": basis,
+                    "evidence": evidence,
+                    "missing": "证据不足：未给出材料编号/条款号/文号/日期/标准号等可回查要素"}
+    return {"verdict": "pass", "status": "pass", "basis": basis,
+            "evidence": evidence, "missing": ""}
+
+
+# 用户可见报告不得暴露内部检索实现（三阶段/联网通道）；自检说明里模型常写这些词，
+# 渲染前统一换成用户能理解的口径。只作用于自检说明，不改正文与材料内容。
+USER_FACING_REPLACEMENTS = (
+    ("宿主 WebSearch", "公开网络检索"),
+    ("外部联网材料", "公开网络材料"),
+    ("外部联网", "公开网络"),
+    ("公开网络", "检索来源"),
+    ("阶段三", "补充检索"),
+    ("阶段二", "补充检索"),
+    ("阶段一", "检索"),
+    # 外部来源只标「非官方来源」；核验由 AI 完成，不再叠加「待核验」
+    ("非官方来源 · 待核验", "非官方来源"),
+    ("（非官方来源，待核验）", "（非官方来源）"),
+    ("(非官方来源，待核验)", "(非官方来源)"),
+    ("非官方来源/待核验", "非官方来源"),
+    ("非官方来源、待核验", "非官方来源"),
+)
+
+
+def user_facing_text(text: str) -> str:
+    """单遍替换：按源词长度倒序拼一条正则一次替换，替换结果不参与后续匹配。
+
+    顺序 str.replace 会级联（如"宿主 WebSearch→公开网络检索"再被"公开网络→检索来源"
+    二次替换成"检索来源检索"）。配置的规则优先，未配置用默认表。
+    """
+    out = str(text or "")
+    configured = (CONFIG.get("channels") or {}).get("user_facing_replacements") or []
+    pairs = [(str(x[0]), str(x[1])) for x in configured if isinstance(x, (list, tuple)) and len(x) >= 2]
+    mapping = {}
+    for src, dst in (pairs or USER_FACING_REPLACEMENTS):
+        mapping.setdefault(str(src), str(dst))
+    if not mapping:
+        return out
+    pattern = re.compile("|".join(re.escape(src) for src in sorted(mapping, key=len, reverse=True)))
+    return pattern.sub(lambda m: mapping[m.group(0)], out)
+
+
+def normalize_self_check(raw: Any) -> Optional[Dict[str, Dict[str, Any]]]:
+    """把 selfCheck / agentCheck 归一化为逐项结构化结果（两轨验收）。"""
     if not isinstance(raw, dict):
         return None
-    items: Dict[str, Tuple[str, str]] = {}
+    items: Dict[str, Dict[str, Any]] = {}
+    labels = selfcheck_labels()
+    require_evidence = bool(agent_track_config().get("require_evidence", True))
     for key, value in raw.items():
-        # 只认五项标准自检键（英文/中文）；白名单外的多余键（如 Agent 自行追加的
-        # "备注""待核验/下一步补充"等描述性键）不构成"交付前检查"定义的核验项，
-        # 直接忽略不计入——核验单只统计定义过的检查项（2026-09-20 实测修正）。
-        label = SELF_CHECK_LABELS.get(key) or SELF_CHECK_LABELS.get(str(key))
+        # 只认配置里的自检键（英文 key 或与显示名相同的中文键）；白名单外的多余键
+        # （如 Agent 自行追加的"备注"等描述性键）不构成核验项，直接忽略不计入。
+        label = labels.get(key) or labels.get(str(key))
+        if not label:
+            # 兼容业务 Skill 直接用中文显示名作为键（如公文的"事实有据"）
+            for display in labels.values():
+                if str(key) == display:
+                    label = display
+                    break
         if not label:
             continue
-        status, note = classify_check_value(value)
-        items[label] = (status, note)
+        parsed = parse_agent_check(value, require_evidence=require_evidence)
+        parsed["basis"] = user_facing_text(parsed.get("basis") or "")
+        parsed["evidence"] = [user_facing_text(x) for x in (parsed.get("evidence") or [])]
+        items[label] = parsed
     return items or None
 
 
@@ -686,12 +814,18 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
     # 只统计被正文引用的材料——未引用召回材料未进入正文核验流程，其缺链在自身卡片上如实标注，
     # 不应拖累"正文依据可交付"的报告级结论。
     # 缺原文链接（接口对部分治理库文章不返回源网址，属数据源覆盖问题而非核验工作缺失）
-    # 不再拖垮整体结论——报告的正常结论即为"核验完成"，缺链在指标行黄色提醒并在卡片标注；
+    # 不再拖垮整体结论——报告的正常结论即为"已核验"，缺链在指标行黄色提醒并在卡片标注；
     # 缺摘录（正文依据无可比对的原文）仍视为核验问题计入未通过。
     cited_sources = [s for s in sources if s.get("used", True)]
     missing_links = [s["title"] for s in cited_sources if not s.get("has_link")]
     missing_excerpts = [s["title"] for s in cited_sources if not (s.get("excerpt") or "").strip()]
-    trace_passed = len(cited_sources) - len(missing_excerpts)
+    # 1.7.3：policy 版本索引/无正文材料显式标为不可引用，即使有摘录也不得作为正文依据
+    uncitable = [s["title"] for s in cited_sources if s.get("citable") is False]
+    # 1.0.2 责任分配：脚本轨只判**结构**——正文依据必须有可展开摘录、且非不可引用材料。
+    # 内容类判断（数字/标准号/地域/缺席/金额对象/措辞）全部交给 AI 验收，不在此判红。
+    bad_ids = {s["id"] for s in cited_sources
+               if s.get("citable") is False or not (s.get("excerpt") or "").strip()}
+    trace_passed = len(cited_sources) - len(bad_ids)
 
     # ② 引用绑定：正文角标与来源卡一一对应（按角标出现次数计，与用户在正文中数到的一致）
     cited = citation_ids(answer)
@@ -715,35 +849,93 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
             "old_count": sum(1 for y, _ in dated if y <= generated_at.year - 3),
         }
 
-    # ④ 类型覆盖：**正文依据**的素材四分类分布（口径同③，2026-09-29 修复）
-    coverage = {key: 0 for key in KIND_CATALOG}
-    for s in cited_sources:
-        coverage[s.get("type_key", "material")] = coverage.get(s.get("type_key", "material"), 0) + 1
-
-    # ⑤ 成稿自检：由溯源 JSON 的 self_check 传入，未传入如实显示未记录
+    # ⑤ 成稿自检（AI 验收轨）：由溯源 JSON 的 selfCheck/agentCheck 传入，未传入如实显示未记录
+    # （selfCheck/agentCheck 均可，agentCheck 是 1.0.2 起的别名）
     self_check_raw = None
     for holder in (payload, payload.get("content") if isinstance(payload.get("content"), dict) else {}):
-        self_check_raw = self_check_raw or holder.get("selfCheck") or holder.get("self_check")
+        self_check_raw = self_check_raw or holder.get("selfCheck") or holder.get("self_check") \
+            or holder.get("agentCheck") or holder.get("agent_check")
     self_items = normalize_self_check(self_check_raw)
     self_check = None
     if self_items:
-        passed = sum(1 for status, _ in self_items.values() if status == "pass")
-        failed = sum(1 for status, _ in self_items.values() if status == "fail")
-        # 状态只由显式 fail 决定：none（值无法识别，如描述性文本）不拖垮结论，
-        # 显示为"通过，N 项未记录"——红项只给真正声明未通过的项。
+        passed = sum(1 for item in self_items.values() if item.get("status") == "pass")
+        failed = sum(1 for item in self_items.values() if item.get("status") == "fail")
+        pending = sum(1 for item in self_items.values() if item.get("status") == "pending")
+        evidence_missing = [label for label, item in self_items.items()
+                            if item.get("status") == "evidence_missing"]
+        # 状态只由显式 fail 决定：none（值无法识别，如描述性文本）不拖垮结论；
+        # evidence_missing（声明通过但无可回查证据）单独点名，按结构违约拦在交付前。
         self_check = {"items": self_items, "passed": passed, "total": len(self_items), "failed": failed,
+                      "pending": pending, "evidence_missing": evidence_missing,
                       "status": "fail" if failed else "pass"}
     else:
-        self_check = {"items": {}, "passed": 0, "total": len(SELF_CHECK_ITEMS), "failed": 0, "status": "missing"}
+        self_check = {"items": {}, "passed": 0, "total": len(self_check_items()), "failed": 0,
+                      "pending": 0, "evidence_missing": [], "status": "missing"}
 
-    # 政策效力：无法自动判定现行效力，列出建议人工复核
-    policy_count = coverage.get("policy", 0)
+    # 1.0.2：脚本不再做任何内容判断（数字/标准号/地域/缺席/金额/措辞均归 AI）。
 
-    trace_ok = cited_sources and not missing_excerpts
+    # ⑥ 域内核验记录（--verify-file）：业务 Skill 自己的核验器（verify_claims 等）产出。
+    # 只做"并入"：verdict 为 fail / 记录指纹失效（答案或证据在核验后被改）按硬错误；
+    # 其余 issues 计入核验明细（软提醒）。不要求所有 Skill 都用同一套核验实现。
+    verify_record = None
+    _content_holder = payload.get("content") if isinstance(payload.get("content"), dict) else {}
+    for holder in (payload, _content_holder):
+        verify_record = verify_record or holder.get("verifyRecord") or holder.get("verify_record")
+    verify_cfg = CONFIG.get("verify") or {}
+    verify_state = {"present": False, "verdict": "", "stale": False, "notes": [], "hard": False}
+    verify_manual: List[str] = []
+    verify_ok = True
+    if verify_cfg.get("enabled", True):
+        if not verify_record:
+            if verify_cfg.get("required"):
+                verify_state["hard"] = True
+                verify_state["notes"] = ["缺少核验记录（--verify-file 未传入）"]
+                verify_ok = False
+        else:
+            verify_state["present"] = True
+            record = verify_record.get("record") if isinstance(verify_record.get("record"), dict) else verify_record
+            verdict = str(verify_record.get("verdict") or (record or {}).get("verdict") or "").strip()
+            verify_state["verdict"] = verdict
+            evidence_items = [{"id": s.get("id"), "url": s.get("url")} for s in sources]
+            # 业务侧 digest 口径未对齐时可关闭比对（只采信 verdict/issues），避免"永远 stale"
+            stale = (trust_digest.stale_reason(record, answer, evidence_items)
+                     if verify_cfg.get("compare_digests", True) else "")
+            issues = [str(x) for x in (verify_record.get("issues") or []) if str(x).strip()][:20]
+            if stale:
+                verify_state["stale"] = True
+                if verify_cfg.get("required"):
+                    verify_state["hard"] = True
+                    verify_state["notes"].append(str(stale))
+                    verify_ok = False
+                else:
+                    verify_manual.append(f"核验记录提示：{stale}")
+            if verdict and verdict.lower() != "pass":
+                verify_state["hard"] = True
+                verify_state["notes"].append("域内核验未通过（verdict=fail）")
+                verify_ok = False
+            prefix = "核验问题：" if verify_state["hard"] else "核验提示："
+            verify_manual.extend(prefix + issue for issue in issues)
+
+    trace_ok = bool(cited_sources) and not bad_ids
     binding_ok = (not unbound) and not no_citation
+    # 1.0.2：结构问题不再注入成 AI 验收项——脚本只管结构、AI 只管内容，两轨各自呈现。
     # 自检显式"未通过"纳为报告级否决项：不能自检失败还顶部打绿章。
-    self_check_ok = self_check["status"] != "fail"
-    overall_passed = bool(trace_ok and binding_ok and self_check_ok)
+    # 1.0.2：声明通过但没有可回查证据 = 结构不合规（contract 违约），同样拦在交付前；
+    # pending（待人工复核）不算未通过，允许出报告。
+    self_check_ok = (self_check["status"] != "fail") and not (self_check.get("evidence_missing") or [])
+    # 1.0.2 两轨验收汇总：脚本轨（上面各指标）+ Agent 轨（五项自检与证据）
+    agent_track = {
+        "enabled": bool(agent_track_config().get("enabled", True)),
+        "require_evidence": bool(agent_track_config().get("require_evidence", True)),
+        "total": self_check["total"],
+        "passed": self_check["passed"],
+        "failed": self_check["failed"],
+        "pending": self_check.get("pending", 0),
+        "evidence_missing": list(self_check.get("evidence_missing") or []),
+        "status": self_check["status"],
+    }
+    # 两轨合流：任一轨判不过即整体未通过，Agent 轨不能用"字面都找到了"翻案脚本轨。
+    overall_passed = bool(trace_ok and binding_ok and self_check_ok and verify_ok)
 
     reasons = []
     if not sources:
@@ -752,16 +944,21 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
         reasons.append("正文里没有来源角标，对不上来源文章")
     if unbound:
         reasons.append(f"有 {len(unbound)} 处角标找不到对应来源文章")
+    if uncitable:
+        reasons.append(f"有 {len(uncitable)} 条正文依据为不可引用材料（版本索引/无正文）")
     if self_check["status"] == "fail":
-        reasons.append("交付前检查有没过的项")
-    if missing_links:
-        reasons.append(f"有 {len(missing_links)} 条正文依据没有原文链接或存档快照，无法回看")
+        reasons.append("AI 验收有未通过项")
+    if self_check.get("evidence_missing"):
+        reasons.append("AI 验收有声明通过但无可回查证据的项")
+    if not verify_ok:
+        reasons.extend(verify_state["notes"] or ["域内核验未通过"])
+    # 缺原文链接/存档快照属回看通道提醒（软项），只进顶部表述与指标行，不进红色失败原因。
 
     if overall_passed and missing_links:
         # 摘录可比对、结论成立，但确有材料无回看通道时，顶部表述要与事实一致
-        overall_label = f"核验完成，其中 {len(missing_links)} 条依据无原文或存档快照可回看"
+        overall_label = f"已核验（{len(missing_links)} 条依据无原文或存档快照可回看）" if overall_passed else "核验未通过"
     else:
-        overall_label = "核验完成，正文依据逐条对过原文" if overall_passed else "核验未完全通过"
+        overall_label = "已核验" if overall_passed else "核验未通过"
 
     return {
         "overall": {
@@ -770,19 +967,79 @@ def compute_verification(answer: str, sources: List[Dict[str, str]], payload: Di
             "reasons": reasons,
         },
         "traceability": {"total": len(cited_sources), "passed": trace_passed,
-                         "missing_links": missing_links, "missing_excerpts": missing_excerpts},
+                         "missing_links": missing_links, "missing_excerpts": missing_excerpts,
+                         "uncitable": uncitable},
         "binding": {"total": len(all_marks), "bound": len(all_marks) - len(unbound), "unbound": unbound_ids, "no_citation": no_citation},
         "freshness": freshness,
-        "coverage": coverage,
         "self_check": self_check,
-        "policy_count": policy_count,
-        "manual_checks": [str(x) for x in (payload.get("verificationChecks") or payload.get("verification_checks") or []) if str(x).strip()],
+        "agent_track": agent_track,
+        "verify": verify_state,
+        "manual_checks": list(dict.fromkeys(
+            [str(x) for x in (payload.get("verificationChecks") or payload.get("verification_checks") or []) if str(x).strip()]
+            + verify_manual
+        )),
     }
 
 
 # ============================================================
 # 过程回顾 / 热词（真实计算，不虚构流程）
 # ============================================================
+
+def route_kind(channel: str) -> str:
+    """按配置的通道关键词把原始通道标记归为 deep / trusted / web。
+
+    通用 JSON 默认无通道约定（route_keywords 为空 → 返回空，统计回退单通道）；
+    业务 Skill 在 config.channels.route_keywords 里配置自己的词表。
+    """
+    text = str(channel or "")
+    rules = (CONFIG.get("channels") or {}).get("route_keywords") or {}
+    for kind in ("web", "deep", "trusted"):
+        for keyword in (rules.get(kind) or []):
+            if keyword and keyword in text:
+                return kind
+    return ""
+
+
+def channel_label(channel: str) -> str:
+    """过程条明细行的通道后缀：config.channels.labels 里 kind→显示名；未配置则空。"""
+    kind = route_kind(channel)
+    if not kind:
+        return ""
+    return str((CONFIG.get("channels") or {}).get("labels", {}).get(kind) or "")
+
+
+def route_summary(deep_n: int, trusted_n: int, n_searches: int) -> str:
+    """过程条/hero 的检索摘要：按配置模板拼装；未配置任何模板时按次数显示。"""
+    summary = (CONFIG.get("channels") or {}).get("summary") or {}
+    parts = []
+    if deep_n and summary.get("deep"):
+        parts.append(str(summary["deep"]).format(deep=deep_n, trusted=trusted_n, n=n_searches))
+    if trusted_n and summary.get("trusted"):
+        parts.append(str(summary["trusted"]).format(deep=deep_n, trusted=trusted_n, n=n_searches))
+    if parts:
+        return " · ".join(parts)
+    fallback = str(summary.get("fallback") or "通用检索 {n} 路")
+    return fallback.format(deep=deep_n, trusted=trusted_n, n=n_searches)
+
+
+def channel_tokens(channels: List[str]) -> List[str]:
+    """来源行通道 token 汇总：按配置过滤内部通道标记，可做 token 映射。"""
+    chan_cfg = CONFIG.get("channels") or {}
+    filters = {str(x) for x in (chan_cfg.get("internal_token_filter") or [])}
+    token_map = {str(k): str(v) for k, v in (chan_cfg.get("tokens") or {}).items()}
+    tokens: List[str] = []
+    for channel in channels:
+        for token in re.split(r"[、·]", str(channel or "")):
+            token = token.strip()
+            if not token or token in filters:
+                continue
+            token = token_map.get(token, token)
+            if not token or token in filters:
+                continue
+            if token not in tokens:
+                tokens.append(token)
+    return tokens
+
 
 def compute_process_stats(sources: List[Dict[str, str]], answer: str,
                          calls: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
@@ -799,7 +1056,7 @@ def compute_process_stats(sources: List[Dict[str, str]], answer: str,
     cond_rows = []
     for key in order:
         group = [s for s in sources if (s.get("search_key") or "").strip() == key]
-        # 该路检索的接口通道（深知深度搜索/深知可信搜索）：取组内多数通道
+        # 该路检索的接口通道（通用检索来源/溯源核验报告生成器）：取组内多数通道
         chan_counts: Dict[str, int] = {}
         for s in group:
             ch = (s.get("channel") or "").strip()
@@ -810,13 +1067,18 @@ def compute_process_stats(sources: List[Dict[str, str]], answer: str,
         # 过程条展示『该路新增 N 篇 · 补充 K 段』——补搜的实际贡献不被分组统计吞掉
         delta = ""
         if calls:
-            matched = next((c for c in calls if str(c.get("label") or "").strip() == key), None)
-            if matched is None:
-                matched = next((c for c in calls
-                                if str(c.get("label") or "").strip()
-                                and key.startswith(str(c.get("label")).strip()[:12])), None)
+            # 同名分组可能对应多条 --input（多个补搜复用同一 --search-key）。
+            # 过程条按分组展示，必须汇总该组全部同名 calls；只取第一条会漏算
+            # 后续同名路的“新增/补段”增量（2026-11-09 五验待确认项）。
+            matched = [c for c in calls if str(c.get("label") or "").strip() == key]
+            if not matched:
+                matched = [c for c in calls
+                           if str(c.get("label") or "").strip()
+                           and key.startswith(str(c.get("label")).strip()[:12])]
             if matched:
-                delta = f"新增 {matched.get('new_articles', 0)} 篇 · 补充 {matched.get('added_paragraphs', 0)} 段"
+                new_total = sum(int(c.get("new_articles") or 0) for c in matched)
+                added_total = sum(int(c.get("added_paragraphs") or 0) for c in matched)
+                delta = f"新增 {new_total} 篇 · 补充 {added_total} 段"
         cond_rows.append({
             "key": key,
             "total": len(group),
@@ -825,11 +1087,18 @@ def compute_process_stats(sources: List[Dict[str, str]], answer: str,
             "delta": delta,
         })
     n_searches = len(cond_rows) or (1 if sources else 0)
-    # 深度/可信互斥计数（2026-10-16 修复）：多数通道为拼接值（"深知深度搜索、深知可信搜索"）
+    # 深度/可信互斥计数（2026-10-16 修复）：多数通道为拼接值（"通用检索来源、溯源核验报告生成器"）
     # 的组同时含两个关键词，若不互斥会被两边各计一次——WB 实测"补搜 10 次"被虚报成 13 次，
     # 与过程条明细行（if/else 口径）自相矛盾。此处与明细行同口径：含"深度"优先归深度。
-    deep_routes = sum(1 for r in cond_rows if "深度" in r.get("channel", ""))
-    trusted_routes = sum(1 for r in cond_rows if "可信" in r.get("channel", "") and "深度" not in r.get("channel", ""))
+    deep_routes = sum(1 for r in cond_rows if route_kind(r.get("channel", "")) == "deep")
+    trusted_routes = sum(1 for r in cond_rows if route_kind(r.get("channel", "")) == "trusted")
+    trusted_web_routes = sum(1 for r in cond_rows
+                             if route_kind(r.get("channel", "")) == "trusted"
+                             and "联网" in r.get("channel", ""))
+    web_routes = sum(1 for r in cond_rows if route_kind(r.get("channel", "")) == "web")
+    # 外部材料按 unofficial 判定，覆盖阶段二（溯源核验报告生成器·联网，route_kind=trusted）
+    # 与阶段三（宿主 WebSearch）；不能只看 pending/web，否则阶段二口径切换不生效。
+    external_materials = sum(1 for s in sources if s.get("unofficial") or s.get("pending"))
     used_count = sum(1 for s in sources if s.get("used", True))
     unused_count = len(sources) - used_count
     n_cite_marks = len(re.findall(r"\[(\d+)\]", answer))
@@ -838,6 +1107,9 @@ def compute_process_stats(sources: List[Dict[str, str]], answer: str,
         "n_searches": n_searches,
         "deep_routes": deep_routes,
         "trusted_routes": trusted_routes,
+        "trusted_web_routes": trusted_web_routes,
+        "web_routes": web_routes,
+        "external_materials": external_materials,
         "has_cond_detail": bool(cond_rows),
         "n_materials": len(sources),
         "used_count": used_count,
@@ -881,9 +1153,15 @@ def render_markdown_table(lines: List[str], citation_repl) -> str:
 
 
 def _safe_url(url: str) -> str:
-    """外链协议白名单（1.6.0）：仅允许 http/https，其余（javascript:/data: 等）置空不渲染。"""
+    """外链协议白名单（1.6.0）：仅允许 http/https，其余（javascript:/data: 等）置空不渲染。
+
+    2026-11-09 审核补充：拒绝带 userinfo 的 URL（https://user:pass@host/...），
+    避免凭据被原样写进报告。
+    """
     value = str(url or "").strip()
     if value.lower().startswith(("http://", "https://")):
+        if re.match(r"^https?://[^/?#]*@", value, re.I):
+            return ""
         return value
     return ""
 
@@ -900,7 +1178,16 @@ def sanitize_table_html(text: str) -> str:
         closing, name = match.group(1), match.group(2).lower()
         if name not in allowed:
             return ""
-        return f"<{closing}{name}>"
+        if closing:
+            return f"</{name}>"
+        attrs = ""
+        if name in ("td", "th"):
+            raw = match.group(0)
+            for attr in ("colspan", "rowspan"):
+                found = re.search(rf"{attr}\s*=\s*[\"']?(\d+)", raw, re.I)
+                if found:
+                    attrs += f' {attr}="{found.group(1)}"'
+        return f"<{name}{attrs}>"
 
     cleaned = re.sub(r"<\s*(/?)\s*([a-zA-Z0-9]+)(?:\s+[^>]*)?>", tag_repl, cleaned)
     # thead 修复（1.6.0，对齐公文写作 3.9.0）：接口偶发把数据行整片包在 thead 里，
@@ -908,6 +1195,9 @@ def sanitize_table_html(text: str) -> str:
     # 时，按文档顺序取全部行重建为「首行 thead + 其余 tbody」，行内容不变。
     def fix_table(m_t: re.Match[str]) -> str:
         block = m_t.group(0)
+        # 嵌套表不能按单层行重建，否则内外层 tbody 会错位；保持原结构（同步多引擎 1.0.1）。
+        if len(re.findall(r"(?is)<table\b", block)) > 1:
+            return block
         rows = re.findall(r"(?is)<tr>.*?</tr>", block)
         thead_rows = re.findall(r"(?is)<tr>.*?</tr>", 
                                 (re.search(r"(?is)<thead>(.*?)</thead>", block) or re.match(r"", "")).group(1)
@@ -974,7 +1264,8 @@ def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str
         site_html = (f'<span class="jb-site"><span class="dot"></span>{esc(jb.get("site") or "")}</span>'
                      if (jb.get("site") or "").strip() else "")
         if jb.get("unofficial"):
-            site_html = ('<span class="jb-unofficial" title="联网检索的非官方来源，仅供参考，建议以官方口径复核">非官方来源</span>'
+            _unofficial_text = "非官方来源"
+            site_html = (f'<span class="jb-unofficial" title="公开网络检索的非官方来源，仅供参考，建议以官方口径复核">{_unofficial_text}</span>'
                          + site_html)
         return (
             f'<span class="jb" data-cite="{esc(cid)}">'
@@ -1002,7 +1293,10 @@ def parse_answer_blocks(answer: str, valid_ids: set, chip_map: Optional[Dict[str
             if remaining[cid] > 0:
                 return ""
             if cid in chip_map:
-                return jb_html(cid)
+                # 行内只保留一个可点击的引用编号；点编号弹出该来源的引用卡，
+                # 完整摘录统一放知识专库，不再在正文里塞标题胶囊和全部段落。
+                return (f'<sup class="cite"><a class="cite-link" href="#src-{esc(cid)}" '
+                        f'data-cite="{esc(cid)}" title="查看引用依据 [{esc(cid)}]">[{esc(cid)}]</a></sup>')
             # 未绑定角标（无对应材料）：红色数字警示，绝不按位置猜测
             return f'<sup class="cite unresolved" data-cite="{esc(cid)}" title="核验依据 [{esc(cid)}?]">{esc(cid)}?</sup>'
 
@@ -1125,6 +1419,7 @@ def build_chip_data(sources: List[Dict[str, str]]) -> Dict[str, Dict[str, str]]:
             "excerpt": (source.get("excerpt") or "").strip(),
             "segments": source.get("segments") or [],
             "unofficial": bool(source.get("unofficial")),
+            "pending": bool(source.get("pending")),
         }
     return chip_map
 
@@ -1169,12 +1464,13 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
         tr_html = (f'<div class="vi"><span class="s ok">✓ 依据溯源 {tr["passed"]}/{tr["total"]}</span>'
                    f'<span class="d">每条素材摘录可比对，原文或存档快照可回看</span></div>')
     elif tr["passed"] == tr["total"]:
-        # 摘录齐全但有材料没有回看通道：不得照写"原文或存档快照可回看"
-        # （此前 missing_links 算出却从未参与结论，属虚假背书）
+        # 软提醒：缺原文链接不改变“已核验”，但要点名无法回看的条数。
         tr_html = (f'<div class="vi"><span class="s warn">◐ 依据溯源 {tr["passed"]}/{tr["total"]}</span>'
-                   f'<span class="d">摘录可比对，其中 {n_no_link} 条没有原文链接或存档快照、无法回看</span></div>')
+                   f'<span class="d">{n_no_link} 条没有原文链接或存档快照、无法回看</span></div>')
     else:
         detail = f'待补摘录 {len(tr.get("missing_excerpts") or [])} 条'
+        if tr.get("uncitable"):
+            detail += f'；不可引用 {len(tr["uncitable"])} 条'
         if n_no_link:
             detail += f'；{n_no_link} 条无原文链接或快照'
         tr_html = (f'<div class="vi"><span class="s warn">◐ 依据溯源 {tr["passed"]}/{tr["total"]}</span>'
@@ -1203,41 +1499,78 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
     else:
         fr_html = '<div class="vi"><span class="s none">— 材料新旧 未记录</span><span class="d">材料没标发布日期</span></div>'
 
-    # 材料构成：材料类型四分类（政策依据型/数据支撑型/…）非本检索接口返回字段
-    # → 没有类型数据时**整行不显示**，不再渲染"材料没标类型"这种永远为空的占位行（2026-09-28 修复）。
-    cov = v["coverage"]
-    parts = [f"{KIND_CATALOG[k][0]} {cov[k]}" for k in ("policy", "data", "case", "reference") if cov.get(k)]
-    cov_html = (f'<div class="vi"><span class="s ok">✓ 材料构成</span>'
-                f'<span class="d">{esc(" · ".join(parts))}</span></div>') if parts else ""
+    # 材料构成：类型分类依赖输入的 类型 字段，而它与实际文体常年对不上（官方公告显示成
+    # "材料"、第三方网页显示成"政策依据"），界定成本高、对读者无决策价值，不再展示；
+    # 正文依据条数已由「依据溯源 N/N」直接给出。
+    # 域内核验行（--verify-file）：只在业务 Skill 传入核验记录时出现
+    vr = v.get("verify") or {}
+    verify_html = ""
+    if vr.get("present"):
+        if vr.get("hard"):
+            detail = "；".join(vr.get("notes") or []) or "域内核验未通过"
+            verify_html = (f'<div class="vi"><span class="s fail">✗ 域内核验 未通过</span>'
+                           f'<span class="d">{esc(short(detail, 120))}</span></div>')
+        else:
+            verify_html = ('<div class="vi"><span class="s ok">✓ 域内核验 已通过</span>'
+                           '<span class="d">结论台账校验记录已并入本核验单</span></div>')
 
     sc = v["self_check"]
+    at = v.get("agent_track") or {}
     selfcheck_notes_html = ""
+    am = list(sc.get("evidence_missing") or [])
+    pend = int(sc.get("pending") or 0)
+    total = sc["total"]
+    verdict_zh = {"pass": "通过", "fail": "未通过", "pending": "待人工复核",
+                  "evidence_missing": "证据不足", "none": "未记录"}
+
+    def _item_text(label: str, item: dict) -> str:
+        parts = [f"结论：{verdict_zh.get(item.get('status'), '未记录')}"]
+        basis = (item.get("basis") or "").strip()
+        if basis:
+            parts.append(f"依据：{basis[:160]}")
+        ev = [x for x in (item.get("evidence") or []) if x and x != basis][:3]
+        if ev:
+            parts.append("证据：" + "；".join(x[:90] for x in ev))
+        if item.get("missing"):
+            parts.append(item["missing"])
+        return " ｜ ".join(parts)
+
     if sc["status"] == "pass":
-        item_names = "、".join(sc["items"].keys()) if sc["items"] else "、".join(label for _, label in SELF_CHECK_ITEMS)
-        unrecorded = sc["total"] - sc["passed"] - sc.get("failed", 0)
-        sc_head = f'✓ 交付前检查 {sc["passed"]}/{sc["total"]}' if not unrecorded else \
-            f'✓ 交付前检查 通过（{unrecorded} 项未记录）'
-        sc_html = (f'<div class="vi"><span class="s ok">{sc_head}</span>'
-                   f'<span class="d">{esc(item_names)}</span></div>')
-        # 逐项说明默认折叠（触屏可用），不再用鼠标悬浮 tooltip
-        note_items = [(label, note) for label, (status, note) in sc["items"].items() if note]
-        if note_items:
-            _li = "".join(f"<li><b>{esc(label)}</b>：{esc(note)}</li>" for label, note in note_items)
-            selfcheck_notes_html = (f'<details class="v-checks"><summary>查看交付前检查说明（{len(note_items)} 项）</summary>'
-                                    f'<ul>{_li}</ul></details>')
+        clean = not am and not pend
+        cls = "ok" if clean else "warn"
+        mark = "✓" if clean else "◐"
+        head = f'AI 验收 {sc["passed"]}/{total} 有据'
+        detail_parts = []
+        if am:
+            detail_parts.append(f"{len(am)} 项证据不足（{'、'.join(am[:3])}{'…' if len(am) > 3 else ''}）")
+        if pend:
+            detail_parts.append(f"{pend} 项待人工复核")
+        sc_html = (f'<div class="vi"><span class="s {cls}">{mark} {head}</span>'
+                   f'<span class="d">{esc("；".join(detail_parts) if detail_parts else "各项目均给出可回查证据")}</span></div>')
+        items = [(label, item) for label, item in sc["items"].items()]
+        if items:
+            _li = "".join(f"<li><b>{esc(label)}</b>：{esc(_item_text(label, item))}</li>" for label, item in items)
+            selfcheck_notes_html = (
+                f'<details class="v-checks"><summary>查看 AI 验收明细（{len(items)} 项）</summary>'
+                f'<ul>{_li}</ul></details>')
     elif sc["status"] == "fail":
         failed_parts = []
-        for label, (status, note) in sc["items"].items():
-            if status == "fail":
-                suffix = f"（{note[:40]}…）" if len(note) > 40 else (f"（{note}）" if note else "")
-                failed_parts.append(label + suffix)
-        sc_html = (f'<div class="vi"><span class="s fail">✗ 交付前检查 {sc["passed"]}/{sc["total"]}</span>'
+        for label, item in sc["items"].items():
+            if item.get("status") == "fail":
+                note = (item.get("basis") or "")[:40]
+                failed_parts.append(label + (f"（{note}）" if note else ""))
+        sc_html = (f'<div class="vi"><span class="s fail">✗ AI 验收 {sc["passed"]}/{total}</span>'
                    f'<span class="d">没过的项：{esc("、".join(failed_parts))}</span></div>')
+        items = [(label, item) for label, item in sc["items"].items()]
+        if items:
+            _li = "".join(f"<li><b>{esc(label)}</b>：{esc(_item_text(label, item))}</li>" for label, item in items)
+            selfcheck_notes_html = (
+                f'<details class="v-checks"><summary>查看 AI 验收明细（{len(items)} 项）</summary>'
+                f'<ul>{_li}</ul></details>')
     else:
-        sc_html = '<div class="vi"><span class="s none">— 交付前检查 未记录</span><span class="d">本次溯源 JSON 没写入检查结果</span></div>'
+        sc_html = '<div class="vi"><span class="s none">— AI 验收 未记录</span>' \
+                  '<span class="d">本次输入没有写入 Agent 验收结论</span></div>'
 
-    # "现行效力"人工复核提示行已移除（2026-09-19 起）：
-    # 政策是否现行有效无法自动判定，此提示对用户无操作价值；policy_count 仅保留在计算层不再展示。
     manual = ""
 
     return f"""
@@ -1245,9 +1578,12 @@ def render_verify_panel(v: Dict[str, Any]) -> str:
       <div class="v-head"><span class="v-shield">{'✓' if ov['passed'] else '!'}</span>{esc(ov['label'])}{stamp}</div>
       {reasons_html}
       <div class="v-grid">
-        {tr_html}{bd_html}{fr_html}{cov_html}{sc_html}{manual}
+        <div class="vi" style="grid-column:1/-1"><span class="s none">结构核验</span><span class="d">报告结构自检：依据溯源 / 引用对应 / 材料新旧</span></div>
+        {tr_html}{bd_html}{fr_html}{verify_html}
+        <div class="vi" style="grid-column:1/-1"><span class="s none">AI 验收</span><span class="d">按既定标准逐项判定，并留下可回查的证据</span></div>
+        {sc_html}{manual}
       </div>
-      <div class="v-note">AI 已完成自验收，正文依据可逐条点开原文复核。{selfcheck_notes_html}{manual_checks_html}</div>
+      <div class="v-note">结论 = 结构核验 ∧ AI 验收；任一轨不过则不出报告，修正后重跑。正文依据可逐条点开原文复核。{selfcheck_notes_html}{manual_checks_html}</div>
     </div>"""
 
 
@@ -1339,8 +1675,20 @@ def render_section_cards(sections: List[Dict[str, Any]], sources: List[Dict[str,
             badge_html = ""
             if sec_cites:
                 unbound = sum(1 for cid in sec_cites if cid not in source_ids)
-                state = "bad" if unbound else ""
-                text = f"本章引用 {len(sec_cites)} 处" + (f" · {unbound} 处未绑定" if unbound else " · 已核验")
+                # 章节徽标只判结构（1.0.2）：该章引用的全部材料可作依据（有摘录、可引用）；
+                # 内容是否被原文支持归 AI 验收，脚本不背书。
+                _sec_sources = [s for s in sources if s.get("id") in sec_cites]
+                _bad = [s for s in _sec_sources
+                        if s.get("citable") is False or not (s.get("excerpt") or "").strip()]
+                if unbound:
+                    state = "bad"
+                    text = f"本章引用 {len(sec_cites)} 处 · {unbound} 处未绑定"
+                elif _bad:
+                    state = "bad"
+                    text = f"本章引用 {len(sec_cites)} 处 · {len(_bad)} 条不可作依据"
+                else:
+                    state = ""
+                    text = f"本章引用 {len(sec_cites)} 处 · 已核验"
                 badge_html = f'<span class="sec-badge {state}">{esc(text)}</span>'
             parts.append(f'<section class="chapter" id="{id_prefix}-{sec_idx}">'
                          f'<header class="ch-head"><h2>{esc(chapter_title)}</h2>{badge_html}</header>')
@@ -1407,6 +1755,8 @@ def render_segments(source: Dict[str, Any]) -> str:
     """多段分块摘录：每段独立区块，各带自己的标题链——段落结构与位置直接可见。"""
     segments = source.get("segments") or []
     if not segments:
+        if not source.get("used", True):
+            return '<div class="seg-empty">未引用，未进入正文</div>'
         return render_excerpt_html(source.get("excerpt") or "接口返回中未识别到可展示的摘录。")
     blocks = []
     for seg in segments:
@@ -1422,18 +1772,24 @@ def render_source_card(source: Dict[str, str], for_print: bool = False) -> str:
     if not source.get("used", True):
         # 未引用召回材料：不标"已核验"（未进入正文核验流程），只标可否查看
         vk = ('<span class="sc-vk" style="color:var(--muted)">可查看全文</span>' if source.get("has_link")
-              else '<span class="sc-vk warn">待补链接</span>')
+              else '<span class="sc-vk" style="color:var(--muted)" title="本条未返回原文链接，可查看接口返回的原文摘录">可查看摘录</span>')
         note_html = ""
+    elif source.get("citable") is False:
+        reason = source.get("uncitable_reason") or "版本索引记录，无正文，不可引用"
+        vk = f'<span class="sc-vk warn" title="{esc(reason)}">◐ 不可引用</span>'
+        note_html = f'<div class="sc-vnote">{esc(short(reason, 90))}</div>'
     elif source.get("verified"):
+        # 1.0.2：来源卡只标结构状态（有可展开摘录、材料可引用），不标"内容核验通过"——
+        # 内容是否被原文支持由 AI 验收判定，脚本不背书。
         note = source.get("verify_note") or "摘录可比对，原文或存档快照可回看"
-        vk = f'<span class="sc-vk ok" title="{esc(note)}">✓ 已核验</span>'
+        vk = f'<span class="sc-vk ok" title="{esc(note)}">✓ 可作为正文依据</span>'
         note_html = f'<div class="sc-vnote">{esc(short(note, 90))}</div>' if source.get("verify_note") else ""
     else:
         reason = "待补原文链接" if not source.get("has_link") else "待补摘录"
         vk = f'<span class="sc-vk warn">◐ {reason}</span>'
         note_html = ""
     links = render_source_links(source.get("url"), source.get("policy_url", ""), source.get("snapshot", ""))
-    # 关键性行：有文号（接口 policyFiles 匹配）时"文号 · 数据源 · 日期"，否则"数据源 · 日期"。
+    # 关键性行：有文号（接口 policyFiles 匹配）时"文号 · 发文机构/来源 · 日期"，否则"发文机构/来源 · 日期"。
     # 文号必须是标准格式——政府公文"〔年份〕序号"（杭政函〔2022〕81号）、公告/令类"第X号"
     # （财政部税务总局公告2023年第19号、主席令第三十五号、国务院令第765号，含汉字数字）；
     # 描述性文字（"XX印发"类自造描述）不显示，当无文号处理。
@@ -1449,11 +1805,17 @@ def render_source_card(source: Dict[str, str], for_print: bool = False) -> str:
                       '标题为模型从原文动态抽取，非规则提取">高可信</span>')
     # 已引用材料显示角标编号；未引用召回材料显示"未引用"灰标（不占正文角标号）
     id_html = f'<span class="sc-id">[{esc(source["id"])}]</span>' if source.get("used", True) else '<span class="sc-unused">未引用</span>'
-    # 非官方来源徽标（1.6.0）：联网路召回的非权威站点材料，报告页与知识专库卡统一标注
-    unofficial_badge = ('<span class="sc-unofficial" title="联网检索的非官方来源，仅供参考，建议以官方口径复核">非官方来源</span>'
+    # 非官方来源徽标：联网路召回的非权威站点材料，报告页与知识专库卡统一标注；
+    # 其中政府域名/官方机构名的归为「公开网络·官方」（官方信源不应作为问题）。
+    _unofficial_text = "非官方来源"
+    official_badge = ('<span class="sc-official" title="公开网络检索到的官方信源（政府机构/法定机构），请以原文复核">公开网络·官方</span>'
+                      if source.get("official_external") else "")
+    unofficial_badge = (f'<span class="sc-unofficial" title="公开网络检索的非官方来源，仅供参考，建议以官方口径复核">{_unofficial_text}</span>'
                         if source.get("unofficial") else "")
+    # 来源卡不再显示"材料类型"标签——输入的类型字段与实际文体常年对不上，界定成本高、
+    # 对读者无决策价值。卡片只保留有明确事实依据的徽标：高可信、公开网络·官方／非官方来源、引用核验态。
     body_html = (f'<div class="sc-head">{id_html}'
-                 f'<span class="sc-type">{esc(source["type_label"])}</span>{conf_badge}{unofficial_badge}{vk}</div>'
+                 f'{conf_badge}{official_badge}{unofficial_badge}{vk}</div>'
                  f'<h4>{esc(source.get("title"))}</h4>'
                  f'<div class="sc-meta">{esc(meta)}</div>'
                  f'{note_html}'
@@ -1474,21 +1836,16 @@ def render_process_bar(stats: Dict[str, Any], verification: Dict[str, Any]) -> s
     ov = verification["overall"]
     tr = verification["traceability"]
     first_query = stats["conds"][0]["key"] if stats["conds"] else ""
-    # 步骤一标题按接口通道拆分（深度搜索与可信搜索是两个接口，不混计成一个数）；
-    # 无通道信息（历史 JSON）时退回"深知检索 N 路"
+    # 步骤一标题按接口通道拆分（检索来源/公开网络/宿主 WebSearch 是不同通道，不混计）；
+    # 无通道信息（历史 JSON）时退回"通用检索 N 路"
     deep_n = stats.get("deep_routes", 0)
     trusted_n = stats.get("trusted_routes", 0)
-    if deep_n and trusted_n:
-        step1_title = f"深度搜索 {deep_n} 路 · 可信补搜 {trusted_n} 次"
-    elif deep_n:
-        step1_title = f"深知深度搜索 {deep_n} 路"
-    elif trusted_n:
-        step1_title = f"深知可信搜索 {trusted_n} 次"
-    else:
-        step1_title = f"深知检索 {stats['n_searches']} 路"
+    step1_title = route_summary(deep_n, trusted_n, stats["n_searches"])
     detail_rows = "".join(
         f'<div class="pd-row"><b>{esc(row["key"])}'
-        + (f'（{"深度搜索" if "深度" in row.get("channel", "") else "可信搜索"}）' if row.get("channel") else "")
+        + (f'（{esc(channel_label(row.get("channel", "")))}）'
+           if channel_label(row.get("channel", ""))
+           and channel_label(row.get("channel", "")) != row["key"] else "")
         + f'</b><span>召回 {row["total"]} 条 · 正文采用 {row["used"]} 条'
         + (f' · {esc(row["delta"])}' if row.get("delta") else '')
         + '</span></div>'
@@ -1500,11 +1857,16 @@ def render_process_bar(stats: Dict[str, Any], verification: Dict[str, Any]) -> s
     elif first_query:
         step1_sub = esc(short(first_query, 26))
     else:
-        step1_sub = "深知可信搜索"
+        step1_sub = str((CONFIG.get("channels") or {}).get("step1_fallback") or "通用检索")
     step4_state = "done" if ov["passed"] else "bad"
     step4_icon = "✓" if ov["passed"] else "!"
-    step4_label = "核验完成" if ov["passed"] else "核验未完全通过"
-    step4_sub = "结论：正文依据逐条对过原文" if ov["passed"] else esc(short("；".join(ov["reasons"]) or "见核验报告单", 30))
+    step4_label = "已核验" if ov["passed"] else "核验未通过"
+    step4_sub = (
+        "结论：正文依据逐条对过来源（公开网络材料已标注非官方来源）"
+        if ov["passed"] and stats.get("external_materials")
+        else "结论：正文依据逐条对过原文" if ov["passed"]
+        else esc(short("；".join(ov["reasons"]) or "见核验报告单", 30))
+    )
     # 研究资料统计（1.5.0）：--research-notes-file 传入时在步骤 2 体现（事实/口径行数）；
     # 未传不显示（如实，不虚构）
     rn = stats.get("research_notes") or {}
@@ -1547,6 +1909,9 @@ def render_library_view(sources: List[Dict[str, str]], doc_title: str = "") -> s
                 '<div class="lib-empty">接口返回中未识别到可展示的来源文章。</div></section>')
     used_sources = [s for s in sources if s.get("used", True)]
     unused_sources = [s for s in sources if not s.get("used", True)]
+    if not used_sources:
+        return ('<section class="view" id="view-library" aria-label="知识专库">'
+                '<div class="lib-empty">正文未引用任何来源文章。</div></section>')
 
     # tabs = 检索分组（全部 / 各路检索 / 未引用），数字真实统计
     conds: List[Tuple[str, int]] = []
@@ -1580,9 +1945,22 @@ def render_library_view(sources: List[Dict[str, str]], doc_title: str = "") -> s
     # JS 的 __unused__ 过滤分支保留为兼容死代码
 
     cards_html = "".join(render_source_card(s) for s in used_sources)
-    cards_html += "".join(render_source_card(s) for s in unused_sources)
+    # 未进入正文的召回材料保留为参考资料，展示原文摘录，供用户判断是否值得回看。
+    unused_html = "".join(render_source_card(s) for s in unused_sources)
+    # 折叠区标题计数由 JS 随筛选动态更新（1.0.1）：data-total 保存全量数，
+    # lu-title 在选中分组/搜索词时改为"本组未进入正文的参考材料（N）"。
+    unused_block = (f'<details class="lib-unused" open data-total="{len(unused_sources)}">'
+                    f'<summary><span class="lu-title">未进入正文的参考材料（{len(unused_sources)}）</span>'
+                    f' · 供参考，未参与答案结论</summary><div class="lib-list">{unused_html}</div></details>'
+                    if unused_sources else "")
+    # 只有一组检索条件时，“全部/本次检索”两个 tab 完全重复，直接隐藏。
+    tabs_html = (f'<div class="lib-tabs" role="tablist" aria-label="按检索分组筛选">{"".join(tabs)}</div>'
+                 if len(conds) > 1 else "")
 
     lib_title = f"知识专库：{doc_title}" if doc_title.strip() else "知识专库"
+    has_external = any(s.get("unofficial") or s.get("pending") for s in sources)
+    lib_foot = (brand_text("lib_foot_source") if not has_external
+                else brand_text("lib_foot_external"))
     return f"""
     <section class="view" id="view-library" aria-label="知识专库">
       <div class="lib-head">
@@ -1591,11 +1969,12 @@ def render_library_view(sources: List[Dict[str, str]], doc_title: str = "") -> s
           <span class="lib-searchIcon" aria-hidden="true">⌕</span>
           <input class="lib-search" type="search" placeholder="搜索标题 / 来源 / 摘录…" aria-label="搜索来源文章">
         </div>
-        <div class="lib-tabs" role="tablist" aria-label="按检索分组筛选">{"".join(tabs)}</div>
+        {tabs_html}
       </div>
       <div class="lib-list" id="lib-list">{cards_html}</div>
+      {unused_block}
       <div class="lib-empty hide" id="lib-empty">没有符合当前筛选的来源文章。</div>
-      <div class="lib-foot">来源：深知可信搜索 · 每段摘录均取自原文原段</div>
+      <div class="lib-foot">{esc(lib_foot)}</div>
     </section>"""
 
 
@@ -1649,8 +2028,9 @@ def safe_output_filename(question: str, timestamp: datetime, fallback: str = "dk
     normalized = normalized.strip("._-")
     if not normalized:
         normalized = fallback
-    # 1.5.0：产物名即《标题.html》（无"_溯源核验报告"后缀、无时间戳）；同题重跑的
-    # _v2/_v3 版本化由 unique_output_path 的同名检测负责，不依赖时间戳
+    # 产物名优先由 Agent 通过 --output 指定（简短的标题式文件名）；
+    # 本函数仅作未指定时的兜底：问题截断 32 字、空格转下划线。
+    # 内部重跑覆盖同名文件，版本编号只在交付层产生（2026-11-23 起）
     stem = normalized[:32].strip("._-") or fallback
     return f"{stem}{suffix_ext}"
 
@@ -1804,6 +2184,7 @@ a{color:var(--brand)}
 
 /* 正文（原型复刻）：章节 / 段落 / 角标 / 句后溯源卡 */
 .doc-paper{background:#fff;border-radius:14px;box-shadow:var(--shadow-1);padding:26px 34px 22px;margin:0 0 16px}
+.body-external-note{font-size:12px;line-height:1.65;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 11px;margin:0 0 16px}
 .chapter{margin:40px 0 0}
 .chapter:first-child{margin-top:6px}
 .ch-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;scroll-margin-top:86px}
@@ -1811,6 +2192,7 @@ a{color:var(--brand)}
 .ch-head::after{content:"";flex-basis:110px;height:1px;background:linear-gradient(90deg,#e9dff9,transparent);order:3;flex-grow:0;flex-shrink:0}
 .ch-head .sec-badge{order:4;flex:none;font-size:11.5px;color:var(--ok);background:var(--policy-soft);border-radius:6px;padding:2px 9px;font-weight:700}
 .ch-head .sec-badge.bad{color:var(--danger);background:#fdecec}
+.ch-head .sec-badge.warn{color:var(--warn);background:#fff6e5}
 @media(min-width:1000px){.ch-head::after{flex-basis:200px}}
 .lead{font-size:15.5px;line-height:1.95;color:var(--body-c);margin:14px 0;padding:0 2px;word-break:break-word}
 .para{font-size:15.5px;line-height:1.95;color:var(--body-c);margin:14px 0;padding:0 2px;word-break:break-word}
@@ -1826,8 +2208,9 @@ code{padding:1px 5px;border-radius:4px;background:#f3f4f6;color:#3f3d52;
 /* 角标 */
 .cite{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:18px;padding:0 5px;margin:0 2px 2px 3px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--brand);background:var(--tint);border:1px solid var(--tint-bd);border-radius:5px;cursor:pointer;vertical-align:super;line-height:1;transition:.14s;position:relative;top:-1px;user-select:none;font-family:inherit}
 .cite:hover{background:var(--brand);border-color:var(--brand);color:#fff}
-.cite.flash{background:var(--primary-bright);border-color:var(--primary-bright);color:#fff}
-.cite.unresolved{color:var(--danger);border-color:#f6c9cb;background:#fdf7f7}
+.cite a{color:inherit;text-decoration:none;border-bottom:0}
+.cite.flash{background:var(--brand);color:#fff}
+.cite.unresolved{color:var(--danger);background:#fdf7f7;border-color:#f6c9cb}
 
 /* 段落级证据 chips（引文卡） */
 /* 行内引文 jb（原型复刻）：角标后小胶囊，点击展开块级卡（溯源原文+引文摘录） */
@@ -1896,44 +2279,54 @@ a.jb-quote{text-decoration:none}
 .lib-list{max-width:860px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 .lib-empty{max-width:860px;margin:30px auto;text-align:center;color:var(--muted);font-size:13.5px}
 .lib-empty.hide{display:none}
+.lib-unused.hide{display:none}
 .lib-foot{text-align:center;color:var(--muted);font-size:11.5px;padding:18px 0 0;line-height:1.8}
+.lib-unused{max-width:860px;margin:20px auto 0;border-top:1px dashed var(--line);padding-top:12px}
+.lib-unused summary{cursor:pointer;color:var(--muted);font-size:12.5px;padding:6px 0;list-style:none}
+.lib-unused summary::-webkit-details-marker{display:none}
+.lib-unused summary::before{content:"▸";display:inline-block;margin-right:6px;transition:transform .15s}
+.lib-unused[open] summary::before{transform:rotate(90deg)}
+.lib-unused .lib-list{margin-top:10px}
+.lib-unused .scard{opacity:.92}
 
 /* ===== 材料卡 ===== */
-.scard{min-width:0;border:1px solid var(--line);border-left-width:3px;border-radius:12px;padding:14px 18px;
-  background:#fff;box-shadow:var(--shadow-1);transition:box-shadow .25s}
-.scard:hover{box-shadow:var(--shadow-2)}
-.scard.pol{border-left-color:var(--policy)}
-.scard.dat{border-left-color:var(--brand-2)}
-.scard.cas{border-left-color:var(--case)}
-.scard.ref,.scard.mat{border-left-color:var(--ref)}
-.scard.hl{box-shadow:0 0 0 3px rgba(139,92,246,.35),var(--shadow-2)}
+.scard{min-width:0;border:1px solid #e5e9f0;border-left:3px solid #cbd5e1;border-radius:14px;padding:18px 20px;
+  background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:box-shadow .25s,border-color .25s}
+.scard:hover{box-shadow:0 8px 24px rgba(15,23,42,.08);border-color:#d5dce6}
+.scard.pol{border-left-color:var(--brand-2)}
+.scard.dat{border-left-color:#0f766e}
+.scard.cas{border-left-color:#d97706}
+.scard.ref,.scard.mat{border-left-color:#94a3b8}
+.scard.hl{box-shadow:0 0 0 3px rgba(59,130,246,.18),0 8px 24px rgba(15,23,42,.08)}
 .scard.hide{display:none}
-.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:6px}
-.sc-id{font-family:monospace;font-weight:800;font-size:11px;color:#fff;background:var(--grad);
-  border-radius:5px;padding:1px 8px}
-.sc-type{font-size:11px;font-weight:700;border-radius:4px;padding:1px 8px;background:var(--ref-soft);color:var(--ref)}
-.scard.pol .sc-type{background:var(--policy-soft);color:var(--policy)}
-.scard.dat .sc-type{background:var(--brand-soft);color:var(--brand)}
-.scard.cas .sc-type{background:var(--case-soft);color:var(--case)}
-.sc-vk{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok)}
-.sc-vk.warn{color:var(--warn)}
-.sc-unused{font-size:10.5px;font-weight:800;color:var(--muted);background:#efedf4;border-radius:4px;
-  padding:1px 7px;flex:none}
-.sc-conf{font-size:10.5px;font-weight:800;color:#8a5a00;background:var(--case-soft);border:1px solid #e6cf8f;
-  border-radius:4px;padding:0 7px;flex:none}
-.scard h4{margin:0 0 5px;font-size:14.5px;color:var(--ink);line-height:1.55}
-.sc-meta{font-size:11.5px;color:var(--muted)}
+.sc-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sc-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;font-size:11px;color:#fff;background:var(--grad);
+  border-radius:6px;padding:2px 8px}
+.sc-official{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;color:#0b4f6c;background:#e6f4fb;border:1px solid #a9d8ea;border-radius:6px;padding:0 7px;white-space:nowrap}
+.sc-vk{margin-left:auto;font-size:11px;font-weight:700;color:#15803d}
+.sc-vk.warn{color:#b45309}
+.sc-unused{font-size:10.5px;font-weight:700;color:#64748b;background:#f1f5f9;border-radius:5px;
+  padding:2px 7px;flex:none}
+.sc-conf{font-size:10.5px;font-weight:600;color:#92400e;background:#fffbeb;border:1px solid #fde68a;
+  border-radius:5px;padding:1px 7px;flex:none}
+.scard h4{margin:0 0 6px;font-size:15px;font-weight:650;color:#0f172a;line-height:1.55}
+.sc-meta{font-size:12px;color:#64748b;line-height:1.7}
 /* 标题链面包屑（模型生成的结构化位置，核验核心抓手）与多段分块 */
-.crumb{font-size:11.5px;color:var(--brand);margin:10px 0 4px;font-weight:600;line-height:1.6;
-  padding:3px 9px;background:var(--tint);border-radius:7px;display:inline-block;max-width:100%;
+.crumb{font-size:11.5px;color:#475569;margin:12px 0 4px;font-weight:500;line-height:1.6;
+  padding:3px 9px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;display:inline-block;max-width:100%;
   overflow-wrap:break-word}
-.crumb i{font-style:normal;color:#c9b3ec;margin:0 2px;font-weight:400}
-.seg-block{margin-top:8px}
-.seg-block:first-child{margin-top:2px}
-.seg-block .sc-excerpt{margin-top:5px}
+.crumb i{font-style:normal;color:#94a3b8;margin:0 2px;font-weight:400}
+.seg-block{margin:0 0 10px;padding:12px 14px;background:#f8fafc;border-left:3px solid #dbe3ec;border-radius:0 9px 9px 0}
+.seg-block:last-child{margin-bottom:0}
+.seg-block .crumb{display:block;margin:0 0 8px;padding:0;background:none;border:0;border-radius:0;
+  font-size:12px;font-weight:600;color:#475569;line-height:1.6}
+.seg-block .sc-excerpt{margin:0;padding:0;border:0;border-radius:0;background:none;
+  font-size:13px;line-height:1.9;color:#334155}
+.seg-empty{margin-top:8px;padding:11px 13px;border:1px dashed #e2e8f0;border-radius:8px;
+  color:#94a3b8;font-size:12px;background:#fcfcfd}
 .sc-vnote{margin-top:5px;font-size:11.3px;color:var(--ok);line-height:1.6}
-.sc-excerpt{margin:8px 0 0;padding:10px 12px;border:1px solid #eceaf2;border-radius:9px;
-  background:#faf9fd;color:#4a4260;font-size:12.3px;line-height:1.75}
+.sc-excerpt{margin:6px 0 0;padding:12px 14px;border:1px solid #e6eaf0;border-left:3px solid #cbd5e1;border-radius:8px;
+  background:#fbfcfd;color:#334155;font-size:12.8px;line-height:1.9}
 .sc-excerpt.rich{overflow-x:auto}
 .sc-excerpt.rich table{width:max-content;min-width:100%;border-collapse:collapse;background:#fff;font-size:12px}
 .sc-excerpt.rich td,.sc-excerpt.rich th{min-width:92px;max-width:220px;padding:7px 8px;border:1px solid var(--line);
@@ -1960,6 +2353,21 @@ a.jb-quote{text-decoration:none}
 
 /* ===== 打印附录 ===== */
 .print-appendix{display:none}
+
+/* ===== 引用依据弹层 ===== */
+.cite-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:120;opacity:0;pointer-events:none;transition:opacity .18s}
+.cite-mask.show{display:block;opacity:1;pointer-events:auto}
+.cite-modal{display:none;position:fixed;z-index:121;left:50%;top:50%;transform:translate(-50%,-48%);width:min(760px,calc(100vw - 32px));max-height:82vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 80px rgba(15,23,42,.25)}
+.cite-modal.show{display:block}
+.cite-modal-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#fff;border-bottom:1px solid #e5e9f0}
+.cite-modal-head b{font-size:14px;color:#0f172a}
+.cite-modal-close{border:1px solid #e2e8f0;background:#f8fafc;border-radius:8px;padding:4px 10px;font-size:12px;color:#475569;cursor:pointer}
+.cite-modal-body{padding:16px 18px 20px}
+.cite-modal .scard{border:0;box-shadow:none;padding:0}
+.cite-modal .scard:hover{box-shadow:none}
+@media (max-width:680px){
+  .cite-modal{top:auto;bottom:0;left:0;transform:none;width:100%;max-height:86vh;border-radius:16px 16px 0 0}
+}
 
 /* ===== 移动端 ===== */
 .sheet-mask{display:none}
@@ -2039,7 +2447,7 @@ a.jb-quote{text-decoration:none}
 /* ===== 打印归档 ===== */
 @media print{
   .banner-bar,.process .p-detail,.lib-head,.toc,.sheet,.sheet-mask,
-  .progress{display:none!important}
+  .cite-mask,.cite-modal,.progress{display:none!important}
   .banner{position:static;background:none;border:0;padding:0 0 6px}
   .banner .orig-q{text-align:left;font-size:13px}
   .banner .meta{color:var(--muted);text-align:left}
@@ -2254,7 +2662,42 @@ PAGE_JS = """
     if (closeBtn) closeBtn.addEventListener("click", closeSheet);
   }
 
-  /* 行内引文 jb（原型行为）：点小胶囊 toggle 展开卡；点角标展开对应 jb 并 flash。
+  /* 行内引用：弹出该来源的引用卡（只含被引用的原文段），不再跳专库。 */
+  var citeModal = $(".cite-modal");
+  var citeMask = $(".cite-mask");
+  function openCite(id) {
+    var card = byId[id];
+    if (!citeModal || !card) {
+      if (card) { setView("library"); card.scrollIntoView({behavior: "smooth", block: "center"}); }
+      return;
+    }
+    var body = citeModal.querySelector(".cite-modal-body");
+    body.innerHTML = "";
+    var clone = card.cloneNode(true);
+    clone.removeAttribute("id");
+    clone.classList.remove("hide");
+    body.appendChild(clone);
+    citeModal.classList.add("show");
+    citeMask.classList.add("show");
+    document.body.style.overflow = "hidden";
+    citeModal.scrollTop = 0;
+  }
+  function closeCite() {
+    if (!citeModal) return;
+    citeModal.classList.remove("show");
+    citeMask.classList.remove("show");
+    document.body.style.overflow = "";
+  }
+  if (citeMask) citeMask.addEventListener("click", closeCite);
+  if (citeModal) {
+    var citeClose = citeModal.querySelector(".cite-modal-close");
+    if (citeClose) citeClose.addEventListener("click", closeCite);
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeCite();
+  });
+
+  /* 行内引文 jb（历史形态，保留兼容）：点小胶囊 toggle 展开卡；点角标展开对应 jb 并 flash。
      未绑定角标红色警示，绝不按位置猜测。 */
   var JB_TABLES = {};
   try {
@@ -2307,8 +2750,14 @@ PAGE_JS = """
     });
   });
   document.querySelectorAll("sup.cite").forEach(function (btn) {
-    /* 仅剩未绑定角标（红色数字）走到这里：点击控制台留痕 */
-    btn.addEventListener("click", function () {
+    /* 整个角标（含内边距）都可点；真正未绑定的角标才留痕。 */
+    var link = btn.querySelector("a.cite-link");
+    btn.addEventListener("click", function (e) {
+      if (link) {
+        e.preventDefault();
+        openCite(link.getAttribute("data-cite"));
+        return;
+      }
       if (console.error) console.error("[核验] 未绑定角标:", btn.getAttribute("data-cite"));
     });
   });
@@ -2331,17 +2780,38 @@ PAGE_JS = """
   /* ===== 7. 知识专库：tabs + 搜索 + 热词 ===== */
   var cond = "";
   var kw = "";
+  /* 筛选必须同时覆盖主列表与"未进入正文"折叠区（1.0.1 修复：此前只过滤主列表，
+     选中分组后折叠区仍展示其他组的材料，标签数与可见结果对不上）。 */
+  var filterCards = $$("#lib-list .scard, .lib-unused .scard");
+  var unusedBox = $(".lib-unused");
+  var luTitle = unusedBox ? unusedBox.querySelector(".lu-title") : null;
   function applyFilter() {
     var visible = 0;
-    cards.forEach(function (c) {
+    var unusedVisible = 0;
+    filterCards.forEach(function (c) {
       var okCond = !cond;
       if (cond === "__unused__") okCond = c.getAttribute("data-unused") === "1";
       else if (cond) okCond = c.getAttribute("data-search") === cond;
       var okKw = !kw || (c.textContent || "").toLowerCase().indexOf(kw) !== -1;
       var show = okCond && okKw;
       c.classList.toggle("hide", !show);
-      if (show) visible++;
+      if (show) {
+        visible++;
+        if (c.getAttribute("data-unused") === "1") unusedVisible++;
+      }
     });
+    if (unusedBox && luTitle) {
+      var total = unusedBox.getAttribute("data-total") || "0";
+      if (cond) {
+        luTitle.textContent = "本组未进入正文的参考材料（" + unusedVisible + "）";
+      } else if (kw) {
+        luTitle.textContent = "未进入正文的参考材料（" + unusedVisible + "）";
+      } else {
+        luTitle.textContent = "未进入正文的参考材料（" + total + "）";
+      }
+      unusedBox.classList.toggle("hide", unusedVisible === 0);
+      if (cond && unusedVisible > 0) unusedBox.open = true;
+    }
     var empty = $("#lib-empty");
     if (empty) empty.classList.toggle("hide", visible !== 0);
   }
@@ -2429,9 +2899,10 @@ PAGE_JS = """
 
 def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", question_override: str = "",
                 generated_at: Optional[datetime] = None,
-                skip_link_check: bool = False, snapshot_enabled: bool = True,
+                snapshot_enabled: bool = True,
+                research_notes: Optional[Dict[str, int]] = None,
                 charts_data: Optional[Dict[str, Any]] = None,
-                research_notes: Optional[Dict[str, int]] = None) -> str:
+                stage_label: str = "") -> str:
     # search_meta.calls（每路调用增量）在 unwrap 前捕获——unwrap 会把 content 外层剥掉（1.6.0）
     _calls_meta = payload.get("search_meta") if isinstance(payload.get("search_meta"), dict) else {}
     payload = unwrap(payload)
@@ -2446,14 +2917,25 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
                 and not _first.endswith(("。", "；", "！", "？", "!", "?", ".", ";"))):
             _rest = answer[answer.index(_first) + len(_first):].lstrip("\n")
             answer = f"# {_first}\n{_rest}"
-    sources = align_sources_to_answer(answer, extract_sources(payload, skip_link_check=skip_link_check, snapshot_enabled=snapshot_enabled))
+    sources = align_sources_to_answer(answer, extract_sources(payload, snapshot_enabled=snapshot_enabled))
     # 角标按首次出现顺序重排为 1..N（含材料卡同步重编号与未引用分组），WorkBuddy 实测反馈要求
     answer, sources = renumber_citations(answer, sources)
+    # 1.0.2：内容判断全部归 AI——渲染器不做任何"某句是否被原文支持"的判断，
+    # 只保证结构（角标绑定、摘录可比对、不可引用材料不作依据、自检有据）。
     used = citation_ids(answer)
     generated_at = generated_at or datetime.now()
     generated = generated_at.strftime("%Y-%m-%d %H:%M")
 
     verification = compute_verification(answer, sources, payload, generated_at)
+    # 1.0.2 两轨验收：不合格不进交付——结构不合格或 AI 验收未通过时直接退出，不生成 HTML。
+    # 交付物只有"合格"这一种形态；发现问题就修复后重跑，而不是把问题交给用户。
+    if not verification["overall"]["passed"]:
+        _reasons = verification["overall"].get("reasons") or []
+        print("错误：核验未通过，未生成报告。请先修正后重跑（不会产出不合格的 HTML）。",
+              file=sys.stderr)
+        for _r in _reasons:
+            print(f"  - {_r}", file=sys.stderr)
+        raise SystemExit(1)
     process_stats = compute_process_stats(sources, answer, calls=_calls_meta.get('calls'))
     if research_notes:
         process_stats["research_notes"] = research_notes
@@ -2474,6 +2956,8 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
             jb_tables[key] = html
     doc_title, sections = group_sections(blocks)
     display_title = doc_title or title
+    stage_suffix = f"（{stage_label}）" if stage_label else ""
+    report_title = f"{brand_text('report_title_prefix')}：{display_title}{stage_suffix}"
     # 正文页：同一份正文去掉全部角标/引文胶囊，输出干净正式内容（核验内容归"溯源核验报告"页）
     clean_blocks, _ = parse_answer_blocks(answer, {s["id"] for s in sources}, chip_map, strip_cites=True)
     _, clean_sections = group_sections(clean_blocks)
@@ -2501,45 +2985,49 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
 
     meta_bits = []
     if process_stats["n_searches"]:
-        # 检索计数按接口通道拆分显示（深度搜索与可信搜索是两个接口来源）
+        # 检索计数按通道拆分显示（检索来源/公开网络/宿主 WebSearch 是不同来源）
         _deep_n = process_stats.get("deep_routes", 0)
         _trusted_n = process_stats.get("trusted_routes", 0)
-        if _deep_n and _trusted_n:
-            meta_bits.append(f"深度搜索 {_deep_n} 路 · 可信补搜 {_trusted_n} 次")
-        elif _deep_n:
-            meta_bits.append(f"深知深度搜索 {_deep_n} 路")
-        elif _trusted_n:
-            meta_bits.append(f"深知可信搜索 {_trusted_n} 次")
-        else:
-            meta_bits.append(f"深知检索 {process_stats['n_searches']} 路")
+        meta_bits.append(route_summary(_deep_n, _trusted_n, process_stats["n_searches"]))
     if sources:
         meta_bits.append(f"知识专库文章 {len(sources)} 篇")
     if process_stats["n_cite_marks"]:
         meta_bits.append(f"正文实际引用 {process_stats['n_cite_marks']} 处")
     meta_bits.append(f"生成于 {generated}")
     meta_line = " · ".join(meta_bits)
-    # 来源＝材料实际使用的检索通道（深知深度搜索 / 深知可信搜索，动态汇总）；
-    # 历史产物无通道信息时保留旧文案
-    # 通道 token 汇总：单条材料可能是双通道拼接值（"深知深度搜索、深知可信搜索"），
-    # 按 、 和 · 拆 token 去重再拼接，避免来源行出现重复或拼接串
-    _channels: List[str] = []
-    for s in sources:
-        for _tok in re.split(r"[、·]", (s.get("channel") or "").strip()):
-            _tok = _tok.strip()
-            if _tok and _tok not in _channels:
-                _channels.append(_tok)
-    source_line = " · ".join(_channels) if _channels else "深知可信搜索"
+    # 来源＝材料实际使用的检索通道（深度/可信/宿主 WebSearch，动态汇总）；
+    # 历史产物无通道信息时保留旧文案；孤立「联网」并回「溯源核验报告生成器（联网）」
+    _channels = channel_tokens([s.get("channel") or "" for s in sources])
+    has_external_any = any(s.get("unofficial") or s.get("pending") for s in sources)
+    source_line = (" · ".join(_channels) if _channels
+                   else (brand_text("source_fallback_external") if has_external_any
+                         else brand_text("source_fallback")))
 
-    # 图表并入核验报告（1.4.0 一体化）：有图表数据且包内 ECharts 可用时，
-    # 图表并入核验报告（1.4.0 一体化）——交付物始终是**一个** HTML，不再另出独立图表报告。
-    # 位置按 metadata.section 锚点插进对应章节（图表跟着它展示的数据走）；锚点缺失或不匹配
-    # 才退化为核验报告单之后的独立"数据可视化"章节。资源缺失或数据不可用则整块不渲染
-    # （不出现空白图，也不阻断报告生成）。
+    # 正文页的来源性质提示：引用了公开网络材料时，给用户一个可见、统一的标记，
+    # 不暴露三阶段/检索通道；具体逐条标记仍在溯源核验报告的材料卡与引文胶囊上。
+    # 1.0.2 来源等级：官方外部信源（政府/法定机构域名或机构名）单独提示，不与"非官方"混同。
+    cited_third_party = any((s.get("unofficial") or s.get("pending")) and s.get("used", True)
+                            for s in sources)
+    cited_official_ext = any(s.get("official_external") and s.get("used", True) for s in sources)
+    if cited_third_party:
+        body_external_note = (
+            '<div class="body-external-note">说明：本页部分材料来自公开网络第三方信源，'
+            '已在溯源核验报告中标注「非官方来源」，请以官方口径复核。</div>')
+    elif cited_official_ext:
+        body_external_note = (
+            '<div class="body-external-note">说明：本页部分材料来自公开网络的官方信源'
+            '（政府机构/法定机构），已在溯源核验报告中标注，请以原文为准。</div>')
+    else:
+        body_external_note = ""
+
+    # 图表并入核验报告（1.0.1 opt-in）：传 --charts-json 才画，交付物始终是**一个** HTML。
+    # 位置按 metadata.section 锚点插进对应章节；锚点缺失或不匹配才退化为独立"数据可视化"章节。
+    # 资源缺失或数据不可用则整块不渲染（不出现空白图，也不阻断报告生成）。
     charts_html = ""
     charts_script = ""
     chart_toc = ""
     charts_by_section: Dict[int, str] = {}
-    if charts_data:
+    if charts_data and (CONFIG.get("charts") or {}).get("enable", True):
         echarts_src = chart_embed.load_echarts_source()
         if not echarts_src:
             print(f"提示：未找到 {chart_embed.ECHARTS_RESOURCE}，本次不生成图表章节（报告其余部分不受影响）。",
@@ -2552,9 +3040,6 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
             chart_title = str(chart_meta.get("title") or "").strip() or "数据可视化"
             note = '<p class="chart-note">图表由已核验材料数据生成，点击图例或数据项可跳转对应来源原文。</p>'
             blocks = chart_embed.render_blocks(charts)
-            # 图表跟着它展示的数据所在的章节走（1.4.0）：metadata.section 指定章节号/标题，
-            # 命中就插进该章节正文之后；未指定或匹配不上，才退化为独立的"数据可视化"章节
-            # （放在核验报告单之后、正文之前，作为总体摘要，不再堆到报告最末尾）。
             anchor_idx = resolve_chart_anchor(sections, chart_meta.get("section"))
             if anchor_idx:
                 charts_by_section[anchor_idx] = (
@@ -2612,13 +3097,14 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
   <main class="view" id="view-body" aria-label="正文">
     <h2 class="paper-title">{esc(display_title)}</h2>
     <div class="doc-paper">
+    {body_external_note}
     {render_section_cards(clean_sections, sources, id_prefix="sec")}
     </div>
-    <div class="foot">深知可信搜索 · 正文 ｜ 内容由 AI 生成，仅供参考</div>
+    <div class="foot">{esc(brand_text("footer_body"))}</div>
   </main>
 
   <main class="view" id="view-report" aria-label="溯源核验报告">
-    <h2 class="paper-title">溯源核验报告：{esc(display_title)}</h2>
+    <h2 class="paper-title">{esc(report_title)}</h2>
     {citation_warning}
     {render_process_bar(process_stats, verification)}
     {render_verify_panel(verification)}
@@ -2626,7 +3112,7 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
     <div class="doc-paper">
     {render_section_cards(sections, sources, charts_by_section, id_prefix="rsec")}
     </div>
-    <div class="foot">深知可信搜索 · 溯源核验报告 ｜ 内容由 AI 生成，仅供参考</div>
+    <div class="foot">{esc(brand_text("footer_report"))}</div>
   </main>
 
   {render_library_view(sources, display_title)}
@@ -2636,7 +3122,12 @@ def render_html(payload: Dict[str, Any], title: str, answer_override: str = "", 
 {render_toc(sections, chart_toc)}
 
 <div class="ev-panel" id="ev-pop" hidden></div>
-{export_script}{jb_tables_script}<div class="sheet-mask" aria-hidden="true"></div>
+{export_script}{jb_tables_script}<div class="cite-mask" aria-hidden="true"></div>
+<div class="cite-modal" role="dialog" aria-label="引用依据">
+  <div class="cite-modal-head"><b>引用依据</b><button class="cite-modal-close" type="button">收起</button></div>
+  <div class="cite-modal-body"></div>
+</div>
+<div class="sheet-mask" aria-hidden="true"></div>
 <div class="sheet" role="dialog" aria-label="来源文章">
   <div class="sheet-grab"></div>
   <div class="sheet-head"><b>依据对照</b><button class="sheet-close" type="button">收起</button></div>
@@ -2699,42 +3190,6 @@ def align_sources_to_answer(answer: str, sources: List[Dict[str, str]]) -> List[
     return sources
 
 
-def resolve_charts_data(value: str) -> Optional[Dict[str, Any]]:
-    """解析 --charts-json：支持直接内联 JSON，也支持 official-docs/search-results/ 内的文件名。
-
-    非法/为空一律返回 None（图表章节不渲染），绝不因此阻断核验报告生成——
-    报告的核验正文是主交付，图表是附加视图。
-    """
-    raw = (value or "").strip()
-    if not raw:
-        return None
-    try:
-        if raw.startswith("{"):
-            data = json.loads(raw)
-        else:
-            data = json.loads(_safe_input_path(raw, {".json"}).read_text(encoding="utf-8"))
-    except (ValueError, OSError, json.JSONDecodeError) as exc:
-        print(f"提示：图表数据无法读取（{exc}），本次不生成图表章节。", file=sys.stderr)
-        return None
-    return data if isinstance(data, dict) else None
-
-
-def _next_version_path(path: Path) -> Path:
-    """输出文件已存在时不覆盖（1.4.0 起）：自动改为 原名_v2 / _v3 … 另存。
-
-    追加图表/修改答案后重跑渲染时，旧版本保留、新版本号递增——不覆盖已交付内容，
-    也不会再靠宿主目录里的 "名字 (2)" 兜底。命名与交付重名规则一致（同名 _v2 副本化）。
-    """
-    if not path.exists():
-        return path
-    for index in range(2, 100):
-        candidate = path.with_name(f"{path.stem}_v{index}{path.suffix}")
-        if not candidate.exists():
-            print(f"提示：{path.name} 已存在，本次输出改为 {candidate.name}（不覆盖旧版，1.4.0 起）。")
-            return candidate
-    raise SystemExit(f"错误：{path.name} 的版本号 _v2~_v99 均已占用，请清理 {path.parent} 后重试。")
-
-
 def parse_research_notes(text: str) -> Dict[str, int]:
     """统计研究资料 Markdown 的两张表行数：核心事实总表 / 数据口径表。
     按二级/三级标题分节识别，表格行以 | 开头（跳过表头与 --- 分隔行）；未识别到相应节时计 0。"""
@@ -2771,40 +3226,105 @@ def parse_research_notes(text: str) -> Dict[str, int]:
     return {"facts": facts, "calibers": calibers}
 
 
+def resolve_charts_data(value: Optional[str], run_dir: Optional[Path] = None) -> Optional[Dict[str, Any]]:
+    """解析 --charts-json：支持直接内联 JSON，也支持 run 目录内的文件名。
+
+    非法/为空一律返回 None（图表章节不渲染），绝不因此阻断核验报告生成。
+    """
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    try:
+        if raw.startswith("{"):
+            data = json.loads(raw)
+        else:
+            data = json.loads(_safe_input_path(raw, {".json"}, run_dir).read_text(encoding="utf-8"))
+    except (ValueError, OSError, json.JSONDecodeError) as exc:
+        print(f"提示：图表数据无法读取（{exc}），本次不生成图表章节。", file=sys.stderr)
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _prescan_config_option(argv: List[str]) -> Optional[str]:
+    """在 argparse 前预读 --config，使 argparse 描述也能用上品牌配置。"""
+    for i, arg in enumerate(argv):
+        if arg == "--config" and i + 1 < len(argv):
+            return argv[i + 1]
+        if arg.startswith("--config="):
+            return arg.split("=", 1)[1]
+    return None
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="生成溯源核验报告 HTML（深知可信搜索 dsh 版）")
-    parser.add_argument("input_json", help="trusted_search.py / deep_query.py 的 --json-only 输出 JSON")
-    parser.add_argument("--output", help="输出 HTML 文件名（official-docs/output/，形如《标题.html》）；不传时按问题自动生成《标题.html》。同题重跑自动 _v2 另存")
-    parser.add_argument("--title", default="溯源核验报告", help="页面标题")
+    apply_config(load_config(_prescan_config_option(sys.argv[1:])))
+
+    parser = argparse.ArgumentParser(description=brand_text("argparse_desc"))
+    parser.add_argument("input_json", help="通用 JSON（materials 数组 + answer）。接口/merge 产物请先用 build_report_input.py 转换")
+    parser.add_argument("--run", help="本次运行的独立目录（必须在 Skill 安装目录之外；相对产物落在该目录）")
+    parser.add_argument("--output", help="输出 HTML 文件名；相对名落在 --run 目录，绝对路径也必须在 Skill 目录之外。内部重跑直接覆盖同名文件（交付版本编号由 deliver_outputs 在用户目录处理）")
+    parser.add_argument("--config", help="业务 Skill 配置 JSON（品牌/通道/自检标签/双版/图表/域内核验）；不传用通用默认值")
+    parser.add_argument("--title", default=None, help="页面标题；不传用配置的 default_page_title")
     parser.add_argument("--answer-file", help="最终答案文件（关键结论带 [1][2] 角标）。复杂任务综合后必须传入，确保 HTML 展示的答案与交付一致。")
     parser.add_argument("--question", default="", help="用户原始问题，用于自动生成文件名。")
-    parser.add_argument("--question-file", help="用户原始问题全文文件（official-docs/search-results/ 内文件名或绝对路径）；多行/长问题必须用本参数传全文，禁止只传首行（1.6.0）")
-    parser.add_argument("--self-check-file", help="答案自检结果 JSON（五项：fact_basis/binding/consistency/freshness/no_gap，值写 通过/未通过：原因）；未传时核验单如实显示'未记录'。")
-    parser.add_argument("--skip-link-check", action="store_true", help="（兼容 no-op）链接活性检测已于 2026-10-08 移除，接口返回的链接原样进报告")
+    parser.add_argument("--question-file", help="用户原始问题全文文件（run 目录内文件名或绝对路径）；多行/长问题必须用本参数传全文，禁止只传首行（1.6.0）")
+    parser.add_argument("--self-check-file", help="答案自检结果 JSON（五项：fact_basis/binding/consistency/freshness/no_gap，值写 通过/未通过：原因；标签集可由配置替换）；未传时核验单如实显示'未记录'。")
+    parser.add_argument("--verify-file", help="业务 Skill 的域内核验记录 JSON（verdict/record/issues）；record 指纹与当前答案/证据不一致或 verdict=fail 时判核验未通过")
+    parser.add_argument("--charts-json", help="图表数据 JSON（run 目录内文件名或内联 JSON）；传入后图表并入本报告（一体化，不另出独立 HTML）")
+    parser.add_argument("--stage", help="双版报告阶段标识（如 outline/final），显示名由配置 stage.labels 提供；未配置则不出现后缀")
     parser.add_argument("--no-snapshot", action="store_true", help="关闭存档快照兜底展示（默认启用：原文失效时以 /A/ 修订后的存档快照回看）")
-    parser.add_argument("--charts-json", help="图表数据：official-docs/search-results/ 内的 JSON 文件名，或直接内联 JSON。传入后图表并入本报告（一体化，不另出独立 HTML）。")
     parser.add_argument("--research-notes-file", help="研究资料 Markdown（核心事实总表 + 数据口径表）；传入后 AI 自验收过程条体现整理规模，未传不显示该统计。")
     args = parser.parse_args()
+    if args.config:
+        apply_config(load_config(args.config))
 
-    input_path = _safe_input_path(args.input_json, {".json"})
+    try:
+        run_dir = resolve_run_dir(args.run) if args.run else None
+    except RunPathError as exc:
+        print(f"错误：{exc}", file=sys.stderr)
+        raise SystemExit(2) from None
+
+    input_path = _safe_input_path(args.input_json, {".json"}, run_dir)
     payload = load_json(input_path)
     answer_override = ""
+    answer_path = None
     if args.answer_file:
-        answer_override = _safe_input_path(args.answer_file, {".txt", ".md"}).read_text(encoding="utf-8")
+        answer_path = _safe_input_path(args.answer_file, {".txt", ".md"}, run_dir)
+        answer_override = answer_path.read_text(encoding="utf-8")
 
     # 答案自检结果注入（写入 unwrap 后的根级，供 compute_verification 读取）
     if args.self_check_file:
-        check_path = _safe_input_path(args.self_check_file, {".json"})
+        check_path = _safe_input_path(args.self_check_file, {".json"}, run_dir)
         check_data = json.loads(check_path.read_text(encoding="utf-8"))
         if isinstance(check_data, dict):
             unwrap(payload)["selfCheck"] = check_data
+        # 文件时间兜底：答案或依据在自检之后被改过，旧自检不得继续沿用。
+        try:
+            if answer_path is not None and answer_path.stat().st_mtime > check_path.stat().st_mtime + 1:
+                unwrap(payload)["answer_stale"] = True
+            if input_path.stat().st_mtime > check_path.stat().st_mtime + 1:
+                unwrap(payload)["evidence_stale"] = True
+        except OSError:
+            pass
+
+    # 域内核验记录注入（--verify-file）：由业务 Skill 的核验器产出，渲染时并入核验单
+    if args.verify_file:
+        verify_path = _safe_input_path(args.verify_file, {".json"}, run_dir)
+        verify_data = json.loads(verify_path.read_text(encoding="utf-8"))
+        if isinstance(verify_data, dict):
+            unwrap(payload)["verifyRecord"] = verify_data
 
     snapshot_enabled = not args.no_snapshot
     unwrapped = unwrap(payload)
+    # 严格单输入：找不到通用材料时直接拒绝，提示改用统一入口转换（不静默产出空报告）
+    if not load_materials(unwrapped) and not load_materials(payload):
+        print("错误：输入不是通用 JSON（未找到 materials / 材料 / sources 数组）。\n"
+              "接口检索或 merge 产物请先用 build_report_input.py --adapter merged 转换为通用 JSON。",
+              file=sys.stderr)
+        raise SystemExit(2)
     final_answer = normalize_citations(answer_override) if answer_override.strip() else extract_answer(unwrapped)
 
     # 生成前硬校验：核验报告必须以可交付状态产出——无角标或角标未绑定材料均拒绝生成
-    preview_sources = extract_sources(unwrapped, skip_link_check=True, snapshot_enabled=snapshot_enabled)
+    preview_sources = extract_sources(unwrapped, snapshot_enabled=snapshot_enabled)
     preview_cited = citation_ids(final_answer)
     if preview_sources and not preview_cited:
         print(
@@ -2827,29 +3347,44 @@ def main() -> None:
         raise SystemExit(1)
 
     if args.question_file:
-        _qf = Path(args.question_file).expanduser()
-        if not _qf.is_absolute():
-            _qf = (SEARCH_RESULTS_DIR / _qf.name).resolve()
+        _qf = _safe_input_path(args.question_file, {".txt", ".md"}, run_dir)
         args.question = _qf.read_text(encoding="utf-8").strip()
     question = args.question.strip() or extract_question(unwrapped)
     generated_at = datetime.now()
-    if args.output:
-        output = _safe_output_path(args.output, {".html", ".htm"}, ".html")
-    else:
-        output = _safe_output_path(safe_output_filename(question, generated_at), {".html", ".htm"}, ".html")
+    try:
+        if args.output:
+            output = _safe_output_path(args.output, {".html", ".htm"}, ".html", run_dir)
+        else:
+            # 产物名应由 Agent 通过 --output 指定（简短、取自答案标题、无 _v2/时间戳）；
+            # 未指定时才回退问题截断式自动命名（仅兜底，不推荐）。
+            print("提示：未指定 --output，使用自动文件名。建议由 Agent 按答案标题命名"
+                  "（如「成都重庆西安养老金对比.html」，重跑仍传同名以覆盖）。", file=sys.stderr)
+            output = _safe_output_path(safe_output_filename(question, generated_at), {".html", ".htm"}, ".html", run_dir)
+    except RunPathError as exc:
+        print(f"错误：{exc}", file=sys.stderr)
+        raise SystemExit(2) from None
 
-    output = _next_version_path(output)
+    # 内部重跑直接覆盖 $RUN 内同名报告（被否掉的草稿不占版本号）；
+    # 版本编号只在**交付给用户**时由 deliver_outputs 按"目标目录已有同名且内容不同"决定。
     output.parent.mkdir(parents=True, exist_ok=True)
     research_notes = None
     if args.research_notes_file:
-        _rn_path = _safe_input_path(args.research_notes_file, {".md", ".txt"})
+        _rn_path = _safe_input_path(args.research_notes_file, {".md", ".txt"}, run_dir)
         research_notes = parse_research_notes(_rn_path.read_text(encoding="utf-8"))
         print(f"研究资料统计：{research_notes['facts']} 项事实 · {research_notes['calibers']} 项口径")
+    title_text = (args.title or brand_text("default_page_title")).strip() or "溯源核验报告"
+    stage_label = ""
+    stage_cfg = CONFIG.get("stage") or {}
+    if args.stage and stage_cfg.get("enable"):
+        stage_label = str((stage_cfg.get("labels") or {}).get(args.stage) or "")
+    charts_data = resolve_charts_data(args.charts_json, run_dir) if args.charts_json else None
     output.write_text(
-        render_html(payload, args.title, answer_override=answer_override, question_override=args.question,
-                    generated_at=generated_at, skip_link_check=args.skip_link_check,
-                    snapshot_enabled=snapshot_enabled, charts_data=resolve_charts_data(args.charts_json),
-                    research_notes=research_notes),
+        render_html(payload, title_text, answer_override=answer_override, question_override=args.question,
+                    generated_at=generated_at,
+                    snapshot_enabled=snapshot_enabled,
+                    research_notes=research_notes,
+                    charts_data=charts_data,
+                    stage_label=stage_label),
         encoding="utf-8")
     print(f"已生成：{output}")
 

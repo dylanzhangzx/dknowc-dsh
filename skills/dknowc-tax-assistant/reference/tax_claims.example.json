@@ -1,0 +1,76 @@
+{
+  "claims": [
+    {
+      "id": "c1",
+      "type": "direct",
+      "text": "2026年增值税小规模纳税人月销售额10万元以下（含本数）免征增值税",
+      "source_ids": ["s1"],
+      "jurisdiction": "全国",
+      "tax_types": ["增值税"],
+      "quote": "（一）对月销售额10万元以下（含本数）的增值税小规模纳税人，免征增值税。",
+      "count": 1,
+      "answer_anchor": "月销售额10万元以下（含本数）"
+    },
+    {
+      "id": "c2",
+      "type": "calculation",
+      "text": "滞纳金=200000×0.05%×40天=4000元",
+      "tool": "calc_tax.py",
+      "mode": "late-fee",
+      "convention": "include-end",
+      "start": "2026-01-01",
+      "end": "2026-02-09",
+      "principal": "200000",
+      "daily_rate": "0.0005",
+      "days": 40,
+      "amount": "4000.00",
+      "answer_anchor": "滞纳金 4,000 元"
+    },
+    {
+      "id": "c3",
+      "type": "negative",
+      "text": "截至2026-11-10未见北京市2026年房产税困难减免新公告",
+      "jurisdiction": "北京市",
+      "tax_types": ["房产税"],
+      "as_of": "2026-11-10",
+      "coverage": "库内标签检索 + 政策条件筛选全文确认 + 公开网络补充检索",
+      "wording": "截至2026-11-10，公开渠道未见北京市2026年房产税困难减免新公告，现行仍按2015年第6号公告执行",
+      "answer_anchor": "截至2026-11-10，公开渠道未见"
+    },
+    {
+      "id": "c4",
+      "type": "external",
+      "text": "有媒体称西藏2026年度社保缴费基数下限为7172.4元/月（待核验）",
+      "source_ids": ["s2"],
+      "source_nature": "次级媒体",
+      "jurisdiction": "西藏自治区",
+      "question_jurisdiction": "西藏自治区",
+      "tax_types": ["社会保险费"],
+      "as_of": "2026-11-10",
+      "value": "7172.4",
+      "official_value": "西藏自治区人社厅公布：2026年度下限7172.4元/月",
+      "wording": "公开报道与官方公开口径一致，仍以正式文件为准",
+      "answer_anchor": "7172.4"
+    },
+    {
+      "id": "c5",
+      "type": "inference",
+      "text": "跨地区经营预缴口径通常以项目所在地主管税务机关认定为准",
+      "jurisdiction": "全国",
+      "tax_types": ["增值税"],
+      "wording": "通常以项目所在地主管税务机关认定为准",
+      "answer_anchor": "通常以项目所在地"
+    },
+    {
+      "id": "c6",
+      "type": "interpretation",
+      "text": "研发费用加计扣除中“其他相关费用”限额存在两种计算理解",
+      "jurisdiction": "全国",
+      "tax_types": ["企业所得税"],
+      "primary": "按全部研发项目统一计算其他相关费用限额",
+      "alternative": "按单个研发项目分别计算后汇总",
+      "selected_reason": "现行公告按全部研发项目统一计算，且需在申报表中按项目归集",
+      "answer_anchor": "按全部研发项目统一计算"
+    }
+  ]
+}

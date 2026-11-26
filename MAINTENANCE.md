@@ -14,6 +14,16 @@
 **产品文档**：`dknowc-dsh-产品文档.html`（仓库根，10 节结构：概览 / 能力矩阵 / 全景流程 / 交付物 / 文件清单 / 红线 / 接口与Key / 分发渠道 / 版本历史 / 已知问题；不入 npm 包）。版本定稿后与母版同步同批维护。
 
 ## 逐版变更要点
+## v2.4.0 变更要点
+
+- **母版大版本同步（公文 3.9.10 / 搜索 1.8.2 / PPT 1.7.0）**：三 skill 整包重建（母版一个月内核级改动），渲染命令/交付/注册段全部重适配；修复旧版 SKILL.md 遗留的一处 `dknowc-output` 双前缀笔误。
+- **渲染内核抽离架构**：五个业务 skill 不再各内嵌渲染内核 5 脚本，统一改为跨 skill 调用插件内兄弟 skill `dk-trace-report`（溯源核验报告生成器 1.0.2，与上游逐字节一致、不 fork 不手改）；业务 skill 保留各自入口（build_trace_input / build_trace_json / source_note_html / verify_claims）与本地 `trace_report.config.json`，入口脚本注入兄弟内核目录到 sys.path。
+- **新增三个 skill**：`dk-trace-report`（通用渲染内核，来自公司 skill 包 1.0.2）、`dknowc-legal-assistant` 1.0.4-dsh、`dknowc-tax-assistant` 1.0.4-dsh（法律/税务首接入：dsh 渠道码、DSH Key 注入位、initialize dsh 门禁、dsh 工作区交付）。
+- **dsh 门禁全量适配**：版本自检渠道跳过扩展为 `("volcengine", "dsh")`（用户指示 dsh 渠道不需要版本自检）；注册默认通行码通道沿用母版（dsh 渠道码 `46A3BA1D-…`）；公文 initialize dsh 门禁助手名对齐 `_valid_api_key`。
+- **公文工作区化**：12 个脚本的 official-docs 目录常量从安装目录切到会话工作区（`WS_ROOT = dknowc-output/<DSH_SESSION_ID前8位>/`）；source_note_html 的 merged_json 校验、build_trace_json 素材越界校验、check_materials merge 检索均按 WS_ROOT 解析；内核加载器改为兄弟 skill 优先、同目录回退。
+- **dsh 侧修复**：tax `verify_claims.py` 答案指纹未 strip 尾空白（与 legal 版口径对齐；内核渲染侧会去掉答案尾换行，不去 strip 恒判「核验后答案被修改」）——已反馈母版。
+- **验证**：npm check 六 skill 全量 py_compile + 5 个 register 脚本 node --check 全过；搜索/PPT/公文/法律/税务五条跨 skill 渲染链 E2E 全通（法律/税务走 verify_claims → build_report_input → render 完整两轨验收链，法律 config verify.required=true 下核验记录强制并入）。
+
 ## v2.0.0 变更要点
 
 - **移除深知可信咨询 skill**：与可信搜索功能重叠且效果不及，咨询类政策问答由可信搜索承接（检索作答 + 溯源）。

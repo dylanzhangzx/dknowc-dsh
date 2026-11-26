@@ -43,6 +43,7 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
+
 SEARCH_RESULTS_DIR = WS_ROOT / "official-docs" / "search-results"
 
 
@@ -156,6 +157,10 @@ def convert(data, area: str, purpose: str) -> dict:
         if source_url:
             article["源网址"] = source_url
             article["原文链接"] = source_url
+        # 发文机构原样透传（来源卡只展示该字段；不回退数据源/站点名称）
+        agency = clean_text(first_value(raw, "发布或实施机构", "发布机关"))
+        if agency:
+            article["发布或实施机构"] = agency
         region = clean_text(first_value(raw, "办理地域", "area"))
         if region:
             article["办理地域"] = region

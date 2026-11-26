@@ -21,6 +21,7 @@ if not _ws:
     _sid = _os.environ.get("DSH_SESSION_ID", "")
     _ws = str(Path(_os.getcwd()) / "dknowc-output" / (_sid[:8] if _sid else "_default"))
 WS_ROOT = Path(_ws).resolve()
+
 OFFICIAL_DOCS_DIR = WS_ROOT / "official-docs"
 SEARCH_RESULTS_DIR = OFFICIAL_DOCS_DIR / "search-results"
 ALLOWED_INPUT_DIRS = (
@@ -73,6 +74,41 @@ def resolve_output_json(output_path: str) -> Path:
     return resolved
 
 
+# URL 归一（去重键用）：去 fragment、常见 tracking 参数、尾斜杠。
+# 与 websearch_convert.py 的 TRACKING_PARAMS 保持一致——两处规则不一致会导致
+# 联网路（?source=wechat 等）与库内/外部路同文无法合并去重。
+TRACKING_PARAMS = {
+    "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+    "gclid", "fbclid", "spm", "scm", "from", "share_token", "share_source",
+    "ref", "ref_src", "source", "campaign",
+}
+
+
+def normalize_url_key(raw: str) -> str:
+    """URL 归一化为去重键：仅 http/https 保留业务参数，其余原样返回压缩文本。"""
+    from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+    text = str(raw or "").strip()
+    if not text:
+        return ""
+    try:
+        parsed = urlparse(text)
+    except ValueError:
+        return re.sub(r"\s+", "", text)
+    if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+        return re.sub(r"\s+", "", text)
+    query = [(k, v) for k, v in parse_qsl(parsed.query, keep_blank_values=True)
+             if k.lower() not in TRACKING_PARAMS]
+    path = parsed.path.rstrip("/") or "/"
+    return urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), path,
+                      "", urlencode(sorted(query)), ""))
+
+
+def is_unofficial(article: Dict) -> bool:
+    """非官方判定：外部联网标记，或接口数据权威性=非权威。"""
+    return bool(article.get("非官方来源")) or str(
+        article.get("数据权威性") or article.get("authority") or "").strip() in ("非权威", "non-authoritative")
+
+
 def merge_results(result_files: List[str]) -> Dict:
     """
     合并多个搜索结果文件
@@ -122,11 +158,29 @@ def merge_results(result_files: List[str]) -> Dict:
         regions_searched.append(region)
         # 本文件处理前的文章/段落基线：用于计算每次调用真实新增量
         before_article_count = len(all_articles)
+        # 官方整卡替换外部卡的次数：该场景列表长度不变（替换不计新增），
+        # 但官方卡对本路而言是新增，需在路次统计中 +1 补偿
+        replacement_credit = 0
         before_para_total = sum(len(a.get("段落") or []) for a in all_articles)
         # 搜索目的兜底该路 --purpose 为空时用该路 query 兜底——
         # 若留空，文章"搜索目的"缺失，溯源报告分组键（search_key）会退化成
         # "中国"/"浙江省"等地域碎片，材料面板筛选胶囊失去意义（避免大量篇目退化）。
         purpose_val = search_meta.get("purpose") or search_meta.get("query") or ""
+        # 调用通道：深搜转换产物自带 channel=deep；补搜文件按文件名区分（deep_* vs 其他）；
+        # 外部联网两形态——联网路（searchChannel 含 webSearch）与宿主 WebSearch 转换产物
+        # （search_meta.websearch_converted）——分别标记，供溯源报告分组与计数。
+        _search_channel_list = search_meta.get("searchChannel") or []
+        if isinstance(_search_channel_list, str):
+            _search_channel_list = [_search_channel_list]
+        if search_meta.get("websearch_converted"):
+            _channel_name = "宿主 WebSearch（公开网络）"
+        elif "webSearch" in _search_channel_list:
+            _channel_name = "深知可信搜索·联网"
+        elif (data.get("channel") == "deep"
+              or Path(str(safe_file_path)).name.startswith("deep_")):
+            _channel_name = "深知深度搜索"
+        else:
+            _channel_name = "深知可信搜索"
         record = {
             "file": str(safe_file_path),
             "query": search_meta.get("query", ""),
@@ -137,11 +191,7 @@ def merge_results(result_files: List[str]) -> Dict:
             "full": search_meta.get("full", False),
             "segmentCount": search_meta.get("segmentCount"),
             "knowledgeBase": data.get("knowledgeBase", ""),
-            # 调用通道：深搜转换产物自带 channel=deep；补搜文件按文件名区分（deep_* vs 其他）
-            "channel": ("深知深度搜索"
-                        if (data.get("channel") == "deep"
-                            or Path(str(safe_file_path)).name.startswith("deep_"))
-                        else "深知可信搜索"),
+            "channel": _channel_name,
         }
         searches.append(record)
         if data.get("knowledgeBase"):
@@ -178,13 +228,38 @@ def merge_results(result_files: List[str]) -> Dict:
             title_key = re.sub(r"\s+", "", title or "").replace("　", "")
             title_key = re.sub(r"^(关于印发|关于)", "", title_key)
             title_key = re.sub(r"(的通知|的公告|的意见|的方案|的办法|的规定|的细则|的批复|的规划|的纲要)$", "", title_key)
-            url_key = re.sub(r"\s+", "", url or "").rstrip("/")
+            url_key = normalize_url_key(url)
             key = title_key if title_key else url_key
             if not key:
                 all_articles.append(article)
                 continue
 
             if key in seen_titles:
+                existing = by_key[key]
+                # 官方优先：同一材料的官方记录与外部联网记录相遇时，官方记录整体胜出——
+                # 外部篇不并入官方卡（段落、字段、通道标记均不进）。与 --input 顺序无关：
+                # 外部先入、官方后入时整卡替换；官方先入、外部后入时直接丢弃外部篇。
+                if is_unofficial(article) != is_unofficial(existing):
+                    duplicates_count += 1
+                    if is_unofficial(existing):
+                        _prev_owner = existing.get("_route_idx")
+                        if isinstance(_prev_owner, int) and 0 <= _prev_owner < len(searches):
+                            # 被替换的外部卡曾计入其所属路次的"新增文章数/新增段落数"，回滚防虚高
+                            searches[_prev_owner]["new_articles"] = max(
+                                0, searches[_prev_owner].get("new_articles", 0) - 1)
+                            searches[_prev_owner]["added_paragraphs"] = max(
+                                0, searches[_prev_owner].get("added_paragraphs", 0)
+                                - len(existing.get("段落") or []))
+                        try:
+                            _pos = all_articles.index(existing)
+                        except ValueError:
+                            _pos = -1
+                        if _pos >= 0:
+                            all_articles[_pos] = article
+                        by_key[key] = article
+                        article["_route_idx"] = len(searches) - 1
+                        replacement_credit += 1
+                    continue
                 # 同一材料：合并段落（保留两篇的段落合集，段落级去重），字段取并集（保留非空者）
                 duplicates_count += 1
                 existing = by_key[key]
@@ -222,6 +297,9 @@ def merge_results(result_files: List[str]) -> Dict:
 
             seen_titles.add(key)
             by_key[key] = article
+            # 记录本篇来自哪个检索路次（内部字段，输出前清除）：
+            # 官方整卡替换外部卡时据此回滚外部路次的"新增文章数"
+            article["_route_idx"] = len(searches) - 1
             article.setdefault("搜索地域", region)
             if search_meta.get("query"):
                 article.setdefault("搜索词", search_meta.get("query"))
@@ -237,7 +315,7 @@ def merge_results(result_files: List[str]) -> Dict:
 
         # 每次调用的真实增量：新增文章数 / 新增段落数（含新文章自带段落）。
         # 补搜的价值主要看这两个数：新增 0 篇但补充 N 段，说明补的是已有文章的条款段落。
-        record["new_articles"] = len(all_articles) - before_article_count
+        record["new_articles"] = len(all_articles) - before_article_count + replacement_credit
         record["added_paragraphs"] = (
             sum(len(a.get("段落") or []) for a in all_articles) - before_para_total
         )
@@ -282,6 +360,17 @@ def merge_results(result_files: List[str]) -> Dict:
                     keep_idx = _i if (_is_official_title(ti) or not _is_official_title(tj)) else _j
                 drop_idx = _j if keep_idx == _i else _i
                 keep, drop = all_articles[keep_idx], all_articles[drop_idx]
+                # 官方优先：官方记录与外部联网记录判为同一材料时，官方记录整体胜出——
+                # 外部篇不并入（段落、字段、通道标记均不进官方卡），直接丢弃。
+                if is_unofficial(keep) != is_unofficial(drop):
+                    keep_idx = _i if not is_unofficial(all_articles[_i]) else _j
+                    drop_idx = _j if keep_idx == _i else _i
+                    all_articles.pop(drop_idx)
+                    fps.pop(drop_idx)
+                    duplicates_count += 1
+                    if drop_idx == _i:
+                        _j = _i + 1  # _i 处已换成保留篇，重新向后比较
+                    continue
                 # 段落取并集（内容级去重，保留各自 id；后续统一重编号）
                 _seen_para = {re.sub(r"\s+", "", str(p.get("内容") or p.get("content") or ""))
                               for p in (keep.get("段落") or [])}
@@ -336,6 +425,10 @@ def merge_results(result_files: List[str]) -> Dict:
                     drop.add(a)          # a 才是污染段
         if drop:
             article["段落"] = [p for i, p in enumerate(paras) if i not in drop]
+
+    # 清除内部路由标记（不进入合并产物）
+    for article in all_articles:
+        article.pop("_route_idx", None)
 
     # 重新编号段落
     global_id = 1

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 公文排版脚本 v2.0.0
-严格按照 config/format.json 与 reference/standards/ 的格式规范进行自动排版
+严格按照 config/format.json 与 reference/standards/*.md 的格式规范进行自动排版
 
 【v2.0.0 更新说明】
 - 删除所有红头文件相关代码（红头+尾表由 template_generator.py 处理）
@@ -608,6 +608,41 @@ def strip_markdown_heading(line):
     return stripped
 
 
+SUBTITLE_FONT = '楷体_GB2312'
+SUBTITLE_SIZE = 16  # 三号
+
+
+def split_document_title(title):
+    """长标题自动分行（机关通行排版）。
+
+    - 含破折号副标题（「主标题——副标题」）：副标题另起一行，楷体三号；
+    - 主标题超过约 20 字且含「关于」：发文机关名单独一行，其余一行
+      （「中共四川省委 四川省人民政府关于……的实施意见」两行制）；
+    - 其余情况保持单行。
+    """
+    title = str(title or "").strip()
+    if not title:
+        return []
+    main, subtitle = title, ""
+    if "——" in title:
+        idx = title.find("——")
+        main = title[:idx].strip()
+        subtitle = title[idx + 2:].strip()
+    rows = []
+    if len(main) > 20 and "关于" in main:
+        idx = main.find("关于")
+        if 0 < idx <= 30:
+            rows.append({"text": main[:idx].strip(), "subtitle": False})
+            rows.append({"text": main[idx:].strip(), "subtitle": False})
+        else:
+            rows.append({"text": main, "subtitle": False})
+    else:
+        rows.append({"text": main, "subtitle": False})
+    if subtitle:
+        rows.append({"text": subtitle, "subtitle": True})
+    return [r for r in rows if r["text"]]
+
+
 def has_markdown_title(lines):
     """判断正文是否已经包含 Markdown 公文标题。"""
     return any(get_line_type(line.strip()) == 'title' for line in lines)
@@ -759,7 +794,13 @@ def _only_signature_tail(lines, index):
         s = line.strip()
         if not s or s == '[分页符]' or s.startswith('<!--'):
             continue
-        if is_date_line(s) or s.startswith(tail_prefixes):
+        # 单独一行"附件"表示附件正文页开始，其后内容属附件，不再参与落款判定
+        # （否则"附件"页的标题、表格题等正文行会让文末署名被误判为非落款，
+        #  连带成文日期也不右对齐）
+        if s == '附件':
+            break
+        # 成文日期后的「（联系人：…）」附注行属文末落款区，不影响署名判定
+        if is_date_line(s) or is_contact_info(s) or s.startswith(tail_prefixes):
             continue
         return False
     return True
@@ -1222,15 +1263,35 @@ def text_width_score(text):
 def compute_column_widths(table_rows, usable_width_dxa):
     num_cols = max(len(row) for row in table_rows)
     scores = []
+    max_scores = []
     for col_idx in range(num_cols):
         values = [row[col_idx] if col_idx < len(row) else '' for row in table_rows]
         max_score = max(text_width_score(value) for value in values) if values else 4
         avg_score = sum(text_width_score(value) for value in values) / max(len(values), 1)
+        max_scores.append(max_score)
         scores.append(max(6, min(28, max_score * 0.65 + avg_score * 0.35)))
 
     total_score = sum(scores) or num_cols
-    min_width = 900 if num_cols <= 6 else 700
+    # 最小列宽按中文字宽设定：三号字单字约 320 twips，1300 约合 4 字，
+    # 避免"金额""序号"这类短列表头被挤成两行
+    min_width = 1300 if num_cols <= 6 else 1000
     widths = [max(min_width, int(usable_width_dxa * score / total_score)) for score in scores]
+
+    # 短列按内容定型：最宽单元格（含单元格左右内边距 240twips）不超过版心 30% 的列，
+    # 直接按其内容需求给宽，省出的宽度让给"测算说明""备注"这类长文本列，
+    # 否则短列被挤成多行、长文本列反而留白。
+    cell_margin = 240
+    required = [score * 160 + cell_margin for score in max_scores]
+    narrow = [i for i in range(num_cols) if required[i] <= usable_width_dxa * 0.30]
+    if narrow and len(narrow) < num_cols:
+        for i in narrow:
+            widths[i] = max(min_width, required[i])
+        rest = usable_width_dxa - sum(widths[i] for i in narrow)
+        rest_score = sum(scores[i] for i in range(num_cols) if i not in narrow) or 1
+        for i in range(num_cols):
+            if i not in narrow:
+                widths[i] = max(min_width, int(rest * scores[i] / rest_score))
+
     total_width = sum(widths)
     if total_width != usable_width_dxa and total_width > 0:
         widths[-1] += usable_width_dxa - total_width
@@ -1655,11 +1716,13 @@ def create_document(content_text, output_path=None):
         # 公文标题（# 标题）
         if line_type == 'title':
             content = strip_markdown_heading(stripped)
-            para = doc.add_paragraph()
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            add_formatted_text(para, content, title_font, title_size)
-            set_paragraph_format(para, first_line_indent=False, alignment=WD_ALIGN_PARAGRAPH.CENTER, line_spacing=title_line_spacing)
-            set_outline_level(para, 0)  # 文档标题设为1级
+            for row in split_document_title(content):
+                para = doc.add_paragraph()
+                para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                row_font, row_size = (SUBTITLE_FONT, SUBTITLE_SIZE) if row["subtitle"] else (title_font, title_size)
+                add_formatted_text(para, row["text"], row_font, row_size)
+                set_paragraph_format(para, first_line_indent=False, alignment=WD_ALIGN_PARAGRAPH.CENTER, line_spacing=title_line_spacing)
+                set_outline_level(para, 0)  # 文档标题设为1级
             add_blank_paragraphs(doc, 1, body_line_spacing, body_font, body_size)
             i += 1
             continue
@@ -1730,35 +1793,30 @@ def create_document(content_text, output_path=None):
             i += 1
             continue
 
-        # 联系信息不再右对齐成结尾段：规范要求联系人电话写进正文（行文方向规则见文种标准），
-        # 独立联系段按普通正文渲染（首行缩进），保留对存量稿件的兼容。
+        # 联系行（成文日期之后的「（联系人：…，联系电话：…）」）：机关通行附注排法——
+        # 前空一行、左对齐、左空二字、保持圆括号。正文中间出现的独立联系段
+        # 仍按普通正文渲染并提示（规范联系人电话写入正文事项段或置于文末）。
         if is_contact_info(stripped):
-            print(f"格式提示：检测到独立联系人段（{stripped[:24]}…）——按规范联系人电话应写入正文相关事项段，"
-                  f"已按正文段落渲染；建议将联系人信息并入对应事项段后重新生成。", file=sys.stderr)
+            if last_sign_date:
+                add_blank_paragraphs(doc, 1, body_line_spacing, body_font, body_size)
+                para = doc.add_paragraph()
+                add_formatted_text(para, stripped, body_font, body_size)
+                set_paragraph_format(para, indent_chars=2, line_spacing=body_line_spacing)
+                i += 1
+                continue
+            print(f"格式提示：检测到正文中间的独立联系人段（{stripped[:24]}…）——联系人电话应写入正文相关事项段，"
+                  f"或置于成文日期之后（空一行、圆括号）；已按正文段落渲染。", file=sys.stderr)
 
-        # 落款日期（GB/T 9704-2012 7.3.5.2）：首字比署名首字右移二字；日期长于署名时改为日期右空二字、
-        # 署名右空相应增加——两分支均满足"日期首字=署名首字右移2字"。
-        # 右缩进是"距右缘的字数"，右移=更靠右=字数更小：设日期首字距右缘为 date_len+date_indent、
-        # 署名首字为 unit_len+unit_indent，右移二字即 date_len+date_indent = unit_len+unit_indent-2。
-        # 修正：两分支旧实现均少算 4 字（写成 unit_len+4-date_len 与 date_len-unit_len），
-        # 导致每份稿子的成文日期都比规则要求偏左。
+        # 落款日期：右对齐并右空二字，与署名右端对齐（署名末字同样右空二字）。
+        # 不按署名长度动态缩进——按署名字数推"首字对齐"会把短署名（如五字机关名）
+        # 推到行中，版式上显得"落款太靠中间"。
         if should_right_align_date(lines, i):
             last_sign_date = stripped
-            date_text = re.sub(r'\s+', '', stripped)
-            unit_len = len(re.sub(r'\s+', '', last_signing_entity))
-            if len(date_text) > unit_len:
-                date_indent = 2
-                unit_indent = len(date_text) - unit_len + 4
-            else:
-                unit_indent = 2
-                date_indent = max(2, unit_len - len(date_text))
-            if last_signing_para is not None and last_signing_para._p.getparent() is not None:
-                last_signing_para.paragraph_format.right_indent = Pt(body_size * unit_indent)
             para = doc.add_paragraph()
             para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             add_formatted_text(para, stripped, body_font, body_size)
             set_paragraph_format(para, first_line_indent=False, alignment=WD_ALIGN_PARAGRAPH.RIGHT, line_spacing=body_line_spacing)
-            para.paragraph_format.right_indent = Pt(body_size * date_indent)
+            para.paragraph_format.right_indent = Pt(body_size * 2)
             para.paragraph_format.keep_with_next = True
             i += 1
             continue
